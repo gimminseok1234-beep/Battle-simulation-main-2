@@ -169,14 +169,11 @@ export class Weapon {
             gameManager.audioManager.play('shurikenShoot');
             unit.attackCooldown = unit.cooldownTime;
         } else if (this.type === 'hadoken') {
-            // [수정] 즉시 발사하는 대신 유닛의 충전 상태를 활성화합니다.
+            // [수정] 이 메서드는 오직 유닛의 충전 상태를 활성화하는 역할만 수행합니다.
+            // 실제 발사는 unit.js의 update 로직에서 처리됩니다.
             unit.isChargingHadoken = true;
             unit.hadokenChargeTimer = unit.hadokenChargeDuration;
             unit.facingAngle = Math.atan2(target.pixelY - unit.pixelY, target.pixelX - unit.pixelX);
-        } else if (this.type === 'lightning') {
-            gameManager.createProjectile(unit, target, 'lightning_bolt');
-            gameManager.audioManager.play('electricity');
-            unit.attackCooldown = unit.cooldownTime;
         } else if (this.type === 'magic_spear') {
             // [수정] use 메서드는 일반 공격만 처리하도록 단순화
             gameManager.createProjectile(unit, target, 'magic_spear_normal');
