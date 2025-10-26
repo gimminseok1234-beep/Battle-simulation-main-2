@@ -169,9 +169,10 @@ export class Weapon {
             gameManager.audioManager.play('shurikenShoot');
             unit.attackCooldown = unit.cooldownTime;
         } else if (this.type === 'hadoken') {
-            gameManager.createProjectile(unit, target, 'hadoken');
-            gameManager.audioManager.play('hadokenShoot');
-            unit.attackCooldown = unit.cooldownTime; 
+            // [수정] 즉시 발사하는 대신 유닛의 충전 상태를 활성화합니다.
+            unit.isChargingHadoken = true;
+            unit.hadokenChargeTimer = unit.hadokenChargeDuration;
+            unit.facingAngle = Math.atan2(target.pixelY - unit.pixelY, target.pixelX - unit.pixelX);
         } else if (this.type === 'lightning') {
             gameManager.createProjectile(unit, target, 'lightning_bolt');
             gameManager.audioManager.play('electricity');

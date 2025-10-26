@@ -74,6 +74,12 @@ export class Unit {
         this.isSpecialAttackReady = false; // [추가] 특수 공격 준비 상태
 
         this.dualSwordSkillCooldown = 0;
+        
+        // [신규] 장풍 충전 관련 속성
+        this.isChargingHadoken = false;
+        this.hadokenChargeTimer = 0;
+        this.hadokenChargeDuration = 45; // 0.75초 충전
+
         this.dualSwordTeleportTarget = null;
         this.dualSwordTeleportDelayTimer = 0;
         this.dualSwordSpinAttackTimer = 0;
