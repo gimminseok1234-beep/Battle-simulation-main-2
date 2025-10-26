@@ -673,6 +673,22 @@ export class Unit {
             return;
         }
 
+        // [수정] 장풍 충전 및 발사 로직을 update 메서드 최상단에서 처리
+        if (this.isChargingHadoken) {
+            this.hadokenChargeTimer -= gameManager.gameSpeed;
+            if (this.hadokenChargeTimer <= 0) {
+                this.isChargingHadoken = false;
+                if (this.target && this.target.hp > 0) {
+                    gameManager.createProjectile(this, this.target, 'hadoken');
+                    gameManager.audioManager.play('hadokenShoot');
+                }
+                this.attackCooldown = this.cooldownTime;
+            }
+            // 충전 중에는 다른 행동을 하지 않도록 여기서 함수를 종료합니다.
+            this.applyPhysics();
+            return;
+        }
+
         if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
 
         if (this.isBeingPulled && this.puller) {
@@ -1556,11 +1572,11 @@ export class Unit {
         const barGap = 1;
         const barX = this.pixelX - barWidth / 2;
 
-        const healthBarIsVisible = this.hpBarAlpha > 0;
-        const normalAttackIsVisible = (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown > 0) || (this.weapon?.type !== 'poison_potion' && this.attackCooldown > 0);
+        const healthBarIsVisible = this.hpBarAlpha > 0; // [수정] 장풍 충전 중에도 게이지가 보이도록 조건 추가
+        const normalAttackIsVisible = (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown > 0) || (this.weapon?.type !== 'poison_potion' && this.attackCooldown > 0) || this.isChargingHadoken;
         const kingSpawnBarIsVisible = this.isKing && this.spawnCooldown > 0;
         let specialSkillIsVisible = // [수정] 독 포션은 원형 특수 공격 게이지에서 제외
-            (this.weapon?.type === 'magic_dagger' && this.magicDaggerSkillCooldown > 0) ||
+            (this.weapon?.type === 'magic_dagger' && this.magicDaggerSkillCooldown > 0) || (this.weapon?.type === 'hadoken' && this.attackCooldown > 0) ||
             (this.weapon?.type === 'axe' && this.axeSkillCooldown > 0) ||
             (this.weapon?.type === 'ice_diamond' && this.iceDiamondChargeTimer > 0 && this.iceDiamondCharges < 5) || (this.weapon?.type === 'magic_spear' && this.magicSpearSpecialCooldown > 0) ||
             (this.weapon?.type === 'boomerang' && this.boomerangCooldown > 0) ||
@@ -1588,12 +1604,16 @@ export class Unit {
             if (normalAttackIsVisible) {
                 ctx.fillStyle = '#0c4a6e';
                 ctx.fillRect(barX, currentBarY, barWidth, barHeight);
-                let progress, fgColor;
-                if (this.weapon?.type === 'poison_potion') {
+                let progress, fgColor; // [수정] 장풍 충전 게이지 로직 추가
+                if (this.isChargingHadoken) {
+                    progress = 1 - (this.hadokenChargeTimer / this.hadokenChargeDuration);
+                    fgColor = '#38bdf8';
+                } else if (this.weapon?.type === 'poison_potion') {
                     progress = 1 - (this.poisonPotionCooldown / 300);
                     fgColor = '#38bdf8'; // 하늘색
                 } else {
-                    progress = Math.max(0, 1 - (this.attackCooldown / this.cooldownTime));
+                    // 장풍은 충전 후 공격 쿨다운이 돌 때, 게이지가 차지 않는 것처럼 보이게 progress를 0으로 설정
+                    progress = this.weapon?.type === 'hadoken' ? 0 : Math.max(0, 1 - (this.attackCooldown / this.cooldownTime));
                     fgColor = '#38bdf8';
                 }
                 ctx.fillStyle = fgColor;
