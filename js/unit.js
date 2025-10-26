@@ -1134,8 +1134,8 @@ export class Unit {
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
                             this.weapon.use(this, this.target); // use 메서드를 호출하여 충전 시작
                             this.moveTarget = null;
-                            // [수정] break 대신 return을 사용하여, 충전 시작 후 불필요한 일반 공격 로직 및 moveTarget 재설정을 방지합니다.
-                            return;
+                            // [수정] return 대신 break를 사용하여 switch 문만 빠져나가고, update 함수의 나머지 로직(move, applyPhysics)이 실행되도록 합니다.
+                            break;
                         }
                     }
 
