@@ -657,6 +657,22 @@ export class Unit {
             return;
         }
 
+        // [수정] 장풍 충전 및 발사 로직을 update 메서드 최상단에서 처리
+        if (this.isChargingHadoken) {
+            this.hadokenChargeTimer -= gameManager.gameSpeed;
+            if (this.hadokenChargeTimer <= 0) {
+                this.isChargingHadoken = false;
+                if (this.target && this.target.hp > 0) {
+                    gameManager.createProjectile(this, this.target, 'hadoken');
+                    gameManager.audioManager.play('hadokenShoot');
+                }
+                this.attackCooldown = this.cooldownTime;
+            }
+            // 충전 중에는 다른 행동을 하지 않도록 여기서 함수를 종료합니다.
+            this.applyPhysics();
+            return;
+        }
+
         if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
 
         if (this.isBeingPulled && this.puller) {

@@ -32,8 +32,8 @@ export class Weapon {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        // [수정] magic_spear에도 공격 애니메이션 타이머 적용
-        if (['sword', 'dual_swords', 'boomerang', 'poison_potion', 'magic_dagger', 'axe', 'bow', 'magic_spear'].includes(this.type)) {
+        // [수정] hadoken에도 공격 애니메이션 타이머 적용
+        if (['sword', 'dual_swords', 'boomerang', 'poison_potion', 'magic_dagger', 'axe', 'bow', 'magic_spear', 'hadoken'].includes(this.type)) {
             unit.attackAnimationTimer = 12; // [MODIFIED] 공격 애니메이션 속도 증가 (15 -> 12)
         }
 
