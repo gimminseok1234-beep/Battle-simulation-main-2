@@ -679,7 +679,7 @@ export class Unit {
         if (this.isChargingHadoken) {
             targetProgress = 1 - (this.hadokenChargeTimer / this.hadokenChargeDuration);
         } else if (this.weapon?.type === 'poison_potion') {
-            targetProgress = 1 - (this.poisonPotionCooldown / 300);
+            targetProgress = Math.max(0, 1 - (this.poisonPotionCooldown / 300));
         } else {
             targetProgress = this.weapon?.type === 'hadoken' ? 0 : Math.max(0, 1 - (this.attackCooldown / this.cooldownTime));
         }
@@ -1605,14 +1605,12 @@ export class Unit {
 
 
             if (normalAttackIsVisible) {
-                // [수정] 게이지 진행률이 0보다 클 때만 그리도록 하여 빈 바가 보이지 않게 함
-                if (this.displayAttackProgress > 0) {
-                    ctx.fillStyle = '#0c4a6e'; // 게이지 배경색
-                    ctx.fillRect(barX, currentBarY, barWidth, barHeight);
-                    
-                    ctx.fillStyle = '#38bdf8'; // 게이지 전경색 (하늘색)
-                    ctx.fillRect(barX, currentBarY, barWidth * this.displayAttackProgress, barHeight);
-                }
+                // [수정] 배경 바는 항상 그리고, 진행률이 있을 때만 하늘색 바를 그림
+                ctx.fillStyle = '#0c4a6e'; // 게이지 배경색
+                ctx.fillRect(barX, currentBarY, barWidth, barHeight);
+                
+                ctx.fillStyle = '#38bdf8'; // 게이지 전경색 (하늘색)
+                ctx.fillRect(barX, currentBarY, barWidth * this.displayAttackProgress, barHeight);
                 currentBarY += barHeight + barGap;
             }
 
