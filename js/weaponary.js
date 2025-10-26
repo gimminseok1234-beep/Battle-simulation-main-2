@@ -288,22 +288,21 @@ export class Weapon {
             ctx.rotate(Math.PI / 4);
             drawAxeIcon(ctx);
         } else if (this.type === 'ice_diamond') {
-            drawIceDiamondIcon(ctx);
+            drawIceDiamondIcon(ctx, 0.8);
         } else if (this.type === 'hadoken') {
-            ctx.rotate(Math.PI / 4);
-            const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, GRID_SIZE * 1.2);
-            grad.addColorStop(0, '#bfdbfe');
-            grad.addColorStop(0.6, '#3b82f6');
-            grad.addColorStop(1, '#1e40af');
-            ctx.fillStyle = grad;
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 1.5 / scale;
-            ctx.beginPath();
-            ctx.arc(-GRID_SIZE * 0.2, 0, GRID_SIZE * 0.6, Math.PI / 2, -Math.PI / 2, false);
-            ctx.lineTo(GRID_SIZE * 0.8, 0);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            // [MODIFIED] 바닥에 놓인 장풍 디자인을 화려한 에너지 구체 형태로 변경
+            const radius = GRID_SIZE * 0.7;
+            const pulse = Math.sin(this.gameManager.animationFrameCounter * 0.05) * 0.1 + 0.9;
+            
+            ctx.save();
+            ctx.scale(pulse, pulse);
+            this.drawHadokenBall(ctx, null, radius, 1.0, true); // isFancy = true
+            ctx.restore();
+
+            // 바닥에 있을 때도 소용돌이 효과 추가
+            ctx.globalCompositeOperation = 'lighter';
+            this.drawHadokenSwirl(ctx, radius, 'rgba(255, 255, 255, 0.2)');
+
         } else if (this.type === 'shuriken') {
             ctx.rotate(Math.PI / 4);
             ctx.fillStyle = '#9ca3af';
@@ -346,13 +345,51 @@ export class Weapon {
      * @param {Unit} unit 
      */
     drawHadokenCharge(ctx, unit) {
+        const gm = this.gameManager;
         const progress = 1 - (unit.attackAnimationTimer / 12); // 0 -> 1
         const radius = (GRID_SIZE / 2) * progress;
         const alpha = Math.sin(progress * Math.PI); // Fades in and out
 
         ctx.save();
-        ctx.translate(GRID_SIZE * 0.7, 0); // Position in front of the unit
-        this.owner.weapon.drawHadokenBall(ctx, unit, radius, alpha);
+        const chargePointX = GRID_SIZE * 0.7;
+        ctx.translate(chargePointX, 0); // Position in front of the unit
+
+        // [NEW] 1. 에너지 흡수 파티클 효과
+        if (gm.random() > 0.5) {
+            const angle = gm.random() * Math.PI * 2;
+            const startRadius = GRID_SIZE * (1.5 + gm.random());
+            const startX = Math.cos(angle) * startRadius;
+            const startY = Math.sin(angle) * startRadius;
+
+            let teamColor;
+            switch(unit.team) {
+                case TEAM.A: teamColor = '#ef4444'; break;
+                case TEAM.B: teamColor = '#3b82f6'; break;
+                case TEAM.C: teamColor = '#10b981'; break;
+                case TEAM.D: teamColor = '#facc15'; break;
+                default:     teamColor = '#9ca3af'; break;
+            }
+
+            // 유닛의 월드 좌표를 기준으로 파티클 생성
+            const worldAngle = unit.facingAngle;
+            const particleStartX = unit.pixelX + Math.cos(worldAngle) * (chargePointX + startX) - Math.sin(worldAngle) * startY;
+            const particleStartY = unit.pixelY + Math.sin(worldAngle) * (chargePointX + startX) + Math.cos(worldAngle) * startY;
+            const chargeWorldX = unit.pixelX + Math.cos(worldAngle) * chargePointX;
+            const chargeWorldY = unit.pixelY + Math.sin(worldAngle) * chargePointX;
+
+            gm.addParticle({
+                x: particleStartX, y: particleStartY,
+                vx: (chargeWorldX - particleStartX) * 0.1, vy: (chargeWorldY - particleStartY) * 0.1,
+                life: 0.2, color: teamColor, size: gm.random() * 1.5 + 0.5, gravity: 0
+            });
+        }
+
+        // 2. 중앙 에너지 구체
+        this.drawHadokenBall(ctx, unit, radius, alpha);
+
+        // [NEW] 3. 충격파 링 효과
+        this.drawShockwaveRing(ctx, progress, unit.team);
+
         ctx.restore();
     }
     /**
@@ -524,9 +561,13 @@ export class Weapon {
             ctx.restore();
         } else if (this.type === 'hadoken') {
             // 공격 애니메이션 중일 때 기 모으는 효과 그리기
-            if (unit.attackAnimationTimer > 0) {
-                this.drawHadokenCharge(ctx, unit);
-            }
+             if (unit.attackAnimationTimer > 0) {
+                 this.drawHadokenCharge(ctx, unit);
+             } else {
+                // [NEW] 평상시 장착 시 손 주변에 작은 에너지 구체 표시
+                ctx.translate(GRID_SIZE * 0.6, 0);
+                this.drawHadokenBall(ctx, unit, GRID_SIZE * 0.3, 0.8, true); // isFancy = true
+             }
         } else if (this.type === 'shuriken') {
             ctx.translate(GRID_SIZE * 0.4, GRID_SIZE * 0.3);
             const shurikenScale = 0.5;
@@ -650,8 +691,9 @@ export class Weapon {
      * @param {Unit} owner 
      * @param {number} radius 
      * @param {number} alpha 
+     * @param {boolean} isFancy - 화려한 무지개 그라데이션을 사용할지 여부
      */
-    drawHadokenBall(ctx, owner, radius, alpha = 1.0) {
+    drawHadokenBall(ctx, owner, radius, alpha = 1.0, isFancy = false) {
         let teamColorRgb = '59, 130, 246'; // Default blue
         let shadowColor = 'rgba(96, 165, 250, 1)';
         if (owner) {
@@ -663,18 +705,67 @@ export class Weapon {
             }
         }
 
-        const grad = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius);
-        grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-        grad.addColorStop(0.5, `rgba(${teamColorRgb}, ${alpha * 0.9})`);
-        grad.addColorStop(1, `rgba(${teamColorRgb}, ${alpha * 0.5})`);
+        let grad;
+        if (isFancy) {
+            // [NEW] 화려한 무지개빛 그라데이션
+            grad = ctx.createConicGradient(this.gameManager.animationFrameCounter * 0.05, 0, 0);
+            grad.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
+            grad.addColorStop(0.25, 'rgba(0, 255, 255, 0.8)');
+            grad.addColorStop(0.5, 'rgba(255, 255, 0, 0.8)');
+            grad.addColorStop(0.75, 'rgba(0, 0, 255, 0.8)');
+            grad.addColorStop(1, 'rgba(255, 0, 255, 0.8)');
+            shadowColor = 'rgba(255, 255, 255, 0.7)';
+        } else {
+            // 기존 팀 색상 기반 그라데이션
+            grad = ctx.createRadialGradient(0, 0, radius * 0.2, 0, 0, radius);
+            grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+            grad.addColorStop(0.5, `rgba(${teamColorRgb}, ${alpha * 0.9})`);
+            grad.addColorStop(1, `rgba(${teamColorRgb}, ${alpha * 0.5})`);
+        }
 
         ctx.fillStyle = grad;
         ctx.shadowColor = shadowColor;
         ctx.shadowBlur = radius * 1.5;
+        ctx.globalAlpha = alpha;
         
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    drawHadokenSwirl(ctx, radius, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        const angle = this.gameManager.animationFrameCounter * 0.2;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.7, angle, angle + Math.PI * 1.5);
+        ctx.stroke();
+    }
+
+    /**
+     * [NEW] Draws a shockwave ring for the charging effect.
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {number} progress 
+     * @param {string} team 
+     */
+    drawShockwaveRing(ctx, progress, team) {
+        const ringRadius = GRID_SIZE * 0.5 + progress * GRID_SIZE * 1.5;
+        const ringAlpha = (1 - progress) * 0.5;
+
+        let teamColor;
+        switch(team) {
+            case TEAM.A: teamColor = '239, 68, 68'; break;
+            case TEAM.B: teamColor = '59, 130, 246'; break;
+            case TEAM.C: teamColor = '16, 185, 129'; break;
+            case TEAM.D: teamColor = '250, 204, 21'; break;
+            default:     teamColor = '156, 163, 175'; break;
+        }
+
+        ctx.strokeStyle = `rgba(${teamColor}, ${ringAlpha})`;
+        ctx.lineWidth = 2 + (1 - progress) * 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
     }
 }
 
@@ -1287,21 +1378,14 @@ export class Projectile {
             // [MODIFIED] 장풍 투사체에 유닛 색상 반영
              ctx.save();
              ctx.translate(this.pixelX, this.pixelY);
- 
-             this.owner.weapon.drawHadokenBall(ctx, this.owner, GRID_SIZE / 1.6);
+             // 투사체는 기존 팀 색상 디자인을 유지 (isFancy = false)
+             this.owner.weapon.drawHadokenBall(ctx, this.owner, GRID_SIZE / 1.6, 1.0, false);
 
             // 소용돌이 효과
             ctx.globalCompositeOperation = 'lighter';
             let teamColor = COLORS[`TEAM_${this.owner.team}`] || '#3b82f6';
-            ctx.strokeStyle = teamColor.replace(')', ', 0.3)').replace('#', 'rgba(');
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            const angle = this.gameManager.animationFrameCounter * 0.2;
-            ctx.arc(0, 0, (GRID_SIZE / 1.6) * 0.7, angle, angle + Math.PI * 1.5);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(0, 0, (GRID_SIZE / 1.6) * 0.5, -angle, -angle + Math.PI * 1.5);
-            ctx.stroke();
+            const swirlColor = teamColor.replace(')', ', 0.3)').replace('#', 'rgba(');
+            this.owner.weapon.drawHadokenSwirl(ctx, GRID_SIZE / 1.6, swirlColor);
 
             ctx.restore();
         } else if (this.type === 'lightning_bolt') {
