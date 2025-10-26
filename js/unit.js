@@ -15,6 +15,7 @@ export class Unit {
         this.maxHp = 100;
         this.displayHp = 100; // [추가] 화면에 표시될 체력
         this.damageFlash = 0; // [추가] 피격 시 깜빡임 효과
+        this.displayAttackProgress = 0; // [신규] 부드러운 공격 게이지 진행률
         this.hpBarAlpha = 0; // [NEW] 체력바 투명도
 
         // 레벨업 시스템 속성
@@ -671,6 +672,24 @@ export class Unit {
             // 충전 중에는 다른 행동을 하지 않도록 여기서 함수를 종료합니다.
             this.applyPhysics();
             return;
+        }
+
+        // [신규] 부드러운 공격 게이지 진행률 업데이트
+        let targetProgress = 0;
+        if (this.isChargingHadoken) {
+            targetProgress = 1 - (this.hadokenChargeTimer / this.hadokenChargeDuration);
+        } else if (this.weapon?.type === 'poison_potion') {
+            targetProgress = 1 - (this.poisonPotionCooldown / 300);
+        } else {
+            targetProgress = this.weapon?.type === 'hadoken' ? 0 : Math.max(0, 1 - (this.attackCooldown / this.cooldownTime));
+        }
+
+        // ease-out 효과 적용 (값이 목표에 가까워질수록 느려짐)
+        const easeFactor = 0.1;
+        this.displayAttackProgress += (targetProgress - this.displayAttackProgress) * easeFactor * gameManager.gameSpeed;
+        // 매우 작은 값은 0으로 처리하여 불필요한 렌더링 방지
+        if (Math.abs(this.displayAttackProgress - targetProgress) < 0.001) {
+            this.displayAttackProgress = targetProgress;
         }
 
         if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
@@ -1557,7 +1576,7 @@ export class Unit {
         const barX = this.pixelX - barWidth / 2;
 
         const healthBarIsVisible = this.hpBarAlpha > 0; // [수정] 장풍 충전 중에도 게이지가 보이도록 조건 추가
-        const normalAttackIsVisible = (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown > 0) || (this.weapon?.type !== 'poison_potion' && this.attackCooldown > 0) || this.isChargingHadoken;
+        const normalAttackIsVisible = (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown > 0) || (this.weapon?.type !== 'poison_potion' && this.attackCooldown > 0) || this.isChargingHadoken || (this.state === 'AGGRESSIVE' || this.state === 'ATTACKING_NEXUS');
         const kingSpawnBarIsVisible = this.isKing && this.spawnCooldown > 0;
         let specialSkillIsVisible = // [수정] 독 포션은 원형 특수 공격 게이지에서 제외
             (this.weapon?.type === 'magic_dagger' && this.magicDaggerSkillCooldown > 0) ||
@@ -1586,22 +1605,14 @@ export class Unit {
 
 
             if (normalAttackIsVisible) {
-                ctx.fillStyle = '#0c4a6e';
-                ctx.fillRect(barX, currentBarY, barWidth, barHeight);
-                let progress, fgColor; // [수정] 장풍 충전 게이지 로직 추가
-                if (this.isChargingHadoken) {
-                    progress = 1 - (this.hadokenChargeTimer / this.hadokenChargeDuration);
-                    fgColor = '#38bdf8';
-                } else if (this.weapon?.type === 'poison_potion') {
-                    progress = 1 - (this.poisonPotionCooldown / 300);
-                    fgColor = '#38bdf8'; // 하늘색
-                } else {
-                    // 장풍은 충전 후 공격 쿨다운이 돌 때, 게이지가 차지 않는 것처럼 보이게 progress를 0으로 설정
-                    progress = this.weapon?.type === 'hadoken' ? 0 : Math.max(0, 1 - (this.attackCooldown / this.cooldownTime));
-                    fgColor = '#38bdf8';
+                // [수정] 게이지 진행률이 0보다 클 때만 그리도록 하여 빈 바가 보이지 않게 함
+                if (this.displayAttackProgress > 0) {
+                    ctx.fillStyle = '#0c4a6e'; // 게이지 배경색
+                    ctx.fillRect(barX, currentBarY, barWidth, barHeight);
+                    
+                    ctx.fillStyle = '#38bdf8'; // 게이지 전경색 (하늘색)
+                    ctx.fillRect(barX, currentBarY, barWidth * this.displayAttackProgress, barHeight);
                 }
-                ctx.fillStyle = fgColor;
-                ctx.fillRect(barX, currentBarY, barWidth * progress, barHeight);
                 currentBarY += barHeight + barGap;
             }
 
