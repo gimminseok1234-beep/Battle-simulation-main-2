@@ -417,7 +417,7 @@ export class Weapon {
             ctx.fillRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
             ctx.strokeRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
         } else if (this.type === 'magic_dagger') {
-            ctx.translate(GRID_SIZE * 0.4, 0);
+            ctx.translate(GRID_SIZE * 0.2, GRID_SIZE * 0.4);
             ctx.scale(0.7, 0.7);
             ctx.rotate(-Math.PI / 8);
             drawMagicDaggerIcon(ctx);
