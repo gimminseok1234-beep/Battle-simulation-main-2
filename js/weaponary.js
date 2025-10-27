@@ -417,11 +417,11 @@ export class Weapon {
             ctx.fillRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
             ctx.strokeRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
         } else if (this.type === 'magic_dagger') {
-            ctx.translate(GRID_SIZE * 0.3, GRID_SIZE * 0.4);
+            // [수정] 단검을 올바른 방향으로 회전시키고 손 위치를 조정합니다.
+            ctx.rotate(-Math.PI / 2); // 단검을 옆으로 눕힙니다 (칼날이 앞을 향하도록).
+            ctx.translate(GRID_SIZE * 0.4, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정합니다.
             ctx.scale(0.7, 0.7);
-            ctx.rotate(-Math.PI / 8);
             drawMagicDaggerIcon(ctx);
-            ctx.rotate(Math.PI); // 공격 애니메이션을 위해 칼날 방향을 뒤집습니다.
         } else if (this.type === 'axe') {
             ctx.translate(GRID_SIZE * 0.8, -GRID_SIZE * 0.7);
             ctx.rotate(Math.PI / 4);
