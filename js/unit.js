@@ -1180,7 +1180,7 @@ export class Unit {
                     // [수정] 독 포션 유닛은 5초 쿨다운 공격만 하므로, 일반 근접 공격 로직에서 제외합니다.
                     if (this.weapon?.type === 'poison_potion') {
                         // 독 포션 유닛은 원거리 공격만 하므로, 적에게 다가가기만 합니다.
-                        if (this.path.length === 0 || !this.isPathToTarget(targetPixel)) {
+                        if (this.path.length === 0 || (targetPixel && !this.isPathToTarget(targetPixel))) {
                             this.updatePathTo(targetPixel);
                         }
                     } else {
@@ -1191,7 +1191,7 @@ export class Unit {
                             this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
                             this.path = []; // 공격 범위 내에서는 A* 경로도 필요 없음
                         } else {
-                            if (this.path.length === 0 || !this.isPathToTarget(targetPixel)) {
+                            if (this.path.length === 0 || (targetPixel && !this.isPathToTarget(targetPixel))) {
                                 this.updatePathTo(targetPixel);
                             }
                         }
