@@ -417,10 +417,11 @@ export class Weapon {
             ctx.fillRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
             ctx.strokeRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
         } else if (this.type === 'magic_dagger') {
-            ctx.translate(GRID_SIZE * 0.4, 0);
+            ctx.translate(GRID_SIZE * 0.3, GRID_SIZE * 0.4);
             ctx.scale(0.7, 0.7);
-            ctx.rotate(Math.PI); // 단검을 180도 회전시킵니다.
+            ctx.rotate(-Math.PI / 8);
             drawMagicDaggerIcon(ctx);
+            ctx.rotate(Math.PI); // 공격 애니메이션을 위해 칼날 방향을 뒤집습니다.
         } else if (this.type === 'axe') {
             ctx.translate(GRID_SIZE * 0.8, -GRID_SIZE * 0.7);
             ctx.rotate(Math.PI / 4);
