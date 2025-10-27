@@ -336,7 +336,7 @@ export class Unit {
         if (!gameManager) return;
 
         // [NEW] A* 길찾기 로직 적용
-        if (this.path.length > 0 && this.stuckTimer > 30) {
+        if (this.path.length > 0) { // A* 경로가 있으면 무조건 경로를 따라 이동
             const nextNode = this.path[0];
             const targetPixelX = nextNode.x * GRID_SIZE + GRID_SIZE / 2;
             const targetPixelY = nextNode.y * GRID_SIZE + GRID_SIZE / 2;
@@ -425,6 +425,7 @@ export class Unit {
                     this.knockbackX += Math.cos(bounceAngle) * 1.5;
                     this.knockbackY += Math.sin(bounceAngle) * 1.5;
                     this.moveTarget = null;
+                    this.path = []; // 벽에 부딪혔으므로 현재 A* 경로를 무효화
                 }
                 return;
             }
@@ -1179,16 +1180,24 @@ export class Unit {
                     // [수정] 독 포션 유닛은 5초 쿨다운 공격만 하므로, 일반 근접 공격 로직에서 제외합니다.
                     if (this.weapon?.type === 'poison_potion') {
                         // 독 포션 유닛은 원거리 공격만 하므로, 적에게 다가가기만 합니다.
-                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                        if (this.path.length === 0 || !this.isPathToTarget(targetPixel)) {
+                            this.updatePathTo(targetPixel);
+                        }
                     } else {
                         let attackDistance = this.attackRange;
                         if (Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY) <= attackDistance) {
                             this.moveTarget = null;
                             this.attack(this.target);
                             this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
-                        } else { this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; }
+                            this.path = []; // 공격 범위 내에서는 A* 경로도 필요 없음
+                        } else {
+                            if (this.path.length === 0 || !this.isPathToTarget(targetPixel)) {
+                                this.updatePathTo(targetPixel);
+                            }
+                        }
                     }
                 }
+                this.moveTarget = null; // A* 경로를 사용하므로 직접 이동 목표는 null로 설정
                 break;
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
@@ -1199,7 +1208,7 @@ export class Unit {
                 break;
         }
 
-        this.move();
+        this.move(); // A* 경로가 있다면 move() 함수 내에서 처리됩니다.
 
         this.applyPhysics();
 
@@ -1214,7 +1223,7 @@ export class Unit {
             if (this.stuckTimer > 30) {
                 // [수정] 막혔을 때만 A* 경로 탐색
                 if (this.path.length === 0) {
-                    this.updatePathTo(this.moveTarget);
+                    if (this.target) this.updatePathTo({ x: this.target.pixelX, y: this.target.pixelY }); // 현재 목표로 다시 경로 탐색
                 } else {
                     // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도
                     this.path = [];
@@ -1333,6 +1342,19 @@ export class Unit {
         this.path = astar(this.gameManager.map, startNode, endNode);
         this.moveTarget = null; // A* 경로가 있으면 직접 이동 목표는 비활성화
         this.pathUpdateCooldown = 15; // 0.25초마다 경로 재계산
+    }
+
+    /**
+     * [NEW] Checks if the current A* path leads to the given target pixel coordinates.
+     * @param {{x: number, y: number}} targetPixel - The target pixel coordinates.
+     * @returns {boolean} - True if the path leads to the target, false otherwise.
+     */
+    isPathToTarget(targetPixel) {
+        if (this.path.length === 0) return false;
+        const lastNode = this.path[this.path.length - 1];
+        const targetGridX = Math.floor(targetPixel.x / GRID_SIZE);
+        const targetGridY = Math.floor(targetPixel.y / GRID_SIZE);
+        return lastNode.x === targetGridX && lastNode.y === targetGridY;
     }
 
     draw(ctx, isOutlineEnabled, outlineWidth) {
