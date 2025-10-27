@@ -418,8 +418,18 @@ export class Weapon {
             ctx.strokeRect(-1.5, GRID_SIZE * 0.3 + 3, 3, GRID_SIZE * 0.3);
         } else if (this.type === 'magic_dagger') {
             // [수정] 단검을 올바른 방향으로 회전시키고 손 위치를 조정합니다.
+            
+            // [수정] 찌르기(Thrust) 애니메이션 로직
+            let thrust = 0;
+            if (unit.attackAnimationTimer > 0) {
+                const duration = 12;
+                const progress = (duration - unit.attackAnimationTimer) / duration; // 0 -> 1
+                // sin 곡선을 사용하여 뒤로 당겼다가 앞으로 빠르게 찌르는 효과를 만듭니다.
+                thrust = Math.sin(progress * Math.PI) * GRID_SIZE * 1.2;
+            }
+
             ctx.rotate(Math.PI / 2); // 단검을 옆으로 눕히고 180도 회전합니다 (칼날이 앞을 향하도록).
-            ctx.translate(GRID_SIZE * 0.4, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정합니다.
+            ctx.translate(GRID_SIZE * 0.4 + thrust, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정하고, 찌르기 효과를 적용합니다.
             ctx.scale(0.7, 0.7);
             drawMagicDaggerIcon(ctx);
         } else if (this.type === 'axe') {
