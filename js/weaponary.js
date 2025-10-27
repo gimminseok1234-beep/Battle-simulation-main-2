@@ -428,8 +428,9 @@ export class Weapon {
                 thrust = Math.sin(progress * Math.PI) * GRID_SIZE * 1.2;
             }
 
+            ctx.translate(thrust, 0); // 찌르기 애니메이션을 먼저 적용합니다.
             ctx.rotate(Math.PI / 2); // 단검을 옆으로 눕히고 180도 회전합니다 (칼날이 앞을 향하도록).
-            ctx.translate(GRID_SIZE * 0.4 + thrust, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정하고, 찌르기 효과를 적용합니다.
+            ctx.translate(GRID_SIZE * 0.4, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정합니다.
             ctx.scale(0.7, 0.7);
             drawMagicDaggerIcon(ctx);
         } else if (this.type === 'axe') {
