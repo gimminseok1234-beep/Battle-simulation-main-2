@@ -3,61 +3,136 @@ import { Assets } from './assets.js';
 
 // Standalone weapon design functions (visuals only). Colors preserved; shapes/gradients subtly improved.
 
+/**
+ * Enhanced Magic Dagger Design - Curved blade with mystic effects
+ * @param {CanvasRenderingContext2D} ctx 
+ */
 export function drawMagicDaggerIcon(ctx) {
-	ctx.save();
-	const img = Assets.get('magic_dagger');
-	if (img) {
-		const size = GRID_SIZE * 1.2;
-		ctx.drawImage(img, -size / 2, -size / 2, size, size);
-		ctx.restore();
-		return;
-	}
+    // const GRID_SIZE = 32; // 기준 그리드 크기. 전역 GRID_SIZE를 사용하도록 주석 처리합니다.
+    const scale = 1.6; // 새로운 디자인이 전역 GRID_SIZE(20)에 맞게 보이도록 크기 보정
 
-	const scale = GRID_SIZE * 0.1;
+    ctx.save();
+    ctx.scale(scale, scale);
+    
+    // 마법 오라 글로우 효과
+    ctx.shadowColor = '#a855f7';
+    ctx.shadowBlur = 15;
+    
+    // 1. 손잡이 (Handle) - 어두운 보라색
+    const handleGrad = ctx.createLinearGradient(0, GRID_SIZE * 0.3, 0, GRID_SIZE * 0.6);
+    handleGrad.addColorStop(0, '#581c87');
+    handleGrad.addColorStop(0.5, '#7e22ce');
+    handleGrad.addColorStop(1, '#581c87');
+    
+    ctx.fillStyle = handleGrad;
+    ctx.strokeStyle = '#3b0764';
+    ctx.lineWidth = 1.5;
+    
+    // 손잡이 본체
+    ctx.beginPath();
+    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.3);
+    ctx.lineTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.55);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.6, -GRID_SIZE * 0.05, GRID_SIZE * 0.6);
+    ctx.lineTo(GRID_SIZE * 0.05, GRID_SIZE * 0.6);
+    ctx.quadraticCurveTo(GRID_SIZE * 0.08, GRID_SIZE * 0.6, GRID_SIZE * 0.08, GRID_SIZE * 0.55);
+    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // 손잡이 장식 라인
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.4);
+    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.4);
+    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.5);
+    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.5);
+    ctx.stroke();
+    
+    // 2. 가드 (Guard) - 화려한 십자 가드
+    ctx.fillStyle = '#6b21a8';
+    ctx.strokeStyle = '#3b0764';
+    ctx.lineWidth = 1.5;
+    
+    ctx.beginPath();
+    ctx.moveTo(-GRID_SIZE * 0.25, GRID_SIZE * 0.25);
+    ctx.lineTo(-GRID_SIZE * 0.25, GRID_SIZE * 0.35);
+    ctx.lineTo(GRID_SIZE * 0.25, GRID_SIZE * 0.35);
+    ctx.lineTo(GRID_SIZE * 0.25, GRID_SIZE * 0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // 가드 보석
+    ctx.fillStyle = '#d8b4fe';
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, GRID_SIZE * 0.3, GRID_SIZE * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // 3. 곡선 칼날 (Curved Blade) - 초승달 형태
+    ctx.shadowBlur = 20; // 칼날은 더 강한 글로우
+    
+    const bladeGrad = ctx.createLinearGradient(-GRID_SIZE * 0.1, -GRID_SIZE * 0.9, GRID_SIZE * 0.1, GRID_SIZE * 0.25);
+    bladeGrad.addColorStop(0, '#f5f3ff'); // 칼끝 - 거의 흰색
+    bladeGrad.addColorStop(0.3, '#e9d5ff'); // 연보라
+    bladeGrad.addColorStop(0.6, '#c084fc'); // 중간 보라
+    bladeGrad.addColorStop(1, '#a855f7'); // 손잡이쪽 - 진한 보라
+    
+    ctx.fillStyle = bladeGrad;
+    ctx.strokeStyle = '#7e22ce';
+    ctx.lineWidth = 2;
+    
+    // 칼날 외곽선 (곡선으로 휜 형태)
+    ctx.beginPath();
+    ctx.moveTo(-GRID_SIZE * 0.05, GRID_SIZE * 0.25);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.15, -GRID_SIZE * 0.3, -GRID_SIZE * 0.08, -GRID_SIZE * 0.85);
+    ctx.lineTo(0, -GRID_SIZE * 0.95);
+    ctx.quadraticCurveTo(GRID_SIZE * 0.2, -GRID_SIZE * 0.2, GRID_SIZE * 0.05, GRID_SIZE * 0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // 4. 칼날 하이라이트 - 날카로운 빛
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = '#faf5ff';
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.8;
+    
+    ctx.beginPath();
+    ctx.moveTo(-GRID_SIZE * 0.02, GRID_SIZE * 0.2);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.08, -GRID_SIZE * 0.3, -GRID_SIZE * 0.04, -GRID_SIZE * 0.8);
+    ctx.stroke();
+    
+    // 5. 마법 룬 문양 (칼날 중앙)
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = '#e9d5ff';
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 8;
+    
+    const runeY = -GRID_SIZE * 0.3;
+    const runeSize = GRID_SIZE * 0.08;
+    
+    ctx.beginPath();
+    ctx.moveTo(0, runeY - runeSize);
+    ctx.lineTo(runeSize * 0.5, runeY);
+    ctx.lineTo(0, runeY + runeSize);
+    ctx.lineTo(-runeSize * 0.5, runeY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // 룬 중앙 점
+    ctx.fillStyle = '#faf5ff';
+    ctx.beginPath();
+    ctx.arc(0, runeY, runeSize * 0.2, 0, Math.PI * 2);
+    ctx.fill();
 
-	// [MODIFIED] 빛 번짐 효과 제거 및 색상 변경
-	// ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-	// ctx.shadowBlur = 10;
-
-	ctx.strokeStyle = '#1e1b4b'; // 테두리 (진한 남색)
-	ctx.lineWidth = 2;
-
-	// Handle
-	ctx.fillStyle = '#5b21b6'; // 손잡이 (진한 보라색)
-	const handleWidth = 2.5 * scale;
-	const handleHeight = 9 * scale;
-	ctx.beginPath();
-	ctx.rect(-handleWidth / 2, 0, handleWidth, handleHeight);
-	ctx.fill();
-	ctx.stroke();
-
-	// Guard
-	ctx.fillStyle = '#a78bfa'; // 가드 (연한 보라색)
-	const guardWidth = 5 * scale;
-	const guardHeight = 1.6 * scale;
-	const guardY = -guardHeight / 2;
-	ctx.fillRect(-guardWidth / 2, guardY, guardWidth, guardHeight);
-	ctx.strokeRect(-guardWidth / 2, guardY, guardWidth, guardHeight);
-
-	// Blade
-	ctx.fillStyle = '#c4b5fd'; // 칼날 (더 연한 보라색)
-	ctx.beginPath();
-	ctx.moveTo(-guardWidth / 2, guardY);
-	ctx.lineTo(1.5 * scale, -11 * scale);
-	ctx.quadraticCurveTo(3 * scale, -5 * scale, guardWidth / 2, guardY);
-	ctx.closePath();
-	ctx.fill();
-	ctx.stroke();
-
-	// Inner bevel
-	ctx.beginPath();
-	ctx.moveTo(0.5 * scale, guardY);
-	ctx.quadraticCurveTo(0, -5 * scale, 1.2 * scale, -8 * scale);
-	ctx.strokeStyle = 'rgba(30, 27, 75, 0.45)'; // 진한 남색 (반투명)
-	ctx.lineWidth = 1.2;
-	ctx.stroke();
-
-	ctx.restore();
+    ctx.restore();
 }
 
 export function drawAxeIcon(ctx) {
