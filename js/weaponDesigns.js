@@ -23,13 +23,14 @@ export function drawMagicDaggerIcon(ctx) {
     ctx.lineWidth = 2;
     
     // 손잡이 본체
+    // 손잡이 본체 (더 얇게)
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25);
-    ctx.lineTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.55);
-    ctx.quadraticCurveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.6, -GRID_SIZE * 0.05, GRID_SIZE * 0.6);
-    ctx.lineTo(GRID_SIZE * 0.05, GRID_SIZE * 0.6);
-    ctx.quadraticCurveTo(GRID_SIZE * 0.08, GRID_SIZE * 0.6, GRID_SIZE * 0.08, GRID_SIZE * 0.55);
-    ctx.lineTo(GRID_SIZE * 0.06, GRID_SIZE * 0.25);
+    ctx.moveTo(-GRID_SIZE * 0.05, GRID_SIZE * 0.25);
+    ctx.lineTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.55);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.6, -GRID_SIZE * 0.04, GRID_SIZE * 0.6);
+    ctx.lineTo(GRID_SIZE * 0.04, GRID_SIZE * 0.6);
+    ctx.quadraticCurveTo(GRID_SIZE * 0.06, GRID_SIZE * 0.6, GRID_SIZE * 0.06, GRID_SIZE * 0.55);
+    ctx.lineTo(GRID_SIZE * 0.05, GRID_SIZE * 0.25);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -38,10 +39,10 @@ export function drawMagicDaggerIcon(ctx) {
     ctx.strokeStyle = '#4b5563';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.4);
-    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.4);
-    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.5);
-    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.5);
+    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.4);
+    ctx.lineTo(GRID_SIZE * 0.06, GRID_SIZE * 0.4);
+    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.5);
+    ctx.lineTo(GRID_SIZE * 0.06, GRID_SIZE * 0.5);
     ctx.stroke();
     
     // 2. 직선 칼날 (Straight Blade) - 보라색 단검
@@ -58,15 +59,15 @@ export function drawMagicDaggerIcon(ctx) {
     ctx.beginPath();
     
     // 왼쪽 칼등 (뒷부분) - 직선
-    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25);
-    ctx.lineTo(-GRID_SIZE * 0.06, -GRID_SIZE * 0.35);
+    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.25);
+    ctx.lineTo(-GRID_SIZE * 0.08, -GRID_SIZE * 0.35);
     
     // 칼끝 (예리한 포인트)
     ctx.lineTo(0, -GRID_SIZE * 0.45);
     
     // 오른쪽 칼날 (앞부분) - 직선
-    ctx.lineTo(GRID_SIZE * 0.06, -GRID_SIZE * 0.35);
-    ctx.lineTo(GRID_SIZE * 0.06, GRID_SIZE * 0.25);
+    ctx.lineTo(GRID_SIZE * 0.08, -GRID_SIZE * 0.35);
+    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.25);
     
     ctx.closePath();
     ctx.fill();
@@ -74,12 +75,12 @@ export function drawMagicDaggerIcon(ctx) {
     
     // 3. 칼날 하이라이트 - 미세한 빛
     ctx.strokeStyle = '#e9d5ff';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.globalAlpha = 0.5;
     
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.03, GRID_SIZE * 0.2);
-    ctx.lineTo(-GRID_SIZE * 0.03, -GRID_SIZE * 0.4);
+    ctx.moveTo(-GRID_SIZE * 0.04, GRID_SIZE * 0.2);
+    ctx.lineTo(-GRID_SIZE * 0.04, -GRID_SIZE * 0.4);
     ctx.stroke();
     
     ctx.globalAlpha = 1;
