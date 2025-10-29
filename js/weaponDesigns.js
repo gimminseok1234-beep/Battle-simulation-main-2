@@ -69,7 +69,7 @@ export function drawMagicDaggerIcon(ctx) {
     );
     
     // 칼끝 (예리한 포인트)
-    ctx.lineTo(-GRID_SIZE * 0.05, -GRID_SIZE * 0.52);
+    ctx.lineTo(0, -GRID_SIZE * 0.55); // [MODIFIED] 칼날 끝을 더 뾰족하게 수정
     
     // 칼날 (앞부분) - 더욱 급격하게 휜 곡선
     ctx.quadraticCurveTo(
