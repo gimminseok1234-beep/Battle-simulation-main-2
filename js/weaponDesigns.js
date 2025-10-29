@@ -15,9 +15,6 @@ export function drawMagicDaggerIcon(ctx) {
 
 	const scale = GRID_SIZE * 0.1;
 
-	ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-	ctx.shadowBlur = 10;
-
 	ctx.strokeStyle = '#111827';
 	ctx.lineWidth = 2;
 
@@ -34,19 +31,20 @@ export function drawMagicDaggerIcon(ctx) {
 	ctx.stroke();
 
 	// Guard
-	ctx.fillStyle = '#e5e7eb';
+	ctx.fillStyle = '#374151'; // 손잡이와 비슷한 어두운 색
 	const guardWidth = 5 * scale;
 	const guardHeight = 1.6 * scale;
 	const guardY = -guardHeight / 2;
 	ctx.fillRect(-guardWidth / 2, guardY, guardWidth, guardHeight);
 	ctx.strokeRect(-guardWidth / 2, guardY, guardWidth, guardHeight);
 
-	// Blade
+	// Blade - 보라색 계열로 변경
 	const bladeGradient = ctx.createLinearGradient(0, -12 * scale, 0, guardY);
-	bladeGradient.addColorStop(0, '#ffffff');
-	bladeGradient.addColorStop(0.5, '#f3f4f6');
-	bladeGradient.addColorStop(1, '#d1d5db');
+	bladeGradient.addColorStop(0, '#d8b4fe'); // 밝은 보라
+	bladeGradient.addColorStop(0.5, '#a855f7'); // 중간 보라
+	bladeGradient.addColorStop(1, '#5b21b6'); // 어두운 보라
 	ctx.fillStyle = bladeGradient;
+
 	ctx.beginPath();
 	ctx.moveTo(-guardWidth / 2, guardY);
 	ctx.lineTo(1.5 * scale, -11 * scale);
@@ -58,8 +56,8 @@ export function drawMagicDaggerIcon(ctx) {
 	// Inner bevel
 	ctx.beginPath();
 	ctx.moveTo(0.5 * scale, guardY);
-	ctx.quadraticCurveTo(0, -5 * scale, 1.2 * scale, -8 * scale);
-	ctx.strokeStyle = 'rgba(17,24,39,0.45)';
+	ctx.quadraticCurveTo(0, -5 * scale, 1.2 * scale, -8 * scale); // 기존과 동일
+	ctx.strokeStyle = 'rgba(233, 213, 255, 0.6)'; // 밝은 보라색 계열로 변경
 	ctx.lineWidth = 1.2;
 	ctx.stroke();
 
