@@ -431,8 +431,19 @@ export class Weapon {
             ctx.translate(thrust, 0); // 찌르기 애니메이션을 먼저 적용합니다.
             ctx.rotate(Math.PI / 2); // 단검을 옆으로 눕히고 180도 회전합니다 (칼날이 앞을 향하도록).
             ctx.translate(GRID_SIZE * 0.4, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정합니다.
-            ctx.scale(0.7, 0.7);
-            drawMagicDaggerIcon(ctx);
+            ctx.scale(0.7, 0.7); // 크기 조정
+
+            // [MODIFIED] 빛 번짐 효과 제거 및 시인성 개선
+            ctx.fillStyle = '#a78bfa'; // 칼날 (연한 보라색)
+            ctx.strokeStyle = '#1e1b4b'; // 테두리 (진한 남색)
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -GRID_SIZE * 1.2); ctx.lineTo(GRID_SIZE * 0.3, 0);
+            ctx.lineTo(0, GRID_SIZE * 0.2); ctx.lineTo(-GRID_SIZE * 0.3, 0);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#5b21b6'; // 손잡이 (진한 보라색)
+            ctx.fillRect(-GRID_SIZE * 0.2, 0, GRID_SIZE * 0.4, GRID_SIZE * 0.5);
+            ctx.strokeRect(-GRID_SIZE * 0.2, 0, GRID_SIZE * 0.4, GRID_SIZE * 0.5);
         } else if (this.type === 'axe') {
             ctx.translate(GRID_SIZE * 0.8, -GRID_SIZE * 0.7);
             ctx.rotate(Math.PI / 4);
