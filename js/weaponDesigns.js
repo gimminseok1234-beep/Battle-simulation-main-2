@@ -15,17 +15,15 @@ export function drawMagicDaggerIcon(ctx) {
 
 	const scale = GRID_SIZE * 0.1;
 
-	ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-	ctx.shadowBlur = 10;
+	// [MODIFIED] 빛 번짐 효과 제거 및 색상 변경
+	// ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+	// ctx.shadowBlur = 10;
 
-	ctx.strokeStyle = '#111827';
+	ctx.strokeStyle = '#1e1b4b'; // 테두리 (진한 남색)
 	ctx.lineWidth = 2;
 
 	// Handle
-	const handleGradient = ctx.createLinearGradient(0, 0, 0, 10 * scale);
-	handleGradient.addColorStop(0, '#374151');
-	handleGradient.addColorStop(1, '#1f2937');
-	ctx.fillStyle = handleGradient;
+	ctx.fillStyle = '#5b21b6'; // 손잡이 (진한 보라색)
 	const handleWidth = 2.5 * scale;
 	const handleHeight = 9 * scale;
 	ctx.beginPath();
@@ -34,7 +32,7 @@ export function drawMagicDaggerIcon(ctx) {
 	ctx.stroke();
 
 	// Guard
-	ctx.fillStyle = '#e5e7eb';
+	ctx.fillStyle = '#a78bfa'; // 가드 (연한 보라색)
 	const guardWidth = 5 * scale;
 	const guardHeight = 1.6 * scale;
 	const guardY = -guardHeight / 2;
@@ -42,11 +40,7 @@ export function drawMagicDaggerIcon(ctx) {
 	ctx.strokeRect(-guardWidth / 2, guardY, guardWidth, guardHeight);
 
 	// Blade
-	const bladeGradient = ctx.createLinearGradient(0, -12 * scale, 0, guardY);
-	bladeGradient.addColorStop(0, '#ffffff');
-	bladeGradient.addColorStop(0.5, '#f3f4f6');
-	bladeGradient.addColorStop(1, '#d1d5db');
-	ctx.fillStyle = bladeGradient;
+	ctx.fillStyle = '#c4b5fd'; // 칼날 (더 연한 보라색)
 	ctx.beginPath();
 	ctx.moveTo(-guardWidth / 2, guardY);
 	ctx.lineTo(1.5 * scale, -11 * scale);
@@ -59,7 +53,7 @@ export function drawMagicDaggerIcon(ctx) {
 	ctx.beginPath();
 	ctx.moveTo(0.5 * scale, guardY);
 	ctx.quadraticCurveTo(0, -5 * scale, 1.2 * scale, -8 * scale);
-	ctx.strokeStyle = 'rgba(17,24,39,0.45)';
+	ctx.strokeStyle = 'rgba(30, 27, 75, 0.45)'; // 진한 남색 (반투명)
 	ctx.lineWidth = 1.2;
 	ctx.stroke();
 
