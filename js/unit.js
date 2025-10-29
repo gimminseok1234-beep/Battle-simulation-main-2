@@ -1037,7 +1037,10 @@ export class Unit {
                         pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
                         pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                     }));
-                    const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
+
+                const visibleHealPacks = healPackPositions.filter(pack => gameManager.hasLineOfSight(this, pack));
+                const { item: closestPack, distance: packDist } = this.findClosest(visibleHealPacks);
+
                     if (closestPack && packDist < this.detectionRange * 1.5) {
                         newState = 'SEEKING_HEAL_PACK';
                         newTarget = closestPack;
