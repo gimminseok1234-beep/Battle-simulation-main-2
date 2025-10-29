@@ -335,18 +335,18 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        // [MODIFIED] A* 길찾기 로직 개선: 경로가 있으면 항상 따르도록 수정
-        if (this.path.length > 0) {
+        // [NEW] A* 길찾기 로직 적용
+        if (this.path.length > 0 && this.stuckTimer > 30) {
             const nextNode = this.path[0];
             const targetPixelX = nextNode.x * GRID_SIZE + GRID_SIZE / 2;
             const targetPixelY = nextNode.y * GRID_SIZE + GRID_SIZE / 2;
 
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
-            const distance = Math.hypot(dx, dy); // [수정] 오타 수정
+            const distance = Math.hypot(dx, dy);
             const currentSpeed = this.speed * gameManager.gameSpeed;
 
-            if (distance < currentSpeed + 1) { // [수정] 목표 도달 판정 완화
+            if (distance < currentSpeed) {
                 this.path.shift();
                 if (this.path.length === 0) {
                     this.stuckTimer = 0; // 경로 완료 후 stuckTimer 초기화
@@ -356,7 +356,7 @@ export class Unit {
             const angle = Math.atan2(dy, dx);
             this.facingAngle = angle;
             this.pixelX += Math.cos(angle) * currentSpeed;
-            this.pixelY += Math.sin(angle) * currentSpeed; // [수정] 오타 수정
+            this.pixelY += Math.sin(angle) * currentSpeed;
             return; // A* 경로를 따라 이동 중에는 아래 로직을 건너뜁니다.
         }
 
@@ -369,38 +369,6 @@ export class Unit {
         }
 
         let angle = Math.atan2(dy, dx);
-
-        // [MODIFIED] 자기장 회피 로직 추가
-        if (this.state !== 'FLEEING_FIELD') {
-            const lookAheadDist = GRID_SIZE * 1.2;
-            const lookAheadX = this.pixelX + Math.cos(angle) * lookAheadDist;
-            const lookAheadY = this.pixelY + Math.sin(angle) * lookAheadDist;
-            const lookAheadGridX = Math.floor(lookAheadX / GRID_SIZE);
-            const lookAheadGridY = Math.floor(lookAheadY / GRID_SIZE);
-
-            if (gameManager.isPosInAnyField(lookAheadGridX, lookAheadGridY)) {
-                const detourAngle = Math.PI / 3; // 60도 회피각
-                let bestAngle = -1;
-
-                const leftAngle = angle - detourAngle;
-                const rightAngle = angle + detourAngle;
-
-                const isLeftSafe = !gameManager.isPosInAnyField(Math.floor((this.pixelX + Math.cos(leftAngle) * lookAheadDist) / GRID_SIZE), Math.floor((this.pixelY + Math.sin(leftAngle) * lookAheadDist) / GRID_SIZE));
-                const isRightSafe = !gameManager.isPosInAnyField(Math.floor((this.pixelX + Math.cos(rightAngle) * lookAheadDist) / GRID_SIZE), Math.floor((this.pixelY + Math.sin(rightAngle) * lookAheadDist) / GRID_SIZE));
-
-                if (isLeftSafe && isRightSafe) {
-                    bestAngle = gameManager.random() < 0.5 ? leftAngle : rightAngle;
-                } else if (isLeftSafe) {
-                    bestAngle = leftAngle;
-                } else if (isRightSafe) {
-                    bestAngle = rightAngle;
-                }
-
-                if (bestAngle !== -1) {
-                    angle = bestAngle;
-                }
-            }
-        }
 
         if (gameManager.isLavaAvoidanceEnabled && this.state !== 'FLEEING_FIELD' && this.state !== 'FLEEING_LAVA') {
             const lookAheadDist = GRID_SIZE * 1.2;
@@ -985,54 +953,56 @@ export class Unit {
         let newTarget = null;
         let targetEnemyForAlert = null;
 
-        // [MODIFIED] isSpecialAttackReady 업데이트 로직을 상태 결정 로직 이전으로 이동하여 매 프레임마다 상태가 정확히 갱신되도록 합니다.
-        // 이 로직은 그대로 유지합니다.
-        this.isSpecialAttackReady = (() => {
-            if (!this.weapon) return false;
+        // [수정] isSpecialAttackReady 업데이트 로직을 상태 결정 로직 이전으로 이동하여 매 프레임마다 상태가 정확히 갱신되도록 합니다.
+        if (this.weapon) {
             switch (this.weapon.type) {
-                case 'sword': case 'bow': return this.attackCount === 2;
-                case 'shuriken': return this.shurikenSkillCooldown <= 0;
-                case 'axe': return this.axeSkillCooldown <= 0;
-                case 'fire_staff': return this.fireStaffSpecialCooldown <= 0;
-                case 'boomerang': return this.boomerangCooldown <= 0;
-                case 'magic_dagger': return this.magicDaggerSkillCooldown <= 0 && !this.isAimingMagicDagger;
-                case 'dual_swords': return this.dualSwordSkillCooldown <= 0;
-                case 'magic_spear': return this.magicSpearSpecialCooldown <= 0;
-                case 'poison_potion': return this.poisonPotionCooldown <= 0;
-                default: return false;
+                case 'sword':
+                case 'bow':
+                    // 3타마다 특수 공격이므로, 2번 공격하면 다음 공격이 특수 공격임
+                    this.isSpecialAttackReady = (this.attackCount === 2);
+                    break;
+                case 'shuriken':
+                    this.isSpecialAttackReady = (this.shurikenSkillCooldown <= 0);
+                    break;
+                case 'axe':
+                    this.isSpecialAttackReady = (this.axeSkillCooldown <= 0);
+                    break;
+                case 'fire_staff':
+                    this.isSpecialAttackReady = (this.fireStaffSpecialCooldown <= 0);
+                    break;
+                case 'boomerang':
+                    this.isSpecialAttackReady = (this.boomerangCooldown <= 0);
+                    break;
+                case 'magic_dagger':
+                    this.isSpecialAttackReady = (this.magicDaggerSkillCooldown <= 0 && !this.isAimingMagicDagger);
+                    break;
+                case 'dual_swords':
+                    this.isSpecialAttackReady = (this.dualSwordSkillCooldown <= 0);
+                    break;
+                case 'magic_spear':
+                    this.isSpecialAttackReady = (this.magicSpearSpecialCooldown <= 0);
+                    break;
+                case 'poison_potion':
+                    this.isSpecialAttackReady = (this.poisonPotionCooldown <= 0);
+                    break;
+                default:
+                    this.isSpecialAttackReady = false;
             }
-        })();
+        } else {
+            this.isSpecialAttackReady = false;
+        }
 
         const currentGridXBeforeMove = Math.floor(this.pixelX / GRID_SIZE);
         const currentGridYBeforeMove = Math.floor(this.pixelY / GRID_SIZE);
         this.isInMagneticField = gameManager.isPosInAnyField(currentGridXBeforeMove, currentGridYBeforeMove);
         this.isInLava = gameManager.isPosInLavaForUnit(currentGridXBeforeMove, currentGridYBeforeMove);
 
-        // [MODIFIED] 자기장과 용암 회피를 최우선으로 처리하도록 로직 순서 변경
         if (this.isInMagneticField) {
             newState = 'FLEEING_FIELD';
         } else if (gameManager.isLavaAvoidanceEnabled && this.isInLava) {
             newState = 'FLEEING_LAVA';
             this.fleeingCooldown = 60;
-        } else {
-            // 안전한 상태일 때만 다른 행동을 결정
-            if (this.hp < this.maxHp / 2) {
-                const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
-                if (healPacks.length > 0) {
-                    const healPackPositions = healPacks.map(pos => ({
-                        gridX: pos.x, gridY: pos.y,
-                        pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
-                        pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
-                    }));
-                    const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
-                    if (closestPack && packDist < this.detectionRange * 1.5 && gameManager.hasLineOfSight(this, closestPack)) {
-                        newState = 'SEEKING_HEAL_PACK';
-                        newTarget = closestPack;
-                    }
-                }
-            }
-        }
-        if (newState === 'IDLE' && this.fleeingCooldown <= 0) {
+        } else if (this.fleeingCooldown <= 0) {
             const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
             const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
 
@@ -1059,6 +1029,20 @@ export class Unit {
 
             if (this.isKing && targetEnemy) {
                 newState = 'FLEEING'; newTarget = targetEnemy; // 왕은 도망
+            } else if (this.hp < this.maxHp / 2) {
+                const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
+                if (healPacks.length > 0) {
+                    const healPackPositions = healPacks.map(pos => ({
+                        gridX: pos.x, gridY: pos.y,
+                        pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
+                        pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
+                    }));
+                    const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
+                    if (closestPack && packDist < this.detectionRange * 1.5) {
+                        newState = 'SEEKING_HEAL_PACK';
+                        newTarget = closestPack;
+                    }
+                }
             }
 
             if (newState === 'IDLE') {
@@ -1075,7 +1059,7 @@ export class Unit {
                     newState = 'ATTACKING_NEXUS';
                     newTarget = enemyNexus;
                 }
-            } 
+            }
         } else {
             if (this.moveTarget) {
                 newState = this.state;
@@ -1230,10 +1214,10 @@ export class Unit {
 
             if (this.stuckTimer > 30) {
                 // [수정] 막혔을 때만 A* 경로 탐색
-                if (this.path.length === 0 && this.pathUpdateCooldown <= 0) {
+                if (this.path.length === 0) {
                     this.updatePathTo(this.moveTarget);
                 } else {
-                    // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도 (예: 목표가 움직여서 경로가 유효하지 않게 된 경우)
+                    // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도
                     this.path = [];
                     this.stuckTimer = 0;
                 }
