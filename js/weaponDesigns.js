@@ -8,15 +8,9 @@ import { Assets } from './assets.js';
  * @param {CanvasRenderingContext2D} ctx 
  */
 export function drawMagicDaggerIcon(ctx) {
-    // 전역 GRID_SIZE(20)를 기준으로 디자인을 적절한 크기로 스케일링합니다.
-    const designScale = GRID_SIZE / 20; // 원래 디자인이 GRID_SIZE=20에 맞춰지도록
+    const GRID_SIZE = 32; // 기준 그리드 크기
 
     ctx.save();
-    ctx.scale(designScale, designScale);
-    
-    // 마법 오라 글로우 효과
-    ctx.shadowColor = '#a855f7';
-    ctx.shadowBlur = 15;
     
     // 1. 손잡이 (Handle) - 어두운 보라색
     const handleGrad = ctx.createLinearGradient(0, GRID_SIZE * 0.3, 0, GRID_SIZE * 0.6);
@@ -25,8 +19,8 @@ export function drawMagicDaggerIcon(ctx) {
     handleGrad.addColorStop(1, '#581c87');
     
     ctx.fillStyle = handleGrad;
-    ctx.strokeStyle = '#3b0764';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
     
     // 손잡이 본체
     ctx.beginPath();
@@ -52,8 +46,8 @@ export function drawMagicDaggerIcon(ctx) {
     
     // 2. 가드 (Guard) - 화려한 십자 가드
     ctx.fillStyle = '#6b21a8';
-    ctx.strokeStyle = '#3b0764';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
     
     ctx.beginPath();
     ctx.moveTo(-GRID_SIZE * 0.25, GRID_SIZE * 0.25);
@@ -66,57 +60,70 @@ export function drawMagicDaggerIcon(ctx) {
     
     // 가드 보석
     ctx.fillStyle = '#d8b4fe';
-    ctx.strokeStyle = '#a855f7';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(0, GRID_SIZE * 0.3, GRID_SIZE * 0.04, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     
-    // 3. 곡선 칼날 (Curved Blade) - 초승달 형태
-    // ctx.shadowBlur = 20; // 칼날은 더 강한 글로우 (제공된 코드에는 없으므로 제거)
+    // 3. 곡선 칼날 (Curved Blade) - 짧고 휜 단검 형태
     
-    const bladeGrad = ctx.createLinearGradient(-GRID_SIZE * 0.1, -GRID_SIZE * 0.9, GRID_SIZE * 0.1, GRID_SIZE * 0.25);
+    const bladeGrad = ctx.createLinearGradient(-GRID_SIZE * 0.1, -GRID_SIZE * 0.5, GRID_SIZE * 0.1, GRID_SIZE * 0.25);
     bladeGrad.addColorStop(0, '#f5f3ff'); // 칼끝 - 거의 흰색
     bladeGrad.addColorStop(0.3, '#e9d5ff'); // 연보라
     bladeGrad.addColorStop(0.6, '#c084fc'); // 중간 보라
     bladeGrad.addColorStop(1, '#a855f7'); // 손잡이쪽 - 진한 보라
     
     ctx.fillStyle = bladeGrad;
-    ctx.strokeStyle = '#7e22ce';
-    ctx.lineWidth = 2; // [MODIFIED] 제공된 코드의 lineWidth 유지
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
     
-    // 칼날 외곽선 (곡선으로 휜 형태)
+    // 칼날 외곽선 (짧고 급격하게 휜 형태 - 이미지처럼)
     ctx.beginPath();
-    // [MODIFIED] 제공된 코드의 칼날 디자인 적용
+    
+    // 칼등 (뒷부분) - 급격한 곡선
     ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25);
-    ctx.quadraticCurveTo(-GRID_SIZE * 0.18, GRID_SIZE * 0.05, -GRID_SIZE * 0.12, -GRID_SIZE * 0.45);
+    ctx.quadraticCurveTo(
+        -GRID_SIZE * 0.18, GRID_SIZE * 0.05,  // 제어점 - 강하게 휨
+        -GRID_SIZE * 0.12, -GRID_SIZE * 0.45   // 끝점 - 짧은 칼날
+    );
+    
+    // 칼끝 (예리한 포인트)
     ctx.lineTo(-GRID_SIZE * 0.05, -GRID_SIZE * 0.52);
-    ctx.quadraticCurveTo(GRID_SIZE * 0.15, -GRID_SIZE * 0.1, GRID_SIZE * 0.06, GRID_SIZE * 0.25);
+    
+    // 칼날 (앞부분) - 더욱 급격하게 휜 곡선
+    ctx.quadraticCurveTo(
+        GRID_SIZE * 0.15, -GRID_SIZE * 0.1,    // 제어점 - 매우 강하게 휨
+        GRID_SIZE * 0.06, GRID_SIZE * 0.25     // 끝점
+    );
+    
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
     
     // 4. 칼날 하이라이트 - 날카로운 빛
-    // ctx.shadowBlur = 10; // (제공된 코드에는 없으므로 제거)
     ctx.strokeStyle = '#faf5ff';
-    ctx.lineWidth = 1.2; // [MODIFIED] 제공된 코드의 lineWidth 유지
-    ctx.globalAlpha = 0.7; // [MODIFIED] 제공된 코드의 globalAlpha 유지
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.7;
     
     ctx.beginPath();
     ctx.moveTo(-GRID_SIZE * 0.03, GRID_SIZE * 0.2);
-    ctx.quadraticCurveTo(-GRID_SIZE * 0.1, GRID_SIZE * 0.05, -GRID_SIZE * 0.08, -GRID_SIZE * 0.4);
+    ctx.quadraticCurveTo(
+        -GRID_SIZE * 0.1, GRID_SIZE * 0.05,
+        -GRID_SIZE * 0.08, -GRID_SIZE * 0.4
+    );
     ctx.stroke();
     
     // 5. 마법 룬 문양 (칼날 중앙)
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = '#e9d5ff';
-    ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 1; // [MODIFIED] 제공된 코드의 lineWidth 유지
-    // ctx.shadowBlur = 8; // (제공된 코드에는 없으므로 제거)
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
     
-    const runeY = -GRID_SIZE * 0.15; // [MODIFIED] 제공된 코드의 runeY 유지
-    const runeSize = GRID_SIZE * 0.06; // [MODIFIED] 제공된 코드의 runeSize 유지
+    // 룬 심볼 - 다이아몬드 형태
+    const runeY = -GRID_SIZE * 0.15;
+    const runeSize = GRID_SIZE * 0.06;
     
     ctx.beginPath();
     ctx.moveTo(0, runeY - runeSize);
