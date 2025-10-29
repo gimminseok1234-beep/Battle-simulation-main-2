@@ -283,7 +283,31 @@ export class Weapon {
             this.drawPoisonPotion(ctx, scale);
         } else if (this.type === 'magic_dagger') {
             ctx.rotate(Math.PI / 4);
-            drawMagicDaggerIcon(ctx);
+            // [MODIFIED] 마법 단검 디자인을 보라색 계열로 변경하고, 장착/비장착 시 동일하게 보이도록 수정
+            const drawPurpleDagger = (context) => {
+                // 손잡이
+                context.fillStyle = '#1f2937'; // 어두운 회색 (검은색에 가까움)
+                context.strokeStyle = '#000000';
+                context.lineWidth = 1.5;
+                context.fillRect(-GRID_SIZE * 0.15, GRID_SIZE * 0.3, GRID_SIZE * 0.3, GRID_SIZE * 0.3);
+                context.strokeRect(-GRID_SIZE * 0.15, GRID_SIZE * 0.3, GRID_SIZE * 0.3, GRID_SIZE * 0.3);
+
+                // 칼날
+                const bladeGradient = context.createLinearGradient(0, -GRID_SIZE * 1.2, 0, GRID_SIZE * 0.3);
+                bladeGradient.addColorStop(0, '#d8b4fe'); // 밝은 보라
+                bladeGradient.addColorStop(0.5, '#a855f7'); // 중간 보라
+                bladeGradient.addColorStop(1, '#5b21b6'); // 어두운 보라
+                context.fillStyle = bladeGradient;
+
+                context.beginPath();
+                context.moveTo(0, -GRID_SIZE * 1.2); // 칼끝
+                context.lineTo(-GRID_SIZE * 0.3, GRID_SIZE * 0.3); // 왼쪽 어깨
+                context.lineTo(GRID_SIZE * 0.3, GRID_SIZE * 0.3);  // 오른쪽 어깨
+                context.closePath();
+                context.fill();
+                context.stroke();
+            };
+            drawPurpleDagger(ctx);
         } else if (this.type === 'axe') {
             ctx.rotate(Math.PI / 4);
             drawAxeIcon(ctx);
@@ -432,7 +456,31 @@ export class Weapon {
             ctx.rotate(Math.PI / 2); // 단검을 옆으로 눕히고 180도 회전합니다 (칼날이 앞을 향하도록).
             ctx.translate(GRID_SIZE * 0.4, -GRID_SIZE * 0.3); // 손잡이가 손에 오도록 위치를 조정합니다.
             ctx.scale(0.7, 0.7);
-            drawMagicDaggerIcon(ctx);
+            // [MODIFIED] 마법 단검 디자인을 보라색 계열로 변경하고, 장착/비장착 시 동일하게 보이도록 수정
+            const drawPurpleDagger = (context) => {
+                // 손잡이
+                context.fillStyle = '#1f2937'; // 어두운 회색 (검은색에 가까움)
+                context.strokeStyle = '#000000';
+                context.lineWidth = 1.5;
+                context.fillRect(-GRID_SIZE * 0.15, GRID_SIZE * 0.3, GRID_SIZE * 0.3, GRID_SIZE * 0.3);
+                context.strokeRect(-GRID_SIZE * 0.15, GRID_SIZE * 0.3, GRID_SIZE * 0.3, GRID_SIZE * 0.3);
+
+                // 칼날
+                const bladeGradient = context.createLinearGradient(0, -GRID_SIZE * 1.2, 0, GRID_SIZE * 0.3);
+                bladeGradient.addColorStop(0, '#d8b4fe'); // 밝은 보라
+                bladeGradient.addColorStop(0.5, '#a855f7'); // 중간 보라
+                bladeGradient.addColorStop(1, '#5b21b6'); // 어두운 보라
+                context.fillStyle = bladeGradient;
+
+                context.beginPath();
+                context.moveTo(0, -GRID_SIZE * 1.2); // 칼끝
+                context.lineTo(-GRID_SIZE * 0.3, GRID_SIZE * 0.3); // 왼쪽 어깨
+                context.lineTo(GRID_SIZE * 0.3, GRID_SIZE * 0.3);  // 오른쪽 어깨
+                context.closePath();
+                context.fill();
+                context.stroke();
+            };
+            drawPurpleDagger(ctx);
         } else if (this.type === 'axe') {
             ctx.translate(GRID_SIZE * 0.8, -GRID_SIZE * 0.7);
             ctx.rotate(Math.PI / 4);
