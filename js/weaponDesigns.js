@@ -11,6 +11,7 @@ export function drawMagicDaggerIcon(ctx) {
     const GRID_SIZE = 32; // 기준 그리드 크기
 
     ctx.save();
+    ctx.scale(0.8, 0.8); // [MODIFIED] 전체 크기를 20% 줄입니다.
     
     // 1. 손잡이 (Handle) - 어두운 보라색
     const handleGrad = ctx.createLinearGradient(0, GRID_SIZE * 0.3, 0, GRID_SIZE * 0.6);
@@ -43,29 +44,7 @@ export function drawMagicDaggerIcon(ctx) {
     ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.5);
     ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.5);
     ctx.stroke();
-    
-    // 2. 가드 (Guard) - 화려한 십자 가드
-    ctx.fillStyle = '#6b21a8';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2;
-    
-    ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.25, GRID_SIZE * 0.25);
-    ctx.lineTo(-GRID_SIZE * 0.25, GRID_SIZE * 0.35);
-    ctx.lineTo(GRID_SIZE * 0.25, GRID_SIZE * 0.35);
-    ctx.lineTo(GRID_SIZE * 0.25, GRID_SIZE * 0.25);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    // 가드 보석
-    ctx.fillStyle = '#d8b4fe';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(0, GRID_SIZE * 0.3, GRID_SIZE * 0.04, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // [REMOVED] 코등이(가드) 부분을 삭제하여 매끄럽게 연결합니다.
     
     // 3. 곡선 칼날 (Curved Blade) - 짧고 휜 단검 형태
     
