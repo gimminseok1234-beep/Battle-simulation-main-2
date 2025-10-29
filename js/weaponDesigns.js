@@ -56,7 +56,7 @@ export function drawMagicDaggerIcon(ctx) {
     
     ctx.fillStyle = bladeGrad;
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.0; // [MODIFIED] 칼날 두께를 얇게 수정
     
     // 칼날 외곽선 (짧고 급격하게 휜 형태 - 이미지처럼)
     ctx.beginPath();
@@ -64,12 +64,12 @@ export function drawMagicDaggerIcon(ctx) {
     // 칼등 (뒷부분) - 급격한 곡선
     ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25);
     ctx.quadraticCurveTo(
-        -GRID_SIZE * 0.18, GRID_SIZE * 0.05,  // 제어점 - 강하게 휨
-        -GRID_SIZE * 0.12, -GRID_SIZE * 0.45   // 끝점 - 짧은 칼날
+        -GRID_SIZE * 0.16, GRID_SIZE * 0.05,  // [MODIFIED] 제어점 수정
+        -GRID_SIZE * 0.10, -GRID_SIZE * 0.38   // [MODIFIED] 칼날 길이를 짧게 수정
     );
     
     // 칼끝 (예리한 포인트)
-    ctx.lineTo(0, -GRID_SIZE * 0.55); // [MODIFIED] 칼날 끝을 더 뾰족하게 수정
+    ctx.lineTo(0, -GRID_SIZE * 0.45); // [MODIFIED] 칼날 끝 위치를 짧게 수정
     
     // 칼날 (앞부분) - 더욱 급격하게 휜 곡선
     ctx.quadraticCurveTo(
