@@ -8,11 +8,11 @@ import { Assets } from './assets.js';
  * @param {CanvasRenderingContext2D} ctx 
  */
 export function drawMagicDaggerIcon(ctx) {
-    // const GRID_SIZE = 32; // 기준 그리드 크기. 전역 GRID_SIZE를 사용하도록 주석 처리합니다.
-    const scale = 1.6; // 새로운 디자인이 전역 GRID_SIZE(20)에 맞게 보이도록 크기 보정
+    // 전역 GRID_SIZE(20)를 기준으로 디자인을 적절한 크기로 스케일링합니다.
+    const designScale = GRID_SIZE / 20; // 원래 디자인이 GRID_SIZE=20에 맞춰지도록
 
     ctx.save();
-    ctx.scale(scale, scale);
+    ctx.scale(designScale, designScale);
     
     // 마법 오라 글로우 효과
     ctx.shadowColor = '#a855f7';
@@ -74,7 +74,7 @@ export function drawMagicDaggerIcon(ctx) {
     ctx.stroke();
     
     // 3. 곡선 칼날 (Curved Blade) - 초승달 형태
-    ctx.shadowBlur = 20; // 칼날은 더 강한 글로우
+    // ctx.shadowBlur = 20; // 칼날은 더 강한 글로우 (제공된 코드에는 없으므로 제거)
     
     const bladeGrad = ctx.createLinearGradient(-GRID_SIZE * 0.1, -GRID_SIZE * 0.9, GRID_SIZE * 0.1, GRID_SIZE * 0.25);
     bladeGrad.addColorStop(0, '#f5f3ff'); // 칼끝 - 거의 흰색
@@ -84,38 +84,39 @@ export function drawMagicDaggerIcon(ctx) {
     
     ctx.fillStyle = bladeGrad;
     ctx.strokeStyle = '#7e22ce';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2; // [MODIFIED] 제공된 코드의 lineWidth 유지
     
     // 칼날 외곽선 (곡선으로 휜 형태)
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.05, GRID_SIZE * 0.25);
-    ctx.quadraticCurveTo(-GRID_SIZE * 0.15, -GRID_SIZE * 0.3, -GRID_SIZE * 0.08, -GRID_SIZE * 0.85);
-    ctx.lineTo(0, -GRID_SIZE * 0.95);
-    ctx.quadraticCurveTo(GRID_SIZE * 0.2, -GRID_SIZE * 0.2, GRID_SIZE * 0.05, GRID_SIZE * 0.25);
+    // [MODIFIED] 제공된 코드의 칼날 디자인 적용
+    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.18, GRID_SIZE * 0.05, -GRID_SIZE * 0.12, -GRID_SIZE * 0.45);
+    ctx.lineTo(-GRID_SIZE * 0.05, -GRID_SIZE * 0.52);
+    ctx.quadraticCurveTo(GRID_SIZE * 0.15, -GRID_SIZE * 0.1, GRID_SIZE * 0.06, GRID_SIZE * 0.25);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
     
     // 4. 칼날 하이라이트 - 날카로운 빛
-    ctx.shadowBlur = 10;
+    // ctx.shadowBlur = 10; // (제공된 코드에는 없으므로 제거)
     ctx.strokeStyle = '#faf5ff';
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 1.2; // [MODIFIED] 제공된 코드의 lineWidth 유지
+    ctx.globalAlpha = 0.7; // [MODIFIED] 제공된 코드의 globalAlpha 유지
     
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.02, GRID_SIZE * 0.2);
-    ctx.quadraticCurveTo(-GRID_SIZE * 0.08, -GRID_SIZE * 0.3, -GRID_SIZE * 0.04, -GRID_SIZE * 0.8);
+    ctx.moveTo(-GRID_SIZE * 0.03, GRID_SIZE * 0.2);
+    ctx.quadraticCurveTo(-GRID_SIZE * 0.1, GRID_SIZE * 0.05, -GRID_SIZE * 0.08, -GRID_SIZE * 0.4);
     ctx.stroke();
     
     // 5. 마법 룬 문양 (칼날 중앙)
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = '#e9d5ff';
     ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 1;
-    ctx.shadowBlur = 8;
+    ctx.lineWidth = 1; // [MODIFIED] 제공된 코드의 lineWidth 유지
+    // ctx.shadowBlur = 8; // (제공된 코드에는 없으므로 제거)
     
-    const runeY = -GRID_SIZE * 0.3;
-    const runeSize = GRID_SIZE * 0.08;
+    const runeY = -GRID_SIZE * 0.15; // [MODIFIED] 제공된 코드의 runeY 유지
+    const runeSize = GRID_SIZE * 0.06; // [MODIFIED] 제공된 코드의 runeSize 유지
     
     ctx.beginPath();
     ctx.moveTo(0, runeY - runeSize);
