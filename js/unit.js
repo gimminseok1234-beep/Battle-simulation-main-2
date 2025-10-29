@@ -370,6 +370,38 @@ export class Unit {
 
         let angle = Math.atan2(dy, dx);
 
+        // [MODIFIED] 자기장 회피 로직 추가
+        if (this.state !== 'FLEEING_FIELD') {
+            const lookAheadDist = GRID_SIZE * 1.2;
+            const lookAheadX = this.pixelX + Math.cos(angle) * lookAheadDist;
+            const lookAheadY = this.pixelY + Math.sin(angle) * lookAheadDist;
+            const lookAheadGridX = Math.floor(lookAheadX / GRID_SIZE);
+            const lookAheadGridY = Math.floor(lookAheadY / GRID_SIZE);
+
+            if (gameManager.isPosInAnyField(lookAheadGridX, lookAheadGridY)) {
+                const detourAngle = Math.PI / 3; // 60도 회피각
+                let bestAngle = -1;
+
+                const leftAngle = angle - detourAngle;
+                const rightAngle = angle + detourAngle;
+
+                const isLeftSafe = !gameManager.isPosInAnyField(Math.floor((this.pixelX + Math.cos(leftAngle) * lookAheadDist) / GRID_SIZE), Math.floor((this.pixelY + Math.sin(leftAngle) * lookAheadDist) / GRID_SIZE));
+                const isRightSafe = !gameManager.isPosInAnyField(Math.floor((this.pixelX + Math.cos(rightAngle) * lookAheadDist) / GRID_SIZE), Math.floor((this.pixelY + Math.sin(rightAngle) * lookAheadDist) / GRID_SIZE));
+
+                if (isLeftSafe && isRightSafe) {
+                    bestAngle = gameManager.random() < 0.5 ? leftAngle : rightAngle;
+                } else if (isLeftSafe) {
+                    bestAngle = leftAngle;
+                } else if (isRightSafe) {
+                    bestAngle = rightAngle;
+                }
+
+                if (bestAngle !== -1) {
+                    angle = bestAngle;
+                }
+            }
+        }
+
         if (gameManager.isLavaAvoidanceEnabled && this.state !== 'FLEEING_FIELD' && this.state !== 'FLEEING_LAVA') {
             const lookAheadDist = GRID_SIZE * 1.2;
             const lookAheadX = this.pixelX + Math.cos(angle) * lookAheadDist;
@@ -990,7 +1022,8 @@ export class Unit {
                     pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                 }));
                 const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
-                if (closestPack && packDist < this.detectionRange * 1.5) {
+                // [MODIFIED] 회복 팩을 찾을 때 시야(Line of Sight)를 확인하도록 수정
+                if (closestPack && packDist < this.detectionRange * 1.5 && gameManager.hasLineOfSight(this, closestPack)) {
                     newState = 'SEEKING_HEAL_PACK';
                     newTarget = closestPack;
                 }
