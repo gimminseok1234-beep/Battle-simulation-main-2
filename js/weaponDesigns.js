@@ -25,12 +25,12 @@ export function drawMagicDaggerIcon(ctx) {
     
     // 손잡이 본체
     ctx.beginPath();
-    ctx.moveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.3);
+    ctx.moveTo(-GRID_SIZE * 0.06, GRID_SIZE * 0.25); // [MODIFIED] 칼날 너비에 맞게 시작점 조정
     ctx.lineTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.55);
     ctx.quadraticCurveTo(-GRID_SIZE * 0.08, GRID_SIZE * 0.6, -GRID_SIZE * 0.05, GRID_SIZE * 0.6);
     ctx.lineTo(GRID_SIZE * 0.05, GRID_SIZE * 0.6);
     ctx.quadraticCurveTo(GRID_SIZE * 0.08, GRID_SIZE * 0.6, GRID_SIZE * 0.08, GRID_SIZE * 0.55);
-    ctx.lineTo(GRID_SIZE * 0.08, GRID_SIZE * 0.3);
+    ctx.lineTo(GRID_SIZE * 0.06, GRID_SIZE * 0.25); // [MODIFIED] 칼날 너비에 맞게 끝점 조정
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
