@@ -1008,28 +1008,31 @@ export class Unit {
         this.isInMagneticField = gameManager.isPosInAnyField(currentGridXBeforeMove, currentGridYBeforeMove);
         this.isInLava = gameManager.isPosInLavaForUnit(currentGridXBeforeMove, currentGridYBeforeMove);
 
+        // [MODIFIED] 자기장과 용암 회피를 최우선으로 처리하도록 로직 순서 변경
         if (this.isInMagneticField) {
             newState = 'FLEEING_FIELD';
         } else if (gameManager.isLavaAvoidanceEnabled && this.isInLava) {
             newState = 'FLEEING_LAVA';
             this.fleeingCooldown = 60;
-        } else if (this.hp < this.maxHp / 2) { // [MODIFIED] 체력이 낮을 때 회복 팩을 최우선으로 찾도록 수정
-            const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
-            if (healPacks.length > 0) {
-                const healPackPositions = healPacks.map(pos => ({
-                    gridX: pos.x, gridY: pos.y,
-                    pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
-                    pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
-                }));
-                const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
-                // [MODIFIED] 회복 팩을 찾을 때 시야(Line of Sight)를 확인하도록 수정
-                if (closestPack && packDist < this.detectionRange * 1.5 && gameManager.hasLineOfSight(this, closestPack)) {
-                    newState = 'SEEKING_HEAL_PACK';
-                    newTarget = closestPack;
+        } else {
+            // 안전한 상태일 때만 다른 행동을 결정
+            if (this.hp < this.maxHp / 2) {
+                const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
+                if (healPacks.length > 0) {
+                    const healPackPositions = healPacks.map(pos => ({
+                        gridX: pos.x, gridY: pos.y,
+                        pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
+                        pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
+                    }));
+                    const { item: closestPack, distance: packDist } = this.findClosest(healPackPositions);
+                    if (closestPack && packDist < this.detectionRange * 1.5 && gameManager.hasLineOfSight(this, closestPack)) {
+                        newState = 'SEEKING_HEAL_PACK';
+                        newTarget = closestPack;
+                    }
                 }
             }
         }
-        if (newState === 'IDLE' && this.fleeingCooldown <= 0) { // [MODIFIED] 회복 팩을 찾지 못했을 경우, 다른 행동 결정
+        if (newState === 'IDLE' && this.fleeingCooldown <= 0) {
             const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
             const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
 
