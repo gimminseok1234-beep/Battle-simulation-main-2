@@ -442,8 +442,6 @@ export class GameManager {
             const maxZ = this.actionCam.maxZoom || 1.8;
             this.actionCam.target.scale = Math.min(maxZ, 3.0);
             this.gameSpeed = this.actionCam.slowdownRate;
-        } else {
-            this.actionCam.target.x = this.canvas.width / 2;
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
