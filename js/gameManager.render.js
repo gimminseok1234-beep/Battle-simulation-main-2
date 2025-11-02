@@ -4,7 +4,7 @@ const GLOWING_WEAPON_TYPES = new Set([
     'sword', 'bow', 'shuriken', 'axe', 'fire_staff', 'boomerang', 'magic_dagger', 'dual_swords', 'magic_spear'
 ]);
 
-export function drawImpl(mouseEvent) {
+export function drawImpl(mouseEvent, isSplitCamRender = false) {
     this.ctx.save();
     this.ctx.fillStyle = '#1f2937';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -76,8 +76,8 @@ export function drawImpl(mouseEvent) {
 
     this.ctx.restore();
 
-    // 분할캠 렌더링
-    if (this.splitCam.active) {
+    // 분할캠 렌더링 (메인 캔버스에만 적용)
+    if (this.splitCam.active && !isSplitCamRender) {
         const splitCanvas = document.getElementById('splitCamCanvas');
         const splitCtx = splitCanvas.getContext('2d');
         
@@ -99,7 +99,7 @@ export function drawImpl(mouseEvent) {
         const splitCamRenderContext = Object.create(this);
         splitCamRenderContext.ctx = splitCtx;
         splitCamRenderContext.actionCam = { current: { scale: 1, x: 0, y: 0 } };
-        drawImpl.call(splitCamRenderContext);
+        drawImpl.call(splitCamRenderContext, mouseEvent, true);
         splitCtx.restore();
     }
 }
