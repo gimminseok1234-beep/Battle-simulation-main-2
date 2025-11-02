@@ -38,11 +38,6 @@ export class InputManager {
         const gm = this.gameManager;
         const pos = this.getMousePos(e);
 
-        if (gm.splitCam.enabled && (gm.state === 'SIMULATE' || gm.state === 'PAUSED' || gm.state === 'DONE' || gm.isReplayMode)) {
-            gm.handleSplitCamClick(pos);
-            return; // 분할캠 클릭 시 다른 동작(액션캠 등)을 막기 위해 여기서 종료
-        }
-
         if (gm.isActionCam) {
             gm.handleActionCamClick(pos);
             return; // 액션캠 클릭 시 다른 동작을 막기 위해 여기서 종료

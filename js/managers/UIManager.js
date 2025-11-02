@@ -181,11 +181,6 @@ export class UIManager {
             this.gameManager.isActionCam = e.target.checked;
             if (!this.gameManager.isActionCam) this.gameManager.resetActionCam(true);
         });
-        document.getElementById('splitCamToggle').addEventListener('change', (e) => {
-            this.gameManager.splitCam.enabled = e.target.checked;
-            if (!this.gameManager.splitCam.enabled) this.gameManager.hideSplitCam();
-        });
-        document.getElementById('splitCamCanvas').addEventListener('click', () => this.gameManager.hideSplitCam());
 
         // Home Settings
         this.setupHomeSettingsModal();
@@ -324,11 +319,25 @@ export class UIManager {
             document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
             document.getElementById('homeActionCamZoomMax').value = (this.gameManager.actionCam.maxZoom ?? 1.8);
             document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.8).toFixed(2);
-            document.getElementById('homeSplitCamSizeControl').value = this.gameManager.splitCam.size;
-            document.getElementById('homeSplitCamSizeValue').textContent = this.gameManager.splitCam.size;
-            document.getElementById('homeSplitCamZoomControl').value = this.gameManager.splitCam.zoom;
-            document.getElementById('homeSplitCamZoomValue').textContent = this.gameManager.splitCam.zoom.toFixed(2);
+            document.getElementById('homeActionCamSlowdownRate').value = (this.gameManager.actionCam.slowdownRate ?? 0.5);
+            document.getElementById('homeActionCamSlowdownRateValue').textContent = (this.gameManager.actionCam.slowdownRate ?? 0.5).toFixed(2);
             this.openModal('homeSettingsModal');
+        });
+
+        document.getElementById('settingsTabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('settings-tab')) {
+                const tabName = e.target.dataset.tab;
+                document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active-tab'));
+                e.target.classList.add('active-tab');
+
+                document.querySelectorAll('.settings-tab-content').forEach(content => {
+                    if (content.id === `tab-content-${tabName}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
         });
 
         document.getElementById('closeHomeSettingsModal').addEventListener('click', () => this.closeModal('homeSettingsModal'));
@@ -352,15 +361,9 @@ export class UIManager {
             this.gameManager.actionCam.maxZoom = parseFloat(e.target.value);
             document.getElementById('homeActionCamZoomMaxValue').textContent = this.gameManager.actionCam.maxZoom.toFixed(2);
         });
-        document.getElementById('homeSplitCamSizeControl').addEventListener('input', (e) => {
-            this.gameManager.splitCam.size = parseInt(e.target.value);
-            document.getElementById('homeSplitCamSizeValue').textContent = this.gameManager.splitCam.size;
-            if (this.gameManager.splitCam.active) this.gameManager.handleSplitCamClick(this.gameManager.splitCam.target);
-        });
-        document.getElementById('homeSplitCamZoomControl').addEventListener('input', (e) => {
-            this.gameManager.splitCam.zoom = parseFloat(e.target.value);
-            document.getElementById('homeSplitCamZoomValue').textContent = this.gameManager.splitCam.zoom.toFixed(2);
-            if (this.gameManager.splitCam.active) this.gameManager.draw();
+        document.getElementById('homeActionCamSlowdownRate').addEventListener('input', (e) => {
+            this.gameManager.actionCam.slowdownRate = parseFloat(e.target.value);
+            document.getElementById('homeActionCamSlowdownRateValue').textContent = this.gameManager.actionCam.slowdownRate.toFixed(2);
         });
 
         document.getElementById('saveHomeSettingsBtn').addEventListener('click', () => {
@@ -369,16 +372,14 @@ export class UIManager {
             this.gameManager.unitOutlineWidth = parseFloat(document.getElementById('homeUnitOutlineWidthControl').value);
             this.gameManager.unitEyeScale = parseFloat(document.getElementById('homeUnitEyeSizeControl').value);
             this.gameManager.actionCam.maxZoom = parseFloat(document.getElementById('homeActionCamZoomMax').value);
-            this.gameManager.splitCam.size = parseInt(document.getElementById('homeSplitCamSizeControl').value);
-            this.gameManager.splitCam.zoom = parseFloat(document.getElementById('homeSplitCamZoomControl').value);
+            this.gameManager.actionCam.slowdownRate = parseFloat(document.getElementById('homeActionCamSlowdownRate').value);
             
             localStorage.setItem('actionCamMaxZoom', String(this.gameManager.actionCam.maxZoom));
             localStorage.setItem('levelUpEnabled', String(this.gameManager.isLevelUpEnabled));
             localStorage.setItem('unitOutlineEnabled', String(this.gameManager.isUnitOutlineEnabled));
             localStorage.setItem('unitOutlineWidth', String(this.gameManager.unitOutlineWidth));
             localStorage.setItem('unitEyeScale', String(this.gameManager.unitEyeScale));
-            localStorage.setItem('splitCamSize', String(this.gameManager.splitCam.size));
-            localStorage.setItem('splitCamZoom', String(this.gameManager.splitCam.zoom));
+            localStorage.setItem('actionCamSlowdownRate', String(this.gameManager.actionCam.slowdownRate));
 
             this.gameManager.draw();
             this.closeModal('homeSettingsModal');

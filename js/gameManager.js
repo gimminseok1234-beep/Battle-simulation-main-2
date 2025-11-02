@@ -67,14 +67,8 @@ export class GameManager {
             current: { x: 0, y: 0, scale: 1 },
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
-            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.8')
-        };
-        this.splitCam = {
-            enabled: false,
-            active: false,
-            target: { pixelX: 0, pixelY: 0 },
-            zoom: parseFloat(localStorage.getItem('splitCamZoom') || '1.5'),
-            size: parseInt(localStorage.getItem('splitCamSize') || '300')
+            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.8'),
+            slowdownRate: parseFloat(localStorage.getItem('actionCamSlowdownRate') || '0.5')
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -439,33 +433,16 @@ export class GameManager {
             this.actionCam.target.y = pos.pixelY;
             const maxZ = this.actionCam.maxZoom || 1.8;
             this.actionCam.target.scale = Math.min(maxZ, 3.0);
+            this.gameSpeed = this.actionCam.slowdownRate;
         } else {
             this.actionCam.target.x = this.canvas.width / 2;
             this.actionCam.target.y = this.canvas.height / 2;
             this.actionCam.target.scale = 1;
+            this.gameSpeed = 1;
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
         return;
-    }
-
-    handleSplitCamClick(pos) {
-        if (!this.splitCam.enabled) return;
-        this.splitCam.target = { pixelX: pos.pixelX, pixelY: pos.pixelY };
-        this.splitCam.active = true;
-        document.getElementById('splitCamContainer').classList.remove('hidden');
-        const splitCanvas = document.getElementById('splitCamCanvas');
-        splitCanvas.width = this.splitCam.size;
-        splitCanvas.height = this.splitCam.size;
-        this.draw();
-    }
-
-    hideSplitCam() {
-        this.splitCam.active = false;
-        document.getElementById('splitCamContainer').classList.add('hidden');
-        if (this.state !== 'SIMULATE' && !this.actionCam.isAnimating) {
-            this.draw();
-        }
     }
 
     resizeCanvas(width, height) {
@@ -650,7 +627,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = 0.15; 
+            const ease = 0.05; 
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;

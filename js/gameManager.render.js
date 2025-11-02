@@ -4,7 +4,7 @@ const GLOWING_WEAPON_TYPES = new Set([
     'sword', 'bow', 'shuriken', 'axe', 'fire_staff', 'boomerang', 'magic_dagger', 'dual_swords', 'magic_spear'
 ]);
 
-export function drawImpl(mouseEvent, isSplitCamRender = false) {
+export function drawImpl(mouseEvent) {
     this.ctx.save();
     this.ctx.fillStyle = '#1f2937';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -76,38 +76,21 @@ export function drawImpl(mouseEvent, isSplitCamRender = false) {
 
     this.ctx.restore();
 
-    // 분할캠 렌더링 (메인 캔버스에만 적용)
-    if (this.splitCam.active && !isSplitCamRender) {
-        const splitCanvas = document.getElementById('splitCamCanvas');
-        const splitCtx = splitCanvas.getContext('2d');
-        
-        splitCtx.save();
-        splitCtx.fillStyle = '#1f2937';
-        splitCtx.fillRect(0, 0, splitCanvas.width, splitCanvas.height);
+    // 액션캠 비네트 효과
+    if (this.actionCam.current.scale > 1.05) {
+        const intensity = (this.actionCam.current.scale - 1) / (this.actionCam.maxZoom - 1);
+        const outerRadius = Math.hypot(this.canvas.width, this.canvas.height) / 2;
+        const innerRadius = outerRadius * (1 - intensity * 0.7);
 
-        const { target, zoom, size } = this.splitCam;
-        
-        // 분할캠 캔버스의 중앙으로 이동
-        splitCtx.translate(size / 2, size / 2);
-        // 확대
-        splitCtx.scale(zoom, zoom);
-        // 확대할 지점을 중앙으로 이동
-        splitCtx.translate(-target.pixelX, -target.pixelY);
+        const gradient = this.ctx.createRadialGradient(
+            this.canvas.width / 2, this.canvas.height / 2, innerRadius,
+            this.canvas.width / 2, this.canvas.height / 2, outerRadius
+        );
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        gradient.addColorStop(1, `rgba(0, 0, 0, ${intensity * 0.8})`);
 
-        // drawImpl을 재귀적으로 호출할 때, this의 프로토타입 체인을 유지해야 합니다.
-        // Object.create(this)를 사용하여 this(GameManager 인스턴스)를 프로토타입으로 하는 새 객체를 만듭니다.
-        const splitCamRenderContext = Object.create(this);
-        splitCamRenderContext.ctx = splitCtx;
-        // 분할캠은 메인 캔버스의 액션캠과 무관하게, 클릭된 월드 좌표를 중심으로 그려야 합니다.
-        // 메인 캔버스의 cam.current.x/y 값을 무시하고, 분할캠의 target 좌표를 중심으로 그리도록
-        // actionCam.current.x/y를 재설정합니다.
-        splitCamRenderContext.actionCam = {
-            current: { scale: 1, x: target.pixelX, y: target.pixelY },
-            target: { scale: 1, x: target.pixelX, y: target.pixelY },
-            isAnimating: false
-        };
-        drawImpl.call(splitCamRenderContext, mouseEvent, true);
-        splitCtx.restore();
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 
