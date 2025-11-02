@@ -429,9 +429,9 @@ export class GameManager {
 
     handleActionCamClick(pos) {
         // 애니메이션 중이라도 클릭하면 즉시 타겟을 반대로 설정하여 취소/전환 가능하게 함
-        const isZoomedIn = this.actionCam.target.scale > 1;
+        const isCurrentlyZoomedIn = this.actionCam.target.scale > 1;
 
-        if (isZoomedIn) {
+        if (isCurrentlyZoomedIn) {
             this.actionCam.target.x = this.canvas.width / 2;
             this.actionCam.target.y = this.canvas.height / 2;
             this.actionCam.target.scale = 1;
@@ -439,8 +439,7 @@ export class GameManager {
         } else {
             this.actionCam.target.x = pos.pixelX;
             this.actionCam.target.y = pos.pixelY;
-            const maxZ = this.actionCam.maxZoom || 1.8;
-            this.actionCam.target.scale = Math.min(maxZ, 3.0);
+            this.actionCam.target.scale = this.actionCam.maxZoom || 1.8;
             this.gameSpeed = this.actionCam.slowdownRate;
         }
         this.actionCam.isAnimating = true;

@@ -326,6 +326,22 @@ export class UIManager {
             this.openModal('homeSettingsModal');
         });
 
+        document.getElementById('settingsTabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('settings-tab')) {
+                const tabName = e.target.dataset.tab;
+                document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active-tab'));
+                e.target.classList.add('active-tab');
+
+                document.querySelectorAll('.settings-tab-content').forEach(content => {
+                    if (content.id === `tab-content-${tabName}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
         document.getElementById('closeHomeSettingsModal').addEventListener('click', () => this.closeModal('homeSettingsModal'));
 
         document.getElementById('homeLevelUpToggle').addEventListener('change', (e) => this.gameManager.isLevelUpEnabled = e.target.checked);
