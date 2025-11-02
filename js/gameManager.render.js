@@ -94,7 +94,12 @@ export function drawImpl(mouseEvent) {
         // 확대할 지점을 중앙으로 이동
         splitCtx.translate(-target.pixelX, -target.pixelY);
 
-        drawImpl.call({ ...this, ctx: splitCtx, actionCam: { current: { scale: 1, x: 0, y: 0 } } });
+        // drawImpl을 재귀적으로 호출할 때, this의 프로토타입 체인을 유지해야 합니다.
+        // Object.create(this)를 사용하여 this(GameManager 인스턴스)를 프로토타입으로 하는 새 객체를 만듭니다.
+        const splitCamRenderContext = Object.create(this);
+        splitCamRenderContext.ctx = splitCtx;
+        splitCamRenderContext.actionCam = { current: { scale: 1, x: 0, y: 0 } };
+        drawImpl.call(splitCamRenderContext);
         splitCtx.restore();
     }
 }
