@@ -69,6 +69,13 @@ export class GameManager {
             isAnimating: false,
             maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.8')
         };
+        this.splitCam = {
+            enabled: false,
+            active: false,
+            target: { pixelX: 0, pixelY: 0 },
+            zoom: 2.5,
+            size: 300
+        };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
         };
@@ -440,6 +447,25 @@ export class GameManager {
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
         return;
+    }
+
+    handleSplitCamClick(pos) {
+        if (!this.splitCam.enabled) return;
+        this.splitCam.target = { pixelX: pos.pixelX, pixelY: pos.pixelY };
+        this.splitCam.active = true;
+        document.getElementById('splitCamContainer').classList.remove('hidden');
+        const splitCanvas = document.getElementById('splitCamCanvas');
+        splitCanvas.width = this.splitCam.size;
+        splitCanvas.height = this.splitCam.size;
+        this.draw();
+    }
+
+    hideSplitCam() {
+        this.splitCam.active = false;
+        document.getElementById('splitCamContainer').classList.add('hidden');
+        if (this.state !== 'SIMULATE' && !this.actionCam.isAnimating) {
+            this.draw();
+        }
     }
 
     resizeCanvas(width, height) {

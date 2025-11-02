@@ -181,6 +181,11 @@ export class UIManager {
             this.gameManager.isActionCam = e.target.checked;
             if (!this.gameManager.isActionCam) this.gameManager.resetActionCam(true);
         });
+        document.getElementById('splitCamToggle').addEventListener('change', (e) => {
+            this.gameManager.splitCam.enabled = e.target.checked;
+            if (!this.gameManager.splitCam.enabled) this.gameManager.hideSplitCam();
+        });
+        document.getElementById('splitCamCanvas').addEventListener('click', () => this.gameManager.hideSplitCam());
 
         // Home Settings
         this.setupHomeSettingsModal();
