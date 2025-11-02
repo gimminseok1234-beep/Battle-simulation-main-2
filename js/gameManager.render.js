@@ -98,7 +98,14 @@ export function drawImpl(mouseEvent, isSplitCamRender = false) {
         // Object.create(this)를 사용하여 this(GameManager 인스턴스)를 프로토타입으로 하는 새 객체를 만듭니다.
         const splitCamRenderContext = Object.create(this);
         splitCamRenderContext.ctx = splitCtx;
-        splitCamRenderContext.actionCam = { current: { scale: 1, x: 0, y: 0 } };
+        // 분할캠은 메인 캔버스의 액션캠과 무관하게, 클릭된 월드 좌표를 중심으로 그려야 합니다.
+        // 따라서 액션캠의 translate/scale을 상쇄할 필요 없이,
+        // 월드 좌표를 기준으로 하는 새로운 렌더링 컨텍스트를 만듭니다.
+        splitCamRenderContext.actionCam = {
+            current: { scale: 1, x: splitCanvas.width / 2, y: splitCanvas.height / 2 },
+            target: { scale: 1, x: splitCanvas.width / 2, y: splitCanvas.height / 2 },
+            isAnimating: false
+        };
         drawImpl.call(splitCamRenderContext, mouseEvent, true);
         splitCtx.restore();
     }
