@@ -324,6 +324,10 @@ export class UIManager {
             document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
             document.getElementById('homeActionCamZoomMax').value = (this.gameManager.actionCam.maxZoom ?? 1.8);
             document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.8).toFixed(2);
+            document.getElementById('homeSplitCamSizeControl').value = this.gameManager.splitCam.size;
+            document.getElementById('homeSplitCamSizeValue').textContent = this.gameManager.splitCam.size;
+            document.getElementById('homeSplitCamZoomControl').value = this.gameManager.splitCam.zoom;
+            document.getElementById('homeSplitCamZoomValue').textContent = this.gameManager.splitCam.zoom.toFixed(2);
             this.openModal('homeSettingsModal');
         });
 
@@ -348,6 +352,16 @@ export class UIManager {
             this.gameManager.actionCam.maxZoom = parseFloat(e.target.value);
             document.getElementById('homeActionCamZoomMaxValue').textContent = this.gameManager.actionCam.maxZoom.toFixed(2);
         });
+        document.getElementById('homeSplitCamSizeControl').addEventListener('input', (e) => {
+            this.gameManager.splitCam.size = parseInt(e.target.value);
+            document.getElementById('homeSplitCamSizeValue').textContent = this.gameManager.splitCam.size;
+            if (this.gameManager.splitCam.active) this.gameManager.handleSplitCamClick(this.gameManager.splitCam.target);
+        });
+        document.getElementById('homeSplitCamZoomControl').addEventListener('input', (e) => {
+            this.gameManager.splitCam.zoom = parseFloat(e.target.value);
+            document.getElementById('homeSplitCamZoomValue').textContent = this.gameManager.splitCam.zoom.toFixed(2);
+            if (this.gameManager.splitCam.active) this.gameManager.draw();
+        });
 
         document.getElementById('saveHomeSettingsBtn').addEventListener('click', () => {
             this.gameManager.isLevelUpEnabled = document.getElementById('homeLevelUpToggle').checked;
@@ -355,12 +369,16 @@ export class UIManager {
             this.gameManager.unitOutlineWidth = parseFloat(document.getElementById('homeUnitOutlineWidthControl').value);
             this.gameManager.unitEyeScale = parseFloat(document.getElementById('homeUnitEyeSizeControl').value);
             this.gameManager.actionCam.maxZoom = parseFloat(document.getElementById('homeActionCamZoomMax').value);
+            this.gameManager.splitCam.size = parseInt(document.getElementById('homeSplitCamSizeControl').value);
+            this.gameManager.splitCam.zoom = parseFloat(document.getElementById('homeSplitCamZoomControl').value);
             
             localStorage.setItem('actionCamMaxZoom', String(this.gameManager.actionCam.maxZoom));
             localStorage.setItem('levelUpEnabled', String(this.gameManager.isLevelUpEnabled));
             localStorage.setItem('unitOutlineEnabled', String(this.gameManager.isUnitOutlineEnabled));
             localStorage.setItem('unitOutlineWidth', String(this.gameManager.unitOutlineWidth));
             localStorage.setItem('unitEyeScale', String(this.gameManager.unitEyeScale));
+            localStorage.setItem('splitCamSize', String(this.gameManager.splitCam.size));
+            localStorage.setItem('splitCamZoom', String(this.gameManager.splitCam.zoom));
 
             this.gameManager.draw();
             this.closeModal('homeSettingsModal');

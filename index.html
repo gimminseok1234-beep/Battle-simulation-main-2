@@ -82,7 +82,7 @@
     </div>
 
 
-    <div id="editorScreen" class="hidden flex-col items-center gap-4 w-full max-w-7xl mx-auto">
+    <div id="editorScreen" class="hidden flex-col items-center gap-6 w-full max-w-7xl mx-auto">
         <div id="toolbar" class="bg-gray-800 p-2 rounded-lg shadow-lg flex items-center justify-between gap-2 w-full flex-wrap">
             <button id="backToHomeBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">홈으로</button>
             <div id="editor-controls" class="flex items-center gap-2">
@@ -112,7 +112,7 @@
         </div>
         <div class="flex items-start gap-4 w-full">
             <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto flex-shrink-0"></div>
-            <div class="flex-grow flex justify-start items-start gap-4">
+            <div class="flex-grow flex justify-start items-start gap-6">
                 <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
                 <div id="splitCamContainer" class="hidden flex-col items-center">
                     <canvas id="splitCamCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700 cursor-pointer"></canvas>
@@ -219,6 +219,14 @@
             <div class="flex items-center gap-3 mb-4">
                 <label for="homeActionCamZoomMax" class="font-semibold whitespace-nowrap">액션캠 확대 최대: <span id="homeActionCamZoomMaxValue">1.80</span>x</label>
                 <input type="range" id="homeActionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.80" class="w-full">
+            </div>
+            <div class="flex items-center gap-3 mb-4">
+                <label for="homeSplitCamSizeControl" class="font-semibold whitespace-nowrap">분할캠 크기: <span id="homeSplitCamSizeValue">300</span>px</label>
+                <input type="range" id="homeSplitCamSizeControl" min="150" max="500" step="10" value="300" class="w-full">
+            </div>
+            <div class="flex items-center gap-3 mb-4">
+                <label for="homeSplitCamZoomControl" class="font-semibold whitespace-nowrap">분할캠 확대: <span id="homeSplitCamZoomValue">2.50</span>x</label>
+                <input type="range" id="homeSplitCamZoomControl" min="1.5" max="5.0" step="0.1" value="2.5" class="w-full">
             </div>
             <div class="modal-buttons">
                 <button id="saveHomeSettingsBtn" class="btn-confirm">설정 저장</button>

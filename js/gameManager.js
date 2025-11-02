@@ -73,8 +73,8 @@ export class GameManager {
             enabled: false,
             active: false,
             target: { pixelX: 0, pixelY: 0 },
-            zoom: 2.5,
-            size: 300
+            zoom: parseFloat(localStorage.getItem('splitCamZoom') || '2.5'),
+            size: parseInt(localStorage.getItem('splitCamSize') || '300')
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
