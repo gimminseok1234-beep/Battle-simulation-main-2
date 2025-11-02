@@ -36,13 +36,18 @@ export class InputManager {
 
     handleMouseDown(e) {
         const gm = this.gameManager;
+        const pos = this.getMousePos(e);
+
+        if (gm.splitCam.enabled && (gm.state === 'SIMULATE' || gm.state === 'PAUSED' || gm.state === 'DONE' || gm.isReplayMode)) {
+            gm.handleSplitCamClick(pos);
+            return;
+        }
+
         if (gm.isActionCam) {
-            gm.handleActionCamClick(this.getMousePos(e));
+            gm.handleActionCamClick(pos);
             return;
         }
         if (gm.state === 'EDIT') {
-            const pos = this.getMousePos(e);
-            
             if (gm.currentTool.tool === 'nametag') {
                 const clickedUnit = gm.units.find(u => Math.hypot(u.pixelX - pos.pixelX, u.pixelY - pos.pixelY) < GRID_SIZE / 2);
                 if (clickedUnit) {

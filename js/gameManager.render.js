@@ -75,6 +75,28 @@ export function drawImpl(mouseEvent) {
     drawSpecialAttackGlows.call(this);
 
     this.ctx.restore();
+
+    // 분할캠 렌더링
+    if (this.splitCam.active) {
+        const splitCanvas = document.getElementById('splitCamCanvas');
+        const splitCtx = splitCanvas.getContext('2d');
+        
+        splitCtx.save();
+        splitCtx.fillStyle = '#1f2937';
+        splitCtx.fillRect(0, 0, splitCanvas.width, splitCanvas.height);
+
+        const { target, zoom, size } = this.splitCam;
+        
+        // 분할캠 캔버스의 중앙으로 이동
+        splitCtx.translate(size / 2, size / 2);
+        // 확대
+        splitCtx.scale(zoom, zoom);
+        // 확대할 지점을 중앙으로 이동
+        splitCtx.translate(-target.pixelX, -target.pixelY);
+
+        drawImpl.call({ ...this, ctx: splitCtx, actionCam: { current: { scale: 1, x: 0, y: 0 } } });
+        splitCtx.restore();
+    }
 }
 
 export function drawMapImpl() {
