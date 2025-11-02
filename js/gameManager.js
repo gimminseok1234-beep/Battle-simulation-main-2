@@ -68,7 +68,8 @@ export class GameManager {
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
             maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.8'),
-            slowdownRate: parseFloat(localStorage.getItem('actionCamSlowdownRate') || '0.5')
+            slowdownRate: parseFloat(localStorage.getItem('actionCamSlowdownRate') || '0.5'),
+            zoomSpeed: parseFloat(localStorage.getItem('actionCamZoomSpeed') || '0.05')
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -427,8 +428,15 @@ export class GameManager {
     }
 
     handleActionCamClick(pos) {
-        if (this.actionCam.isAnimating) return;
-        if (this.actionCam.target.scale === 1) {
+        // 애니메이션 중이라도 클릭하면 즉시 타겟을 반대로 설정하여 취소/전환 가능하게 함
+        const isZoomedIn = this.actionCam.target.scale > 1;
+
+        if (isZoomedIn) {
+            this.actionCam.target.x = this.canvas.width / 2;
+            this.actionCam.target.y = this.canvas.height / 2;
+            this.actionCam.target.scale = 1;
+            this.gameSpeed = 1;
+        } else {
             this.actionCam.target.x = pos.pixelX;
             this.actionCam.target.y = pos.pixelY;
             const maxZ = this.actionCam.maxZoom || 1.8;
@@ -436,9 +444,6 @@ export class GameManager {
             this.gameSpeed = this.actionCam.slowdownRate;
         } else {
             this.actionCam.target.x = this.canvas.width / 2;
-            this.actionCam.target.y = this.canvas.height / 2;
-            this.actionCam.target.scale = 1;
-            this.gameSpeed = 1;
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
@@ -627,7 +632,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = 0.05; 
+            const ease = this.actionCam.zoomSpeed || 0.05; 
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;

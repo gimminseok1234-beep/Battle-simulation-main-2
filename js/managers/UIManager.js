@@ -321,23 +321,9 @@ export class UIManager {
             document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.8).toFixed(2);
             document.getElementById('homeActionCamSlowdownRate').value = (this.gameManager.actionCam.slowdownRate ?? 0.5);
             document.getElementById('homeActionCamSlowdownRateValue').textContent = (this.gameManager.actionCam.slowdownRate ?? 0.5).toFixed(2);
+            document.getElementById('homeActionCamZoomSpeed').value = (this.gameManager.actionCam.zoomSpeed ?? 0.05);
+            document.getElementById('homeActionCamZoomSpeedValue').textContent = (this.gameManager.actionCam.zoomSpeed ?? 0.05).toFixed(2);
             this.openModal('homeSettingsModal');
-        });
-
-        document.getElementById('settingsTabs').addEventListener('click', (e) => {
-            if (e.target.classList.contains('settings-tab')) {
-                const tabName = e.target.dataset.tab;
-                document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active-tab'));
-                e.target.classList.add('active-tab');
-
-                document.querySelectorAll('.settings-tab-content').forEach(content => {
-                    if (content.id === `tab-content-${tabName}`) {
-                        content.classList.remove('hidden');
-                    } else {
-                        content.classList.add('hidden');
-                    }
-                });
-            }
         });
 
         document.getElementById('closeHomeSettingsModal').addEventListener('click', () => this.closeModal('homeSettingsModal'));
@@ -365,6 +351,10 @@ export class UIManager {
             this.gameManager.actionCam.slowdownRate = parseFloat(e.target.value);
             document.getElementById('homeActionCamSlowdownRateValue').textContent = this.gameManager.actionCam.slowdownRate.toFixed(2);
         });
+        document.getElementById('homeActionCamZoomSpeed').addEventListener('input', (e) => {
+            this.gameManager.actionCam.zoomSpeed = parseFloat(e.target.value);
+            document.getElementById('homeActionCamZoomSpeedValue').textContent = this.gameManager.actionCam.zoomSpeed.toFixed(2);
+        });
 
         document.getElementById('saveHomeSettingsBtn').addEventListener('click', () => {
             this.gameManager.isLevelUpEnabled = document.getElementById('homeLevelUpToggle').checked;
@@ -373,6 +363,7 @@ export class UIManager {
             this.gameManager.unitEyeScale = parseFloat(document.getElementById('homeUnitEyeSizeControl').value);
             this.gameManager.actionCam.maxZoom = parseFloat(document.getElementById('homeActionCamZoomMax').value);
             this.gameManager.actionCam.slowdownRate = parseFloat(document.getElementById('homeActionCamSlowdownRate').value);
+            this.gameManager.actionCam.zoomSpeed = parseFloat(document.getElementById('homeActionCamZoomSpeed').value);
             
             localStorage.setItem('actionCamMaxZoom', String(this.gameManager.actionCam.maxZoom));
             localStorage.setItem('levelUpEnabled', String(this.gameManager.isLevelUpEnabled));
@@ -380,6 +371,7 @@ export class UIManager {
             localStorage.setItem('unitOutlineWidth', String(this.gameManager.unitOutlineWidth));
             localStorage.setItem('unitEyeScale', String(this.gameManager.unitEyeScale));
             localStorage.setItem('actionCamSlowdownRate', String(this.gameManager.actionCam.slowdownRate));
+            localStorage.setItem('actionCamZoomSpeed', String(this.gameManager.actionCam.zoomSpeed));
 
             this.gameManager.draw();
             this.closeModal('homeSettingsModal');
