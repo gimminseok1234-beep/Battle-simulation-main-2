@@ -780,25 +780,25 @@ export class Unit {
             }
         }
 
-        if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= gameManager.gameSpeed;
-        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= gameManager.gameSpeed;
+        if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= 1;
+        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= 1;
         if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= gameManager.gameSpeed;
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
-        if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= gameManager.gameSpeed;
+        if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= 1;
         if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= gameManager.gameSpeed;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
-        if (this.attackCooldown > 0) this.attackCooldown -= gameManager.gameSpeed;
-        if (this.teleportCooldown > 0) this.teleportCooldown -= gameManager.gameSpeed;
-        if (this.alertedCounter > 0) this.alertedCounter -= gameManager.gameSpeed; // [수정] 마법창 특수 공격 쿨다운
-        if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= gameManager.gameSpeed;
-        if (this.evasionCooldown > 0) this.evasionCooldown -= gameManager.gameSpeed;
+        if (this.attackCooldown > 0) this.attackCooldown -= 1;
+        if (this.teleportCooldown > 0) this.teleportCooldown -= 1;
+        if (this.alertedCounter > 0) this.alertedCounter -= 1; // [수정] 마법창 특수 공격 쿨다운
+        if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= 1;
+        if (this.evasionCooldown > 0) this.evasionCooldown -= 1;
         if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
-        if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= gameManager.gameSpeed;
-        if (this.boomerangCooldown > 0) this.boomerangCooldown -= gameManager.gameSpeed;
-        if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= gameManager.gameSpeed;
-        if (this.fireStaffSpecialCooldown > 0) this.fireStaffSpecialCooldown -= gameManager.gameSpeed;
-        if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= gameManager.gameSpeed; // [신규] 독 포션 쿨다운 감소
-        if (this.fleeingCooldown > 0) this.fleeingCooldown -= gameManager.gameSpeed;
+        if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= 1;
+        if (this.boomerangCooldown > 0) this.boomerangCooldown -= 1;
+        if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= 1;
+        if (this.fireStaffSpecialCooldown > 0) this.fireStaffSpecialCooldown -= 1;
+        if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= 1; // [신규] 독 포션 쿨다운 감소
+        if (this.fleeingCooldown > 0) this.fleeingCooldown -= 1;
 
         if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
@@ -823,7 +823,7 @@ export class Unit {
         }
 
         if (this.poisonEffect.active) {
-            this.poisonEffect.duration -= gameManager.gameSpeed;
+            this.poisonEffect.duration -= 1;
             this.takeDamage(this.poisonEffect.damage, { isTileDamage: true });
             if (this.poisonEffect.duration <= 0) {
                 this.poisonEffect.active = false;
@@ -832,7 +832,7 @@ export class Unit {
 
         if (this.weapon && this.weapon.type === 'ice_diamond') {
             if (this.iceDiamondCharges < 5) {
-                this.iceDiamondChargeTimer += gameManager.gameSpeed;
+                this.iceDiamondChargeTimer += 1;
                 if (this.iceDiamondChargeTimer >= 240) {
                     this.iceDiamondCharges++;
                     this.iceDiamondChargeTimer = 0;
@@ -841,7 +841,7 @@ export class Unit {
         }
 
         if (this.dualSwordTeleportDelayTimer > 0) {
-            this.dualSwordTeleportDelayTimer -= gameManager.gameSpeed;
+            this.dualSwordTeleportDelayTimer -= 1;
             if (this.dualSwordTeleportDelayTimer <= 0) {
                 this.performDualSwordTeleportAttack(enemies);
             }
@@ -875,7 +875,7 @@ export class Unit {
         }
 
         if (this.isAimingMagicDagger) {
-            this.magicDaggerAimTimer -= gameManager.gameSpeed;
+            this.magicDaggerAimTimer -= 1;
             if (this.magicDaggerAimTimer <= 0) {
                 this.isAimingMagicDagger = false;
                 this.magicDaggerSkillCooldown = 420;
@@ -1271,7 +1271,7 @@ export class Unit {
 
         // [신규] 독 장판 데미지 처리
         if (this.poisonPuddleDamageCooldown > 0) {
-            this.poisonPuddleDamageCooldown -= gameManager.gameSpeed;
+            this.poisonPuddleDamageCooldown -= 1;
         }
         const isOnPuddle = gameManager.isPosInPoisonPuddle(finalGridX, finalGridY);
         if (isOnPuddle && this.poisonPuddleDamageCooldown <= 0) {

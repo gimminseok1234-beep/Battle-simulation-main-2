@@ -648,7 +648,10 @@ export class GameManager {
         }
 
         if (this.state === 'SIMULATE' || this.state === 'ENDING') {
-            this.simulationManager.update();
+            // Fixed Timestep: Logic updates are independent of gameSpeed
+            this.simulationManager.updateLogic(); 
+            // Visual updates are affected by gameSpeed for slow-motion
+            this.simulationManager.updateVisuals();
         }
         
         if (this.timerElement && (this.state === 'SIMULATE' || this.state === 'PAUSED' || this.state === 'ENDING' || this.state === 'DONE')) {

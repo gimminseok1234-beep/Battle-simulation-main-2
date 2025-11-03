@@ -190,12 +190,12 @@ export class SimulationManager {
         }
     }
 
-    update() {
+    updateLogic() {
         const gm = this.gameManager;
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
-            gm.simulationTime += 1 / 60;
+            gm.simulationTime += 1 / 60; // This should be tied to logic ticks, not frames. It's correct here.
         }
 
         if (gm.state === 'ENDING') {
@@ -206,7 +206,7 @@ export class SimulationManager {
         }
 
         if (gm.autoMagneticField.isActive) {
-            gm.autoMagneticField.simulationTime++;
+            gm.autoMagneticField.simulationTime += 1; // Use fixed step
             const progress = Math.min(1, gm.autoMagneticField.simulationTime / gm.autoMagneticField.totalShrinkTime);
 
             if (gm.autoMagneticField.shrinkType === 'vertical') {
@@ -234,8 +234,6 @@ export class SimulationManager {
                 };
             }
         }
-        
-        gm.growingFields.forEach(field => field.update());
         
         const unitsBeforeUpdate = gm.units.length;
 
@@ -267,11 +265,9 @@ export class SimulationManager {
         deadUnits.forEach(u => u.handleDeath());
         
         gm.units = gm.units.filter(u => u.hp > 0);
-        if (gm.units.length < unitsBeforeUpdate) {
-            gm.audioManager.play('unitDeath');
-        }
         
-        gm.nexuses.forEach(n => n.update());
+        // Visual/Audio updates are moved to updateVisuals
+        // gm.nexuses.forEach(n => n.update());
 
         gm.projectiles.forEach(p => p.update());
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
