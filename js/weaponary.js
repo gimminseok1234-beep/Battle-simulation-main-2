@@ -1098,7 +1098,8 @@ export class Projectile {
         const dy = this.logicY - this.pixelY;
         const distance = Math.hypot(dx, dy);
 
-        const interpFactor = Math.min(0.5 * this.gameManager.gameSpeed, 1);
+        // 투사체는 유닛보다 빠르므로 보간 계수(비율)를 더 높게 설정합니다. (예: 0.5)
+        const interpFactor = Math.min(0.5 * this.gameManager.gameSpeed, 1.0);
 
         if (distance < 0.5) {
              this.pixelX = this.logicX;

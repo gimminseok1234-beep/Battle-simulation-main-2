@@ -1278,18 +1278,23 @@ export class Unit {
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
- 
+
         // [신규] 시각적 위치 보간 (Interpolation) 로직
         const dx = this.logicX - this.pixelX;
         const dy = this.logicY - this.pixelY;
         const distance = Math.hypot(dx, dy);
- 
-        const interpFactor = Math.min(0.25 * gameManager.gameSpeed, 1);
- 
+
+        // 0.25는 시각적 위치가 논리적 위치를 따라잡는 '부드러움'의 정도입니다.
+        // (0.1 = 매우 부드럽게(느리게) 따라감, 1.0 = 즉시 따라잡음)
+        // gameSpeed가 0.5가 되면 따라잡는 비율도 절반이 되어 시각적으로 느려집니다.
+        const interpFactor = Math.min(0.25 * this.gameManager.gameSpeed, 1.0);
+
         if (distance < 0.5) {
+            // 거리가 매우 가까우면 즉시 동기화
             this.pixelX = this.logicX;
             this.pixelY = this.logicY;
         } else {
+            // gameSpeed에 비례하여 논리적 위치와의 '거리의 25%'만큼 따라감
             this.pixelX += dx * interpFactor;
             this.pixelY += dy * interpFactor;
         }
