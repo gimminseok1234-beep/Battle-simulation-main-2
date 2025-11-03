@@ -104,8 +104,10 @@
         </div>
         <div class="flex items-start gap-4 w-full">
             <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto flex-shrink-0"></div>
-            <div class="flex-grow flex justify-center items-start">
-                <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+            <div class="flex-grow flex justify-start items-start gap-4">
+                <div class="flex-grow flex justify-center ml-auto">
+                    <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+                </div>
                 <div id="actionCamControls" class="hidden ml-4 p-4 bg-gray-800 rounded-lg shadow-lg w-64 flex-col gap-4">
                     <h4 class="text-lg font-bold text-center text-white">액션캠 제어</h4>
                     <div class="flex items-center justify-between">

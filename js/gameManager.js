@@ -1484,6 +1484,9 @@ export class GameManager {
         const placementResetBtn = document.getElementById('simPlacementResetBtn');
         placementResetBtn.textContent = '리플레이 초기화';
         placementResetBtn.style.display = 'inline-block';
+
+        document.getElementById('actionCamControls').classList.remove('hidden');
+        document.getElementById('actionCamControls').classList.add('flex');
     }
 
     updateUIToEditorMode() {
@@ -1496,5 +1499,8 @@ export class GameManager {
         const placementResetBtn = document.getElementById('simPlacementResetBtn');
         placementResetBtn.textContent = '배치 초기화';
         placementResetBtn.style.display = 'inline-block';
+
+        document.getElementById('actionCamControls').classList.add('hidden');
+        document.getElementById('actionCamControls').classList.remove('flex');
     }
 }
