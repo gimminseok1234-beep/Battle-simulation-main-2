@@ -5,51 +5,6 @@ const GLOWING_WEAPON_TYPES = new Set([
 ]);
 
 export function drawImpl(mouseEvent) {
-    // [수정] 액션캠 자동 타겟팅 로직을 drawImpl로 복원 (uiPrng 사용)
-    if (this.isActionCam && this.state === 'SIMULATE' && !this.actionCam.isAnimating) {
-        const hotSpots = [];
-        const gridStep = 5;
-        for (let y = 0; y < this.ROWS; y += gridStep) {
-            for (let x = 0; x < this.COLS; x += gridStep) {
-                let score = 0;
-                this.units.forEach(u => {
-                    const dist = Math.hypot(u.gridX - x, u.gridY - y);
-                    if (dist < 10) score++;
-                });
-                this.projectiles.forEach(p => {
-                    const dist = Math.hypot(p.pixelX / GRID_SIZE - x, p.pixelY / GRID_SIZE - y);
-                    if (dist < 10) score += 0.5;
-                });
-                if (score > 0) hotSpots.push({ x: x * GRID_SIZE, y: y * GRID_SIZE, score });
-            }
-        }
-
-        if (hotSpots.length > 0) {
-            hotSpots.sort((a, b) => b.score - a.score);
-            const randomFactor = this.uiPrng.next() * 0.2 - 0.1;
-            this.actionCam.target.x = hotSpots[0].x + randomFactor * this.canvas.width;
-            this.actionCam.target.y = hotSpots[0].y + randomFactor * this.canvas.height;
-            
-            // --- [버그 수정] ---
-            // 타겟을 갱신한 후 애니메이션을 활성화하는 신호가 누락되었습니다.
-            this.actionCam.isAnimating = true;
-            // --------------------
-        }
-
-        if (this.uiPrng.next() < 0.01) {
-            const randomUnit = this.units[Math.floor(this.random() * this.units.length)];
-            if (randomUnit) {
-                this.actionCam.target.x = randomUnit.pixelX;
-                this.actionCam.target.y = randomUnit.pixelY;
-
-                // --- [버그 수정] ---
-                // 타겟을 갱신한 후 애니메이션을 활성화하는 신호가 누락되었습니다.
-                this.actionCam.isAnimating = true;
-                // --------------------
-            }
-        }
-    }
-
     this.ctx.save();
     this.ctx.fillStyle = '#1f2937';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
