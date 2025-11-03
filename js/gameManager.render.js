@@ -5,6 +5,41 @@ const GLOWING_WEAPON_TYPES = new Set([
 ]);
 
 export function drawImpl(mouseEvent) {
+    // [수정] 액션캠 로직을 drawImpl 함수 상단으로 이동 및 prng -> uiPrng로 변경
+    if (this.isActionCam && this.state === 'SIMULATE') {
+        const hotSpots = [];
+        const gridStep = 5;
+        for (let y = 0; y < this.ROWS; y += gridStep) {
+            for (let x = 0; x < this.COLS; x += gridStep) {
+                let score = 0;
+                this.units.forEach(u => {
+                    const dist = Math.hypot(u.gridX - x, u.gridY - y);
+                    if (dist < 10) score++;
+                });
+                this.projectiles.forEach(p => {
+                    const dist = Math.hypot(p.pixelX / GRID_SIZE - x, p.pixelY / GRID_SIZE - y);
+                    if (dist < 10) score += 0.5;
+                });
+                if (score > 0) hotSpots.push({ x: x * GRID_SIZE, y: y * GRID_SIZE, score });
+            }
+        }
+
+        if (hotSpots.length > 0) {
+            hotSpots.sort((a, b) => b.score - a.score);
+            const randomFactor = this.uiPrng.next() * 0.2 - 0.1; // prng -> uiPrng
+            this.actionCam.target.x = hotSpots[0].x + randomFactor * this.canvas.width;
+            this.actionCam.target.y = hotSpots[0].y + randomFactor * this.canvas.height;
+        }
+
+        if (this.uiPrng.next() < 0.01) { // prng -> uiPrng
+            const randomUnit = this.units[Math.floor(this.random() * this.units.length)];
+            if (randomUnit) {
+                this.actionCam.target.x = randomUnit.pixelX;
+                this.actionCam.target.y = randomUnit.pixelY;
+            }
+        }
+    }
+
     this.ctx.save();
     this.ctx.fillStyle = '#1f2937';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
