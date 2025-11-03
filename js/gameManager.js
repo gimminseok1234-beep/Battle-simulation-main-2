@@ -1059,7 +1059,7 @@ export class GameManager {
         let minDistance = Infinity;
         for (const unit of this.units) {
             if (unit.team !== ownerTeam && !excludeSet.has(unit) && unit.hp > 0) {
-                const dist = Math.hypot(x - unit.pixelX, y - unit.pixelY);
+                const dist = Math.hypot(x - unit.logicX, y - unit.logicY);
                 if (dist < minDistance) {
                     minDistance = dist;
                     closest = unit;

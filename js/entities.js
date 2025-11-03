@@ -253,8 +253,8 @@ export class PoisonCloud {
 
         targets.forEach(target => {
             if (target.team !== this.ownerTeam && !target.isDestroying) {
-               const dx = Math.abs(target.pixelX - this.pixelX);
-               const dy = Math.abs(target.pixelY - this.pixelY);
+               const dx = Math.abs(target.logicX - this.pixelX);
+               const dy = Math.abs(target.logicY - this.pixelY);
                if (dx < GRID_SIZE * 2.5 && dy < GRID_SIZE * 2.5) {
                    if(target.constructor.name === 'Unit') {
                        target.takeDamage(0, { poison: { damage: this.damage }, isTileDamage: true });

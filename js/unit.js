@@ -89,7 +89,7 @@ export class Unit {
 
         // 유닛이 길을 찾지 못하고 막혔는지 판단하기 위한 속성
         this.stuckTimer = 0;
-        this.lastPosition = { x: this.pixelX, y: this.pixelY };
+        this.lastPosition = { x: this.logicX, y: this.logicY };
         // [NEW] A* 길찾기 관련 속성
         this.path = [];
         this.pathUpdateCooldown = 0;
