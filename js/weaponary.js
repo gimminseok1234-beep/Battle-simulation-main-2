@@ -968,40 +968,20 @@ export class Projectile {
         }
     }
 
-    update() {
+    updateLogic() {
         const gameManager = this.gameManager;
         if (!gameManager) return;
-        
+
         if (this.type === 'returning_shuriken') {
-            this.rotationAngle += this.lingerRotationSpeed * gameManager.gameSpeed;
-
             if (this.state === 'MOVING_OUT') {
-                const moveX = Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
-                const moveY = Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
-                this.pixelX += moveX;
-                this.pixelY += moveY;
-                this.distanceTraveled += Math.hypot(moveX, moveY);
-                
-                for (const unit of gameManager.units) {
-                    if (unit.team !== this.owner.team && !this.hitTargets.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
-                        unit.takeDamage(this.damage, {}, this.owner);
-                        this.hitTargets.add(unit);
-                    }
-                }
-
                 if (this.distanceTraveled >= this.maxDistance) {
                     this.state = 'LINGERING';
                 }
             } else if (this.state === 'LINGERING') {
-                this.lingerDuration -= gameManager.gameSpeed;
+                this.lingerDuration -= 1;
                 this.damageCooldown -= 1;
 
                 if (this.damageCooldown <= 0) {
-                    for (const unit of gameManager.units) {
-                        if (unit.team !== this.owner.team && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE * 2) {
-                            unit.takeDamage(this.damage * 0.15, {}, this.owner); // Reduced lingering damage
-                        }
-                    }
                     this.damageCooldown = this.damageInterval;
                 }
 
@@ -1013,28 +993,14 @@ export class Projectile {
                     this.destroyed = true;
                     return;
                 }
-                const dx = this.owner.pixelX - this.pixelX;
-                const dy = this.owner.pixelY - this.pixelY;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist < this.speed) {
-                    this.destroyed = true;
-                    return;
-                }
-
-                const returnAngle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(returnAngle) * this.speed * gameManager.gameSpeed;
-                this.pixelY += Math.sin(returnAngle) * this.speed * gameManager.gameSpeed;
-
-                for (const unit of gameManager.units) {
-                    if (unit.team !== this.owner.team && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
-                        unit.takeDamage(this.damage, {}, this.owner);
-                        this.alreadyDamagedOnReturn.add(unit);
-                    }
-                }
             }
             return;
         }
+    }
+
+    updateVisuals() {
+        const gameManager = this.gameManager;
+        if (!gameManager) return;
 
         // [NEW] 활 특수 공격 파티클 생성 로직 호출
         if (this.type === 'arrow' && this.isSpecial) {

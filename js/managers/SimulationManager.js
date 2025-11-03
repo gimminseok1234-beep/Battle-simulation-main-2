@@ -223,6 +223,8 @@ export class SimulationManager {
             const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
             unit.update(enemies, gm.weapons, gm.projectiles); // This now only handles logic
         });
+
+        gm.projectiles.forEach(p => p.updateLogic());
         
         const deadUnits = gm.units.filter(u => u.hp <= 0);
 
@@ -480,7 +482,7 @@ export class SimulationManager {
         gm.units.forEach(unit => unit.updateVisuals());
 
         // Projectile movement is visual and affected by gameSpeed
-        gm.projectiles.forEach(p => p.update());
+        gm.projectiles.forEach(p => p.updateVisuals());
 
         if (gm.units.length < unitsBeforeUpdate) {
             gm.audioManager.play('unitDeath');

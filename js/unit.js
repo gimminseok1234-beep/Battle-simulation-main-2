@@ -394,8 +394,8 @@ export class Unit {
                 const isRightSafe = !gameManager.isPosInLavaForUnit(Math.floor(rightLookAheadX / GRID_SIZE), Math.floor(rightLookAheadY / GRID_SIZE));
 
                 if (isLeftSafe && isRightSafe) {
-                    // [MODIFIED] 시각적 회피 로직이므로 논리 RNG(random) 대신 시각 RNG(visualPrng)를 사용합니다.
-                    bestAngle = this.gameManager.visualPrng.next() < 0.5 ? leftAngle : rightAngle;
+                    // [MODIFIED] Math.random()을 gameManager.random()으로 변경하여 결정성을 보장합니다.
+                    bestAngle = this.gameManager.random() < 0.5 ? leftAngle : rightAngle;
                 } else if (isLeftSafe) {
                     bestAngle = leftAngle;
                 } else if (isRightSafe) {
