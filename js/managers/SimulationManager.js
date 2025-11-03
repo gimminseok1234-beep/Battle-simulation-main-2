@@ -246,7 +246,7 @@ export class SimulationManager {
             }
             unitsByTeam[unit.team].push(unit);
         }
-        const allTeamKeys = Object.keys(unitsByTeam);
+        const allTeamKeys = Object.keys(unitsByTeam).sort();
         
         gm.units.forEach(unit => {
             const enemyTeams = allTeamKeys.filter(key => key !== unit.team);
