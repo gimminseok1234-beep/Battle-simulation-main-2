@@ -93,10 +93,6 @@
             <div id="statusText" class="text-lg font-semibold flex-grow text-center">에디터 모드</div>
             <div id="timerText" class="text-lg font-semibold text-white" style="display: none;">00:00</div>
             <div class="flex items-center gap-4">
-                 <div class="flex items-center">
-                    <label for="actionCamToggle" class="mr-2 font-semibold">액션캠</label>
-                    <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
-                </div>
             </div>
             <div class="flex items-center gap-2">
                 <button id="simStartBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">시작</button>
@@ -110,6 +106,21 @@
             <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto flex-shrink-0"></div>
             <div class="flex-grow flex justify-center items-start">
                 <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+                <div id="actionCamControls" class="hidden ml-4 p-4 bg-gray-800 rounded-lg shadow-lg w-64 flex-col gap-4">
+                    <h4 class="text-lg font-bold text-center text-white">액션캠 제어</h4>
+                    <div class="flex items-center justify-between">
+                        <label for="actionCamToggle" class="font-semibold">활성화</label>
+                        <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label for="actionCamZoomMax" class="font-semibold whitespace-nowrap">확대 배율: <span id="actionCamZoomMaxValue">1.40</span>x</label>
+                        <input type="range" id="actionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label for="actionCamZoomSpeed" class="font-semibold whitespace-nowrap">줌 속도: <span id="actionCamZoomSpeedValue">0.05</span></label>
+                        <input type="range" id="actionCamZoomSpeed" min="0.01" max="0.2" step="0.01" value="0.05" class="w-full">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -225,16 +236,8 @@
 
             <div id="tab-content-camera" class="settings-tab-content hidden">
                 <div class="flex items-center gap-3 mb-4">
-                    <label for="homeActionCamZoomMax" class="font-semibold whitespace-nowrap">액션캠 확대 최대: <span id="homeActionCamZoomMaxValue">1.40</span>x</label>
-                    <input type="range" id="homeActionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
-                </div>
-                <div class="flex items-center gap-3 mb-4">
                     <label for="homeActionCamSlowdownRate" class="font-semibold whitespace-nowrap">액션캠 슬로우 모션: <span id="homeActionCamSlowdownRateValue">0.50</span>x</label>
                     <input type="range" id="homeActionCamSlowdownRate" min="0.1" max="0.9" step="0.05" value="0.4" class="w-full">
-                </div>
-                <div class="flex items-center gap-3 mb-4">
-                    <label for="homeActionCamZoomSpeed" class="font-semibold whitespace-nowrap">액션캠 줌 속도: <span id="homeActionCamZoomSpeedValue">0.05</span></label>
-                    <input type="range" id="homeActionCamZoomSpeed" min="0.01" max="0.2" step="0.01" value="0.05" class="w-full">
                 </div>
             </div>
             <div class="modal-buttons mt-6">

@@ -428,6 +428,8 @@ export class GameManager {
     }
 
     handleActionCamClick(pos) {
+        if (!this.isReplayMode) return;
+
         // 애니메이션 중이라도 클릭하면 즉시 타겟을 반대로 설정하여 취소/전환 가능하게 함
         const isCurrentlyZoomedIn = this.actionCam.target.scale > 1;
 
