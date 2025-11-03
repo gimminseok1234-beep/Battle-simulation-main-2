@@ -734,7 +734,7 @@ export class Unit {
         }
 
         if (this.isStunned > 0) {
-            this.isStunned -= gameManager.gameSpeed;
+            this.isStunned -= 1;
             if (this.isStunned <= 0) {
                 this.stunnedByMagicCircle = false;
             }
@@ -743,18 +743,18 @@ export class Unit {
         }
 
         if (this.isSlowed > 0) {
-            this.isSlowed -= gameManager.gameSpeed;
+            this.isSlowed -= 1;
         }
 
         if (this.isMarkedByDualSword.active) {
-            this.isMarkedByDualSword.timer -= gameManager.gameSpeed;
+            this.isMarkedByDualSword.timer -= 1;
             if (this.isMarkedByDualSword.timer <= 0) {
                 this.isMarkedByDualSword.active = false;
             }
         }
 
         if (this.awakeningEffect.active && this.awakeningEffect.stacks < 3) {
-            this.awakeningEffect.timer += gameManager.gameSpeed;
+            this.awakeningEffect.timer += 1;
             if (this.awakeningEffect.timer >= 300) {
                 this.awakeningEffect.timer = 0;
                 this.awakeningEffect.stacks++;
@@ -800,7 +800,7 @@ export class Unit {
         if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= 1; // [신규] 독 포션 쿨다운 감소
         if (this.fleeingCooldown > 0) this.fleeingCooldown -= 1;
 
-        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
+        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= 1;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
                 if (p.owner.team === this.team) continue;
@@ -1889,3 +1889,4 @@ Unit.prototype.drawEyes = function(ctx) {
     }
     ctx.restore();
 }
+

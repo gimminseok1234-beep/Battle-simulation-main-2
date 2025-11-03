@@ -10,6 +10,8 @@ import {
     drawPoisonPotion as designDrawPoisonPotion,
 } from './weaponDesigns.js';
 
+// Drawing implementations moved to js/weaponDesigns.js
+
 // Weapon class
 export class Weapon {
     constructor(gameManager, x, y, type) {
@@ -742,6 +744,7 @@ export function createFireballHitEffect(gameManager, x, y) {
 export class Projectile {
     constructor(gameManager, owner, target, type = 'arrow', options = {}) {
         this.gameManager = gameManager;
+        this.gameManager = gameManager; // [수정] 중복된 코드 제거
         this.owner = owner;
         this.target = target;
         this.pixelX = options.startX !== undefined ? options.startX : owner.pixelX;

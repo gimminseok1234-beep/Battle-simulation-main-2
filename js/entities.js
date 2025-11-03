@@ -254,10 +254,10 @@ export class PoisonCloud {
                const dx = Math.abs(target.pixelX - this.pixelX);
                const dy = Math.abs(target.pixelY - this.pixelY);
                if (dx < GRID_SIZE * 2.5 && dy < GRID_SIZE * 2.5) {
-                   if(target.constructor.name === 'Unit') { 
-                       target.takeDamage(0, { poison: { damage: this.damage * gameManager.gameSpeed }, isTileDamage: true });
-                   } else if (target.constructor.name === 'Nexus') { 
-                       target.takeDamage(this.damage * gameManager.gameSpeed);
+                   if(target.constructor.name === 'Unit') {
+                       target.takeDamage(0, { poison: { damage: this.damage }, isTileDamage: true });
+                   } else if (target.constructor.name === 'Nexus') {
+                       target.takeDamage(this.damage);
                    }
                }
            }
