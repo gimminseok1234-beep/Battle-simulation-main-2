@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
-            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
+            const nextX = this.pixelX + this.knockbackX;
+            const nextY = this.pixelY + this.knockbackY;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -257,8 +257,8 @@ export class Unit {
             }
         }
 
-        this.knockbackX *= (1 - 0.1 * gameManager.gameSpeed);
-        this.knockbackY *= (1 - 0.1 * gameManager.gameSpeed);
+        this.knockbackX *= 0.9;
+        this.knockbackY *= 0.9;
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
@@ -275,10 +275,10 @@ export class Unit {
                     const moveX = (overlap / 2) * Math.cos(angle);
                     const moveY = (overlap / 2) * Math.sin(angle);
 
-                    const myNextX = this.pixelX - moveX * gameManager.gameSpeed;
-                    const myNextY = this.pixelY - moveY * gameManager.gameSpeed;
-                    const otherNextX = otherUnit.pixelX + moveX * gameManager.gameSpeed;
-                    const otherNextY = otherUnit.pixelY + moveY * gameManager.gameSpeed;
+                    const myNextX = this.pixelX - moveX;
+                    const myNextY = this.pixelY - moveY;
+                    const otherNextX = otherUnit.pixelX + moveX;
+                    const otherNextY = otherUnit.pixelY + moveY;
 
                     const myGridX = Math.floor(myNextX / GRID_SIZE);
                     const myGridY = Math.floor(myNextY / GRID_SIZE);
@@ -344,7 +344,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed * gameManager.gameSpeed;
+            const currentSpeed = this.speed;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -362,7 +362,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * gameManager.gameSpeed;
+        const currentSpeed = this.speed;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -526,44 +526,6 @@ export class Unit {
             return;
         }
 
-
-        // [MODIFIED] 레벨 2 이상일 때 유닛 주변에서 파티클이 생성되도록 수정
-        if (this.level >= 2 && gameManager.isLevelUpEnabled) {
-            this.levelUpParticleCooldown -= gameManager.gameSpeed;
-            if (this.levelUpParticleCooldown <= 0) {
-                this.levelUpParticleCooldown = 15 - this.level;
-
-                let teamColor;
-                switch(this.team) {
-                    case TEAM.A: teamColor = DEEP_COLORS.TEAM_A; break;
-                    case TEAM.B: teamColor = DEEP_COLORS.TEAM_B; break;
-                    case TEAM.C: teamColor = DEEP_COLORS.TEAM_C; break;
-                    case TEAM.D: teamColor = DEEP_COLORS.TEAM_D; break;
-                    default: teamColor = '#FFFFFF'; break;
-                }
-
-                const particleCount = (this.level - 1) * 2;
-                for (let i = 0; i < particleCount; i++) {
-                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
-                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
-                    const spawnX = this.pixelX + Math.cos(angle) * radius;
-                    const spawnY = this.pixelY + Math.sin(angle) * radius;
-                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
-
-                    gameManager.addParticle({
-                        x: spawnX,
-                        y: spawnY,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 0.6,
-                        color: teamColor,
-                        size: this.level * 0.5 + gameManager.visualPrng.next() * this.level,
-                        gravity: -0.02
-                    });
-                }
-            }
-        }
-
         if (this.isDashing) {
             this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
             if (this.dashTrail.length > 5) this.dashTrail.shift();
@@ -576,34 +538,29 @@ export class Unit {
                 case 'UP': moveY = -this.dashSpeed; break;
             }
 
-            for (let i = 0; i < gameManager.gameSpeed; i++) {
-                const nextX = this.pixelX + moveX;
-                const nextY = this.pixelY + moveY;
-                const gridX = Math.floor(nextX / GRID_SIZE);
-                const gridY = Math.floor(nextY / GRID_SIZE);
+            const nextX = this.pixelX + moveX;
+            const nextY = this.pixelY + moveY;
+            const gridX = Math.floor(nextX / GRID_SIZE);
+            const gridY = Math.floor(nextY / GRID_SIZE);
 
-                if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS) {
-                    this.isDashing = false;
-                    break;
-                }
-
+            if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS) {
+                this.isDashing = false;
+            } else {
                 const tile = gameManager.map[gridY][gridX];
                 if (tile.type === TILE.WALL) {
                     this.isDashing = false;
-                    break;
-                }
+                } else {
+                    if (tile.type === TILE.CRACKED_WALL) {
+                        gameManager.damageTile(gridX, gridY, 999);
+                    }
 
-                if (tile.type === TILE.CRACKED_WALL) {
-                    gameManager.damageTile(gridX, gridY, 999);
-                }
+                    this.pixelX = nextX;
+                    this.pixelY = nextY;
+                    this.dashDistanceRemaining -= this.dashSpeed;
 
-                this.pixelX = nextX;
-                this.pixelY = nextY;
-                this.dashDistanceRemaining -= this.dashSpeed;
-
-                if (this.dashDistanceRemaining <= 0) {
-                    this.isDashing = false;
-                    break;
+                    if (this.dashDistanceRemaining <= 0) {
+                        this.isDashing = false;
+                    }
                 }
             }
             if (!this.isDashing) this.dashTrail = [];
@@ -611,29 +568,6 @@ export class Unit {
         }
 
         if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
-
-        if (this.isBeingPulled && this.puller) {
-            const dx = this.pullTargetPos.x - this.pixelX;
-            const dy = this.pullTargetPos.y - this.pixelY;
-            const dist = Math.hypot(dx, dy);
-            const pullSpeed = 4;
-
-            if (dist < pullSpeed) { // 로직은 gameSpeed 영향 X
-                this.pixelX = this.pullTargetPos.x;
-                this.pixelY = this.pullTargetPos.y;
-                this.isBeingPulled = false;
-
-                const damage = 20 + (this.puller.specialAttackLevelBonus || 0);
-                this.takeDamage(damage, { stun: 120 }, this.puller);
-
-                this.puller = null;
-            } else {
-                // 움직임은 updateVisuals에서 처리
-            }
-            // this.applyPhysics(); // This is logic, so it's fine here.
-            // applyPhysics는 시각적 요소이므로 updateVisuals에서 처리
-            return;
-        }
 
         // [신규] 마법창 비전 이동 로직
         if (this.weapon?.type === 'magic_spear' && !this.hasUsedBlink && this.hp < this.maxHp * 0.3) {
@@ -786,6 +720,34 @@ export class Unit {
                 if (this.iceDiamondChargeTimer >= 240) {
                     this.iceDiamondCharges++;
                     this.iceDiamondChargeTimer = 0;
+                }
+            }
+        }
+
+        // [수정] update() 함수 내부 (예: 쿨다운 감소시키는 곳)
+        if (this.level >= 2 && gameManager.isLevelUpEnabled) {
+            this.levelUpParticleCooldown -= 1; // gameSpeed 제거
+            if (this.levelUpParticleCooldown <= 0) {
+                this.levelUpParticleCooldown = 15 - this.level;
+
+                let teamColor;
+                switch(this.team) {
+                    case TEAM.A: teamColor = DEEP_COLORS.TEAM_A; break;
+                    case TEAM.B: teamColor = DEEP_COLORS.TEAM_B; break;
+                    case TEAM.C: teamColor = DEEP_COLORS.TEAM_C; break;
+                    case TEAM.D: teamColor = DEEP_COLORS.TEAM_D; break;
+                    default: teamColor = '#FFFFFF'; break;
+                }
+
+                const particleCount = (this.level - 1) * 2;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
+                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
+                    const spawnX = this.pixelX + Math.cos(angle) * radius;
+                    const spawnY = this.pixelY + Math.sin(angle) * radius;
+                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
+
+                    gameManager.addParticle({ x: spawnX, y: spawnY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.6, color: teamColor, size: this.level * 0.5 + gameManager.visualPrng.next() * this.level, gravity: -0.02 });
                 }
             }
         }
@@ -1208,6 +1170,29 @@ export class Unit {
         }
         this.lastPosition = { x: this.pixelX, y: this.pixelY };
 
+        // [수정] isBeingPulled 로직을 update()로 이동
+        if (this.isBeingPulled && this.puller) {
+            const dx = this.pullTargetPos.x - this.pixelX;
+            const dy = this.pullTargetPos.y - this.pixelY;
+            const dist = Math.hypot(dx, dy);
+            const pullSpeed = 4; // gameSpeed 제거 (로직 속도 고정)
+
+            if (dist < pullSpeed) {
+                this.pixelX = this.pullTargetPos.x;
+                this.pixelY = this.pullTargetPos.y;
+                this.isBeingPulled = false;
+
+                // 데미지 및 기절 적용
+                const damage = 20 + (this.puller.specialAttackLevelBonus || 0);
+                this.takeDamage(damage, { stun: 120 }, this.puller);
+                this.puller = null;
+            }
+        }
+
+        // [수정] 로직 업데이트의 마지막 단계로 이동/물리 적용
+        this.move();
+        this.applyPhysics();
+
 
         const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
@@ -1325,60 +1310,23 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        // Smooth HP bar decrease
+        // js/unit.js -> updateVisuals()
         if (this.isBeingPulled && this.puller) {
             const dx = this.pullTargetPos.x - this.pixelX;
             const dy = this.pullTargetPos.y - this.pixelY;
             const dist = Math.hypot(dx, dy);
-            const pullSpeed = 4 * gameManager.gameSpeed;
+            const pullSpeed = 4; // 로직과 동일한 기본 속도
+            const visualPullSpeed = pullSpeed * gameManager.gameSpeed; // 시각적 이동 속도
 
-            if (dist > pullSpeed) {
+            if (dist > visualPullSpeed) {
                 const angle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(angle) * pullSpeed;
-                this.pixelY += Math.sin(angle) * pullSpeed;
-                this.knockbackX = 0;
+                this.pixelX += Math.cos(angle) * visualPullSpeed;
+                this.pixelY += Math.sin(angle) * visualPullSpeed;
+                this.knockbackX = 0; // 끌려가는 동안 넉백 무시
                 this.knockbackY = 0;
             }
+            // [제거] 데미지 및 상태 변경 로직은 update()로 이동했으므로 여기선 삭제
         }
-
-        // [MODIFIED] 레벨 2 이상일 때 유닛 주변에서 파티클이 생성되도록 수정
-        if (this.level >= 2 && gameManager.isLevelUpEnabled) {
-            if (this.levelUpParticleCooldown <= 0) {
-                this.levelUpParticleCooldown = 15 - this.level;
-
-                let teamColor;
-                switch(this.team) {
-                    case TEAM.A: teamColor = DEEP_COLORS.TEAM_A; break;
-                    case TEAM.B: teamColor = DEEP_COLORS.TEAM_B; break;
-                    case TEAM.C: teamColor = DEEP_COLORS.TEAM_C; break;
-                    case TEAM.D: teamColor = DEEP_COLORS.TEAM_D; break;
-                    default: teamColor = '#FFFFFF'; break;
-                }
-
-                const particleCount = (this.level - 1) * 2;
-                for (let i = 0; i < particleCount; i++) {
-                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
-                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
-                    const spawnX = this.pixelX + Math.cos(angle) * radius;
-                    const spawnY = this.pixelY + Math.sin(angle) * radius;
-                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
-
-                    gameManager.addParticle({
-                        x: spawnX,
-                        y: spawnY,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 0.6,
-                        color: teamColor,
-                        size: this.level * 0.5 + gameManager.visualPrng.next() * this.level,
-                        gravity: -0.02
-                    });
-                }
-            }
-        }
-
-        this.move();
-        this.applyPhysics();
 
         // Smooth HP bar decrease
         if (this.displayHp > this.hp) {
