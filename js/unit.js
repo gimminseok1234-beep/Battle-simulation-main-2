@@ -105,8 +105,8 @@ export class Unit {
         if (this.poisonEffect.active) speedModifier -= 0.7;
         if (this.isSlowed > 0) speedModifier -= 0.3;
 
-        const gridX = Math.floor(this.pixelX / GRID_SIZE);
-        const gridY = Math.floor(this.pixelY / GRID_SIZE);
+        const gridX = Math.floor(this.logicX / GRID_SIZE);
+        const gridY = Math.floor(this.logicY / GRID_SIZE);
         if (gridY >= 0 && gridY < gameManager.ROWS && gridX >= 0 && gridX < gameManager.COLS) {
             const tile = gameManager.map[gridY][gridX];
             if (tile.type === TILE.LAVA) speedModifier = -0.5;
@@ -341,8 +341,8 @@ export class Unit {
             const targetPixelX = nextNode.x * GRID_SIZE + GRID_SIZE / 2; // This is a logic target
             const targetPixelY = nextNode.y * GRID_SIZE + GRID_SIZE / 2; // This is a logic target
 
-            const dx = targetPixelX - this.pixelX;
-            const dy = targetPixelY - this.pixelY;
+            const dx = targetPixelX - this.logicX;
+            const dy = targetPixelY - this.logicY;
             const distance = Math.hypot(dx, dy);
             const currentSpeed = this.speed;
 
@@ -1308,7 +1308,7 @@ export class Unit {
 
         // [신규] 마법창 비전 이동 로직
         if (this.weapon?.type === 'magic_spear' && !this.hasUsedBlink && this.hp < this.maxHp * 0.3) {
-            this.hasUsedBlink = true;
+            this.hasUsedBlink = true; // This logic seems to be duplicated, but let's keep it as per the file state.
 
             let safeSpot = null;
             const searchRadius = 8; // 타일 단위 검색 반경
@@ -1507,7 +1507,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist < this.detectionRange) {
@@ -1565,7 +1565,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist <= this.attackRange) {
@@ -1582,7 +1582,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;

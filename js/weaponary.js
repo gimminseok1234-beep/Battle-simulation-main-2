@@ -747,8 +747,8 @@ export class Projectile {
         this.gameManager = gameManager; // [수정] 중복된 코드 제거
         this.owner = owner;
         this.target = target;
-        this.pixelX = options.startX !== undefined ? options.startX : owner.pixelX;
-        this.pixelY = options.startY !== undefined ? options.startY : owner.pixelY;
+        this.pixelX = options.startX !== undefined ? options.startX : owner.logicX;
+        this.pixelY = options.startY !== undefined ? options.startY : owner.logicY;
         // [신규] 논리적(결과) 위치
         this.logicX = this.pixelX;
         this.logicY = this.pixelY;
@@ -851,7 +851,7 @@ export class Projectile {
         targetX = target.logicX + (gameManager.prng.next() - 0.5) * inaccuracy;
         targetY = target.logicY + (gameManager.prng.next() - 0.5) * inaccuracy;
 
-        const dx = targetX - this.pixelX; const dy = targetY - this.pixelY;
+        const dx = targetX - this.logicX; const dy = targetY - this.logicY;
         this.angle = options.angle !== undefined ? options.angle : Math.atan2(dy, dx);
         this.destroyed = false;
         this.trail = [];
