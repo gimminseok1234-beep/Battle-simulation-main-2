@@ -175,6 +175,7 @@ export class GameManager {
         document.getElementById('defaultMapsScreen').style.display = 'none';
         document.getElementById('replayScreen').style.display = 'none';
         this.updateUIToEditorMode(); 
+        this.gameSpeed = 1;
         this.resetActionCam(true);
         this.persistenceManager.renderMapCards();
         if (this.timerElement) this.timerElement.style.display = 'none';
@@ -454,6 +455,7 @@ export class GameManager {
         this.canvas.height = height;
         document.getElementById('widthInput').value = width;
         document.getElementById('heightInput').value = height;
+        this.gameSpeed = 1;
         this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
         this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
         
@@ -463,6 +465,7 @@ export class GameManager {
     resetMap() {
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
+        this.gameSpeed = 1;
         this.state = 'EDIT';
         this.map = this.createEmptyMap(this.canvas.width, this.canvas.height);
         this.units = []; this.weapons = []; this.nexuses = []; this.growingFields = [];
@@ -507,6 +510,7 @@ export class GameManager {
 
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
+        this.gameSpeed = 1;
         this.state = 'EDIT';
 
         this.units = JSON.parse(this.initialUnitsState).map(uData => {
