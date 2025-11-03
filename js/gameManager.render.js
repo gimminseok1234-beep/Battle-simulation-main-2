@@ -29,6 +29,11 @@ export function drawImpl(mouseEvent) {
             const randomFactor = this.uiPrng.next() * 0.2 - 0.1;
             this.actionCam.target.x = hotSpots[0].x + randomFactor * this.canvas.width;
             this.actionCam.target.y = hotSpots[0].y + randomFactor * this.canvas.height;
+            
+            // --- [버그 수정] ---
+            // 타겟을 갱신한 후 애니메이션을 활성화하는 신호가 누락되었습니다.
+            this.actionCam.isAnimating = true;
+            // --------------------
         }
 
         if (this.uiPrng.next() < 0.01) {
@@ -36,6 +41,11 @@ export function drawImpl(mouseEvent) {
             if (randomUnit) {
                 this.actionCam.target.x = randomUnit.pixelX;
                 this.actionCam.target.y = randomUnit.pixelY;
+
+                // --- [버그 수정] ---
+                // 타겟을 갱신한 후 애니메이션을 활성화하는 신호가 누락되었습니다.
+                this.actionCam.isAnimating = true;
+                // --------------------
             }
         }
     }
