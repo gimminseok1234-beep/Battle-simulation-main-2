@@ -94,7 +94,7 @@ export class Unit {
         this.isBlinking = false;
     }
 
-    get speed() {
+    get speed() { // A. speed getter 수정
         const gameManager = this.gameManager;
         if (!gameManager || this.isStunned > 0) {
             return 0;
@@ -193,7 +193,7 @@ export class Unit {
     findClosest(items) {
         let closestItem = null, minDistance = Infinity;
         for (const item of items) {
-            const distance = Math.hypot(this.logicX - item.pixelX, this.logicY - item.pixelY);
+            const distance = Math.hypot(this.logicX - (item.logicX || item.pixelX), this.logicY - (item.logicY || item.pixelY));
             if (distance < minDistance) { minDistance = distance; closestItem = item; }
         }
         return { item: closestItem, distance: minDistance };
@@ -729,7 +729,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
-            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
+            const { item: closestEnemy } = this.findBestTarget(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist < this.detectionRange) {
@@ -787,7 +787,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
-            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
+            const { item: closestEnemy } = this.findBestTarget(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist <= this.attackRange) {
@@ -804,7 +804,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
-            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
+            const { item: closestEnemy } = this.findBestTarget(enemies);
             if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
@@ -1127,7 +1127,7 @@ export class Unit {
         } else {
             this.stuckTimer = 0;
         }
-        this.lastPosition = { x: this.pixelX, y: this.pixelY };
+        this.lastPosition = { x: this.logicX, y: this.logicY };
 
 
         const finalGridX = Math.floor(this.logicX / GRID_SIZE);
@@ -2393,7 +2393,7 @@ export class Unit {
 
     performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
-        if (target && target.hp > 0) {
+        if (target && target.hp > 0) { // E. findEmptySpotNear 함수 수정 (호출부)
             const teleportPos = this.gameManager.findEmptySpotNear(target); // findEmptySpotNear uses pixelX, but should use logicX
             this.logicX = teleportPos.x;
             this.logicY = teleportPos.y;

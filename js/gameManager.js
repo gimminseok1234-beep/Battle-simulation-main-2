@@ -809,8 +809,9 @@ export class GameManager {
     hasLineOfSight(startUnit, endTarget, isWeaponCheck = false) {
         let x1 = startUnit.logicX;
         let y1 = startUnit.logicY;
-        const x2 = endTarget.logicX;
-        const y2 = endTarget.logicY;
+        // 힐팩, 무기 등은 logicX가 없으므로 pixelX를 사용하도록 호환
+        const x2 = endTarget.logicX || endTarget.pixelX; 
+        const y2 = endTarget.logicY || endTarget.pixelY;
 
         const dx = x2 - x1;
         const dy = y2 - y1;
@@ -1069,8 +1070,8 @@ export class GameManager {
     }
 
     findEmptySpotNear(targetUnit) {
-        const startX = Math.floor(targetUnit.logicX / GRID_SIZE);
-        const startY = Math.floor(targetUnit.logicY / GRID_SIZE);
+        const startX = Math.floor(targetUnit.logicX / GRID_SIZE); // E. findEmptySpotNear 함수 수정
+        const startY = Math.floor(targetUnit.logicY / GRID_SIZE); // E. findEmptySpotNear 함수 수정
     
         for (let radius = 1; radius < 5; radius++) {
             for (let dy = -radius; dy <= radius; dy++) {
@@ -1084,8 +1085,8 @@ export class GameManager {
                         (this.map[checkY][checkX].type === TILE.FLOOR || this.map[checkY][checkX].type === TILE.LAVA)) {
                         
                         const isOccupied = this.units.some(u => 
-                            Math.floor(u.logicX / GRID_SIZE) === checkX && 
-                            Math.floor(u.logicY / GRID_SIZE) === checkY
+                            Math.floor(u.logicX / GRID_SIZE) === checkX && // E. findEmptySpotNear 함수 수정
+                            Math.floor(u.logicY / GRID_SIZE) === checkY   // E. findEmptySpotNear 함수 수정
                         );
                         
                         if (!isOccupied) {
