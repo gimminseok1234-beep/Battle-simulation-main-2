@@ -68,7 +68,7 @@ export class GameManager {
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
             maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4'),
-            slowdownRate: parseFloat(localStorage.getItem('actionCamSlowdownRate') || '0.5'),
+            slowdownFactor: parseFloat(localStorage.getItem('actionCamSlowdownFactor') || '1.0'),
             zoomSpeed: parseFloat(localStorage.getItem('actionCamZoomSpeed') || '0.05')
         };
         this.growingFieldSettings = {
@@ -437,12 +437,12 @@ export class GameManager {
             this.actionCam.target.x = this.canvas.width / 2;
             this.actionCam.target.y = this.canvas.height / 2;
             this.actionCam.target.scale = 1;
-            this.gameSpeed = 1;
+            this.gameSpeed = 1; // 줌 아웃 시에는 항상 원래 속도로 복귀
         } else {
             this.actionCam.target.x = pos.pixelX;
             this.actionCam.target.y = pos.pixelY;
             this.actionCam.target.scale = this.actionCam.maxZoom || 1.8;
-            this.gameSpeed = this.actionCam.slowdownRate;
+            this.gameSpeed = 1 / (this.actionCam.slowdownFactor || 1); // 슬로우 모션 적용
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
