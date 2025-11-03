@@ -195,6 +195,37 @@ export class SimulationManager {
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
+            // [추가] js/managers/SimulationManager.js -> updateLogic()
+            if (gm.autoMagneticField.isActive && gm.state === 'SIMULATE') { // [수정] ENDING 상태에서는 더 이상 줄어들지 않도록 state 체크 추가
+                // [수정] gameSpeed를 제거하고 고정된 틱(1/60초)으로만 시간을 계산합니다.
+                gm.autoMagneticField.simulationTime += (1 / 60);
+                const progress = Math.min(1, gm.autoMagneticField.simulationTime / (gm.autoMagneticField.totalShrinkTime / 60));
+
+                if (gm.autoMagneticField.shrinkType === 'vertical') {
+                    const finalHeight = gm.autoMagneticField.safeZoneSize;
+                    const finalMinY = (gm.ROWS - finalHeight) / 2;
+                    const finalMaxY = (gm.ROWS + finalHeight) / 2;
+                    gm.autoMagneticField.currentBounds = {
+                        minX: 0,
+                        maxX: gm.COLS,
+                        minY: 0 + (finalMinY - 0) * progress,
+                        maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
+                    };
+                } else { // 'all'
+                    const finalWidth = gm.autoMagneticField.safeZoneSize;
+                    const finalHeight = gm.autoMagneticField.safeZoneSize;
+                    const finalMinX = (gm.COLS - finalWidth) / 2;
+                    const finalMaxX = (gm.COLS + finalWidth) / 2;
+                    const finalMinY = (gm.ROWS - finalHeight) / 2;
+                    const finalMaxY = (gm.ROWS + finalHeight) / 2;
+                    gm.autoMagneticField.currentBounds = {
+                        minX: 0 + (finalMinX - 0) * progress,
+                        maxX: gm.COLS - (gm.COLS - finalMaxX) * progress,
+                        minY: 0 + (finalMinY - 0) * progress,
+                        maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
+                    };
+                }
+            }
             // 자기장 시간 계산은 gameSpeed의 영향을 받아야 하므로 updateVisuals로 이동.
         }
 
@@ -441,36 +472,6 @@ export class SimulationManager {
 
         if (gm.state === 'SIMULATE') {
             gm.simulationTime += (1 / 60) * gm.gameSpeed;
-        }
-
-        if (gm.autoMagneticField.isActive) {
-            gm.autoMagneticField.simulationTime += (1 / 60) * gm.gameSpeed;
-            const progress = Math.min(1, gm.autoMagneticField.simulationTime / (gm.autoMagneticField.totalShrinkTime / 60));
-
-            if (gm.autoMagneticField.shrinkType === 'vertical') {
-                const finalHeight = gm.autoMagneticField.safeZoneSize;
-                const finalMinY = (gm.ROWS - finalHeight) / 2;
-                const finalMaxY = (gm.ROWS + finalHeight) / 2;
-                gm.autoMagneticField.currentBounds = {
-                    minX: 0,
-                    maxX: gm.COLS,
-                    minY: 0 + (finalMinY - 0) * progress,
-                    maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
-                };
-            } else { // 'all'
-                const finalWidth = gm.autoMagneticField.safeZoneSize;
-                const finalHeight = gm.autoMagneticField.safeZoneSize;
-                const finalMinX = (gm.COLS - finalWidth) / 2;
-                const finalMaxX = (gm.COLS + finalWidth) / 2;
-                const finalMinY = (gm.ROWS - finalHeight) / 2;
-                const finalMaxY = (gm.ROWS + finalHeight) / 2;
-                gm.autoMagneticField.currentBounds = {
-                    minX: 0 + (finalMinX - 0) * progress,
-                    maxX: gm.COLS - (gm.COLS - finalMaxX) * progress,
-                    minY: 0 + (finalMinY - 0) * progress,
-                    maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
-                };
-            }
         }
 
         const unitsBeforeUpdate = gm.units.length;
