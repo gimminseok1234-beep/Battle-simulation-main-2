@@ -109,6 +109,7 @@ export class GameManager {
         
         this.prng = new SeededRandom(Date.now());
         this.uiPrng = new SeededRandom(Date.now());
+        this.visualPrng = new SeededRandom(Date.now());
         this.simulationSeed = null;
         this.rngPolicy = 'legacy'; // 'legacy' | 'seeded_v2'
         this._originalMathRandom = null;

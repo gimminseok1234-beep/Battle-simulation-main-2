@@ -90,7 +90,7 @@ export class Unit {
         this.pathUpdateCooldown = 0;
 
         // [NEW] 눈 깜빡임 관련 속성
-        this.blinkTimer = this.gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
+        this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120; // 2~7초 사이 랜덤
         this.isBlinking = false;
     }
 
@@ -602,7 +602,7 @@ export class Unit {
             if (this.blinkTimer <= 0) {
                 this.isBlinking = false;
                 // 다음 깜빡임까지의 시간
-                this.blinkTimer = this.gameManager.random() * 300 + 120;
+                this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120;
             }
         }
 
@@ -1834,11 +1834,11 @@ Unit.prototype.drawEyes = function(ctx) {
                 targetX = this.moveTarget.x - this.pixelX;
                 targetY = this.moveTarget.y - this.pixelY;
             } else {
-                const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001;
+                const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001; // This is visual and deterministic based on frame
                 targetX = Math.cos(t);
                 targetY = Math.sin(t * 1.4);
             }
-
+            
             const ang = Math.atan2(targetY, targetX);
             const maxOffX = eyeWidth * 0.18;
             const maxOffY = eyeHeight * 0.18;
@@ -1874,7 +1874,7 @@ Unit.prototype.drawEyes = function(ctx) {
             ctx.lineWidth = headRadius * 0.25;
             
             // 씰룩이는 효과 추가
-            const browWiggle = Math.sin(this.gameManager.animationFrameCounter * 0.3) * headRadius * 0.05;
+            const browWiggle = Math.sin(this.gameManager.animationFrameCounter * 0.3) * headRadius * 0.05; // This is visual and deterministic based on frame
             const browY = topY - headRadius * 0.15 + browWiggle;
 
             ctx.beginPath();
