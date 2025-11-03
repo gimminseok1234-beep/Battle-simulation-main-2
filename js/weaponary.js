@@ -749,6 +749,10 @@ export class Projectile {
         this.target = target;
         this.pixelX = options.startX !== undefined ? options.startX : owner.pixelX;
         this.pixelY = options.startY !== undefined ? options.startY : owner.pixelY;
+        // [신규] 논리적(결과) 위치
+        this.logicX = this.pixelX;
+        this.logicY = this.pixelY;
+
         this.type = type;
         
         // --- Shuriken Special Attack ---
@@ -844,8 +848,8 @@ export class Projectile {
         
         let targetX, targetY;
         // [수정] Math.random() 대신 gameManager.prng.next() 사용
-        targetX = target.pixelX + (gameManager.prng.next() - 0.5) * inaccuracy;
-        targetY = target.pixelY + (gameManager.prng.next() - 0.5) * inaccuracy;
+        targetX = target.logicX + (gameManager.prng.next() - 0.5) * inaccuracy;
+        targetY = target.logicY + (gameManager.prng.next() - 0.5) * inaccuracy;
 
         const dx = targetX - this.pixelX; const dy = targetY - this.pixelY;
         this.angle = options.angle !== undefined ? options.angle : Math.atan2(dy, dx);
@@ -996,6 +1000,45 @@ export class Projectile {
             }
             return;
         }
+
+        // [수정] 유도탄 로직 (updateVisuals에서 이동)
+        if (this.type === 'ice_diamond_projectile' || this.type === 'boomerang_projectile') {
+            if (this.target && this.target.hp > 0) {
+                const targetAngle = Math.atan2(this.target.logicY - this.logicY, this.target.logicX - this.logicX);
+                let angleDiff = targetAngle - this.angle;
+                // ... (각도 정규화) ...
+                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+                const turnSpeed = 0.03; // gameSpeed 제거
+                if (Math.abs(angleDiff) > turnSpeed) {
+                    this.angle += Math.sign(angleDiff) * turnSpeed;
+                } else {
+                    this.angle = targetAngle;
+                }
+            }
+        }
+
+        // [수정] 투사체 이동 로직 (updateVisuals에서 이동)
+        const nextX = this.logicX + Math.cos(this.angle) * this.speed; // gameSpeed 제거
+        const nextY = this.logicY + Math.sin(this.angle) * this.speed; // gameSpeed 제거
+
+        const gridX = Math.floor(nextX / GRID_SIZE);
+        const gridY = Math.floor(nextY / GRID_SIZE);
+
+        if (gridY >= 0 && gridY < gameManager.ROWS && gridX >= 0 && gridX < gameManager.COLS) {
+            const tile = gameManager.map[gridY][gridX];
+            const isCollidableWall = tile.type === 'WALL' || tile.type === 'CRACKED_WALL';
+            if (this.type !== 'magic_spear_special' && this.type !== 'sword_wave' && isCollidableWall) {
+                if (tile.type === 'CRACKED_WALL') {
+                    gameManager.damageTile(gridX, gridY, 999);
+                }
+                this.destroyed = true;
+                return; // 로직 업데이트 중단
+            }
+        }
+        this.logicX = nextX; 
+        this.logicY = nextY;
     }
 
     updateVisuals() {
@@ -1031,45 +1074,6 @@ export class Projectile {
         if (this.type === 'boomerang_projectile') {
             this.handleBoomerangTrail();
         }
-
-        // [MODIFIED] 얼음 다이아와 부메랑 특수 공격 투사체에 유도 기능 추가
-        if (this.type === 'ice_diamond_projectile' || this.type === 'boomerang_projectile') {
-            if (this.target && this.target.hp > 0) {
-                const targetAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
-                let angleDiff = targetAngle - this.angle;
-
-                // 각도 차이를 -PI ~ PI 범위로 정규화
-                while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-                while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-                const turnSpeed = 0.03 * gameManager.gameSpeed; // 프레임당 회전 속도 (라디안)
-                if (Math.abs(angleDiff) > turnSpeed) { // Visual turning can be affected by gameSpeed
-                    this.angle += Math.sign(angleDiff) * turnSpeed;
-                } else {
-                    this.angle = targetAngle;
-                }
-            }
-        }
-
-        const nextX = this.pixelX + Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
-        const nextY = this.pixelY + Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
-        const gridX = Math.floor(nextX / GRID_SIZE);
-        const gridY = Math.floor(nextY / GRID_SIZE);
-
-        if (gridY >= 0 && gridY < gameManager.ROWS && gridX >= 0 && gridX < gameManager.COLS) {
-            const tile = gameManager.map[gridY][gridX];
-            const isCollidableWall = tile.type === 'WALL' || tile.type === 'CRACKED_WALL';
-            if (this.type !== 'magic_spear_special' && this.type !== 'sword_wave' && isCollidableWall) {
-                if (tile.type === 'CRACKED_WALL') {
-                    gameManager.damageTile(gridX, gridY, 999);
-                }
-                this.destroyed = true;
-                return;
-            }
-        }
-        this.pixelX = nextX;
-        this.pixelY = nextY;
-
         // [남겨둠] 잔상(trail) 로직 (시각 효과)
         if (this.isSpecial || ['hadoken', 'lightning_bolt', 'magic_spear', 'ice_diamond_projectile', 'fireball_projectile', 'mini_fireball_projectile', 'black_sphere_projectile', 'sword_wave'].some(t => this.type.startsWith(t))) {
             this.trail.push({x: this.pixelX, y: this.pixelY});
@@ -1087,6 +1091,21 @@ export class Projectile {
                 vx: (gameManager.visualPrng.next() - 0.5) * 1, vy: (gameManager.visualPrng.next() - 0.5) * 1,
                 life: 0.6, color: '#3b82f6', size: gameManager.visualPrng.next() * 2 + 1,
             });
+        }
+
+        const dx = this.logicX - this.pixelX;
+        const dy = this.logicY - this.pixelY;
+        const distance = Math.hypot(dx, dy);
+
+        const moveSpeed = (this.speed * 2) * this.gameManager.gameSpeed;
+
+        if (distance < moveSpeed || distance < 0.1) {
+            this.pixelX = this.logicX;
+            this.pixelY = this.logicY;
+        } else {
+            const angle = Math.atan2(dy, dx);
+            this.pixelX += Math.cos(angle) * moveSpeed;
+            this.pixelY += Math.sin(angle) * moveSpeed;
         }
     }
     

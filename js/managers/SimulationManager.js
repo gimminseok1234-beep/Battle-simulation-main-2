@@ -276,7 +276,7 @@ export class SimulationManager {
             let hit = false;
         
             for (const unit of gm.units) {
-                if (p.owner.team !== unit.team && !p.hitTargets.has(unit) && Math.hypot(p.pixelX - unit.pixelX, p.pixelY - unit.pixelY) < GRID_SIZE / 2) {
+                if (p.owner.team !== unit.team && !p.hitTargets.has(unit) && Math.hypot(p.logicX - unit.logicX, p.logicY - unit.logicY) < GRID_SIZE / 2) {
                     
                     if (p.type === 'bouncing_sword') {
                         unit.takeDamage(p.damage, {}, p.owner);
@@ -289,9 +289,9 @@ export class SimulationManager {
 
                     // [신규] 독 포션 투사체 적중 시 독 장판 생성
                     if (p.type === 'poison_potion_projectile') {
-                        unit.takeDamage(p.damage, { stun: 60, noKnockback: true }, p.owner); // [수정] 데미지, 1초 기절, 넉백 없음 효과 추가
-                        const gridX = Math.floor(unit.pixelX / GRID_SIZE);
-                        const gridY = Math.floor(unit.pixelY / GRID_SIZE);
+                        unit.takeDamage(p.damage, { stun: 60, noKnockback: true }, p.owner);
+                        const gridX = Math.floor(unit.logicX / GRID_SIZE);
+                        const gridY = Math.floor(unit.logicY / GRID_SIZE);
                         gm.addPoisonPuddle(gridX, gridY);
                         p.destroyed = true;
                         hit = true; // [수정] hit 플래그를 true로 설정하여 아래 로직을 건너뛰도록 함
@@ -303,27 +303,27 @@ export class SimulationManager {
                     if (p.type === 'boomerang_projectile') {
                         unit.isBeingPulled = true;
                         unit.puller = p.owner;
-                        const pullToX = p.owner.pixelX + Math.cos(p.owner.facingAngle) * GRID_SIZE;
-                        const pullToY = p.owner.pixelY + Math.sin(p.owner.facingAngle) * GRID_SIZE;
+                        const pullToX = p.owner.logicX + Math.cos(p.owner.facingAngle) * GRID_SIZE;
+                        const pullToY = p.owner.logicY + Math.sin(p.owner.facingAngle) * GRID_SIZE;
                         unit.pullTargetPos = { x: pullToX, y: pullToY };
                     } else if (p.type === 'ice_diamond_projectile') {
                         unit.takeDamage(p.damage, { slow: 120 }, p.owner);
                     } else if (p.type === 'fireball_projectile') {
                         unit.takeDamage(p.damage, {}, p.owner);
-                        createFireballHitEffect(gm, unit.pixelX, unit.pixelY);
+                        createFireballHitEffect(gm, unit.logicX, unit.logicY);
                         p.destroyed = true;
                         
                         const initialHitTargets = new Set([unit]);
                         for (let j = 0; j < 4; j++) {
                             const angle = j * Math.PI / 2;
                             const dummyTarget = {
-                                pixelX: unit.pixelX + Math.cos(angle) * 100,
-                                pixelY: unit.pixelY + Math.sin(angle) * 100
+                                logicX: unit.logicX + Math.cos(angle) * 100,
+                                logicY: unit.logicY + Math.sin(angle) * 100
                             };
                             gm.createProjectile(p.owner, dummyTarget, 'mini_fireball_projectile', { 
                                 angle: angle,
-                                startX: unit.pixelX,
-                                startY: unit.pixelY,
+                                startX: unit.logicX,
+                                startY: unit.logicY,
                                 hitTargets: initialHitTargets
                              });
                         }
@@ -337,10 +337,10 @@ export class SimulationManager {
         
                         if (potentialTargets.length > 0) {
                             let closestEnemy = potentialTargets[0];
-                            let minDistance = Math.hypot(unit.pixelX - closestEnemy.pixelX, unit.pixelY - closestEnemy.pixelY);
+                            let minDistance = Math.hypot(unit.logicX - closestEnemy.logicX, unit.logicY - closestEnemy.logicY);
         
                             for (let j = 1; j < potentialTargets.length; j++) {
-                                const distance = Math.hypot(unit.pixelX - potentialTargets[j].pixelX, unit.pixelY - potentialTargets[j].pixelY);
+                                const distance = Math.hypot(unit.logicX - potentialTargets[j].logicX, unit.logicY - potentialTargets[j].logicY);
                                 if (distance < minDistance) {
                                     minDistance = distance;
                                     closestEnemy = potentialTargets[j];
@@ -350,8 +350,8 @@ export class SimulationManager {
                             const newProjectile = new Projectile(gm, p.owner, closestEnemy, 'lightning_bolt', {
                                 hitTargets: p.hitTargets
                             });
-                            newProjectile.pixelX = unit.pixelX;
-                            newProjectile.pixelY = unit.pixelY;
+                            newProjectile.logicX = unit.logicX;
+                            newProjectile.logicY = unit.logicY;
                             gm.projectiles.push(newProjectile);
                         }
                     } else {
@@ -375,8 +375,8 @@ export class SimulationManager {
                         const angles = [baseAngle - spread, baseAngle, baseAngle + spread];
 
                         angles.forEach(angle => {
-                            const dummyTarget = { pixelX: unit.pixelX + Math.cos(angle) * 100, pixelY: unit.pixelY + Math.sin(angle) * 100 };
-                            gm.createProjectile(p.owner, dummyTarget, 'magic_spear_fragment', { startX: unit.pixelX, startY: unit.pixelY, angle: angle, hitTargets: initialHitTargets });
+                            const dummyTarget = { logicX: unit.logicX + Math.cos(angle) * 100, logicY: unit.logicY + Math.sin(angle) * 100 };
+                            gm.createProjectile(p.owner, dummyTarget, 'magic_spear_fragment', { startX: unit.logicX, startY: unit.logicY, angle: angle, hitTargets: initialHitTargets });
                         });
                     }
         
@@ -391,8 +391,8 @@ export class SimulationManager {
         
             if (!hit) {
                 // [신규] 독 포션 투사체의 벽 충돌 처리
-                const gridX = Math.floor(p.pixelX / GRID_SIZE);
-                const gridY = Math.floor(p.pixelY / GRID_SIZE);
+                const gridX = Math.floor(p.logicX / GRID_SIZE);
+                const gridY = Math.floor(p.logicY / GRID_SIZE);
                 if (gridY >= 0 && gridY < gm.ROWS && gridX >= 0 && gridX < gm.COLS) {
                     const tile = gm.map[gridY][gridX];
                     if (p.type === 'poison_potion_projectile' && (tile.type === 'WALL' || tile.type === 'CRACKED_WALL')) {
@@ -404,25 +404,25 @@ export class SimulationManager {
                     }
                 }
                 for (const nexus of gm.nexuses) {
-                    if (p.owner.team !== nexus.team && Math.hypot(p.pixelX - nexus.pixelX, p.pixelY - nexus.pixelY) < GRID_SIZE) {
+                    if (p.owner.team !== nexus.team && Math.hypot(p.logicX - nexus.pixelX, p.logicY - nexus.pixelY) < GRID_SIZE) {
                         if (p.type === 'ice_diamond_projectile') {
                            nexus.takeDamage(p.damage, p.owner);
                         } else if (p.type === 'fireball_projectile') {
                             nexus.takeDamage(p.damage, p.owner);
-                            createFireballHitEffect(gm, nexus.pixelX, nexus.pixelY);
+                            createFireballHitEffect(gm, nexus.logicX, nexus.logicY);
                             p.destroyed = true;
                             
                             const initialHitTargets = new Set([nexus]);
                             for (let j = 0; j < 4; j++) {
                                 const angle = j * Math.PI / 2;
                                  const dummyTarget = {
-                                    pixelX: nexus.pixelX + Math.cos(angle) * 100,
-                                    pixelY: nexus.pixelY + Math.sin(angle) * 100
+                                    logicX: nexus.logicX + Math.cos(angle) * 100,
+                                    logicY: nexus.logicY + Math.sin(angle) * 100
                                 };
                                 gm.createProjectile(p.owner, dummyTarget, 'mini_fireball_projectile', { 
                                     angle: angle,
-                                    startX: nexus.pixelX,
-                                    startY: nexus.pixelY,
+                                    startX: nexus.logicX,
+                                    startY: nexus.logicY,
                                     hitTargets: initialHitTargets
                                 });
                             }
@@ -439,12 +439,12 @@ export class SimulationManager {
                 }
             }
         
-            if (p.pixelX < 0 || p.pixelX > gm.canvas.width || p.pixelY < 0 || p.pixelY > gm.canvas.height) {
+            if (p.logicX < 0 || p.logicX > gm.canvas.width || p.logicY < 0 || p.logicY > gm.canvas.height) {
                 p.destroyed = true;
             }
 
             if (hit && p.type === 'fireball_projectile' && !p.destroyed) {
-                createFireballHitEffect(gm, p.pixelX, p.pixelY);
+                createFireballHitEffect(gm, p.logicX, p.logicY);
                 p.destroyed = true;
             }
         }

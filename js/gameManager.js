@@ -807,10 +807,10 @@ export class GameManager {
     }
     
     hasLineOfSight(startUnit, endTarget, isWeaponCheck = false) {
-        let x1 = startUnit.pixelX;
-        let y1 = startUnit.pixelY;
-        const x2 = endTarget.pixelX;
-        const y2 = endTarget.pixelY;
+        let x1 = startUnit.logicX;
+        let y1 = startUnit.logicY;
+        const x2 = endTarget.logicX;
+        const y2 = endTarget.logicY;
 
         const dx = x2 - x1;
         const dy = y2 - y1;
@@ -1069,8 +1069,8 @@ export class GameManager {
     }
 
     findEmptySpotNear(targetUnit) {
-        const startX = Math.floor(targetUnit.pixelX / GRID_SIZE);
-        const startY = Math.floor(targetUnit.pixelY / GRID_SIZE);
+        const startX = Math.floor(targetUnit.logicX / GRID_SIZE);
+        const startY = Math.floor(targetUnit.logicY / GRID_SIZE);
     
         for (let radius = 1; radius < 5; radius++) {
             for (let dy = -radius; dy <= radius; dy++) {
@@ -1084,8 +1084,8 @@ export class GameManager {
                         (this.map[checkY][checkX].type === TILE.FLOOR || this.map[checkY][checkX].type === TILE.LAVA)) {
                         
                         const isOccupied = this.units.some(u => 
-                            Math.floor(u.pixelX / GRID_SIZE) === checkX && 
-                            Math.floor(u.pixelY / GRID_SIZE) === checkY
+                            Math.floor(u.logicX / GRID_SIZE) === checkX && 
+                            Math.floor(u.logicY / GRID_SIZE) === checkY
                         );
                         
                         if (!isOccupied) {
@@ -1095,7 +1095,7 @@ export class GameManager {
                 }
             }
         }
-        return { x: targetUnit.pixelX, y: targetUnit.pixelY };
+        return { x: targetUnit.logicX, y: targetUnit.logicY };
     }
 
     findStunnedEnemy(team) {

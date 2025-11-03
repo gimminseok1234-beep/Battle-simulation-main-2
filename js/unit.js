@@ -193,7 +193,7 @@ export class Unit {
     findClosest(items) {
         let closestItem = null, minDistance = Infinity;
         for (const item of items) {
-            const distance = Math.hypot(this.pixelX - item.pixelX, this.pixelY - item.pixelY);
+            const distance = Math.hypot(this.logicX - item.pixelX, this.logicY - item.pixelY);
             if (distance < minDistance) { minDistance = distance; closestItem = item; }
         }
         return { item: closestItem, distance: minDistance };
@@ -210,7 +210,7 @@ export class Unit {
         let maxScore = -Infinity;
 
         for (const enemy of enemies) {
-            const distance = Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY);
+            const distance = Math.hypot(this.logicX - enemy.logicX, this.logicY - enemy.logicY);
 
             // 탐지 범위 밖이거나 시야에 없으면 무시
             if (distance > this.detectionRange || !this.gameManager.hasLineOfSight(this, enemy)) {
@@ -230,7 +230,7 @@ export class Unit {
             }
         }
 
-        const bestDistance = bestTarget ? Math.hypot(this.pixelX - bestTarget.pixelX, this.pixelY - bestTarget.pixelY) : Infinity;
+        const bestDistance = bestTarget ? Math.hypot(this.logicX - bestTarget.logicX, this.logicY - bestTarget.logicY) : Infinity;
         return { item: bestTarget, distance: bestDistance };
     }
 
@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX;
-            const nextY = this.pixelY + this.knockbackY;
+            const nextX = this.logicX + this.knockbackX;
+            const nextY = this.logicY + this.knockbackY;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -251,8 +251,8 @@ export class Unit {
                     this.knockbackX = 0;
                     this.knockbackY = 0;
                 } else {
-                    this.pixelX = nextX;
-                    this.pixelY = nextY;
+                    this.logicX = nextX;
+                    this.logicY = nextY;
                 }
             }
         }
@@ -264,21 +264,21 @@ export class Unit {
 
         gameManager.units.forEach(otherUnit => {
             if (this !== otherUnit) {
-                const dx = otherUnit.pixelX - this.pixelX;
-                const dy = otherUnit.pixelY - this.pixelY;
+                const dx = otherUnit.logicX - this.logicX;
+                const dy = otherUnit.logicY - this.logicY;
                 const distance = Math.hypot(dx, dy);
                 const minDistance = (GRID_SIZE / 1.67) * 2;
 
                 if (distance < minDistance && distance > 0) {
                     const angle = Math.atan2(dy, dx);
                     const overlap = minDistance - distance;
-                    const moveX = (overlap / 2) * Math.cos(angle);
-                    const moveY = (overlap / 2) * Math.sin(angle);
+                    const moveX = (overlap / 2) * Math.cos(angle); // No gameSpeed
+                    const moveY = (overlap / 2) * Math.sin(angle); // No gameSpeed
 
-                    const myNextX = this.pixelX - moveX;
-                    const myNextY = this.pixelY - moveY;
-                    const otherNextX = otherUnit.pixelX + moveX;
-                    const otherNextY = otherUnit.pixelY + moveY;
+                    const myNextX = this.logicX - moveX;
+                    const myNextY = this.logicY - moveY;
+                    const otherNextX = otherUnit.logicX + moveX;
+                    const otherNextY = otherUnit.logicY + moveY;
 
                     const myGridX = Math.floor(myNextX / GRID_SIZE);
                     const myGridY = Math.floor(myNextY / GRID_SIZE);
@@ -292,12 +292,12 @@ export class Unit {
                         (gameManager.map[otherGridY][otherGridX].type === TILE.WALL || gameManager.map[otherGridY][otherGridX].type === TILE.CRACKED_WALL);
 
                     if (!isMyNextPosWall) {
-                        this.pixelX = myNextX;
-                        this.pixelY = myNextY;
+                        this.logicX = myNextX;
+                        this.logicY = myNextY;
                     }
                     if (!isOtherNextPosWall) {
-                        otherUnit.pixelX = otherNextX;
-                        otherUnit.pixelY = otherNextY;
+                        otherUnit.logicX = otherNextX;
+                        otherUnit.logicY = otherNextY;
                     }
                 }
             }
@@ -305,22 +305,22 @@ export class Unit {
 
         const radius = GRID_SIZE / 1.67;
         let bounced = false;
-        if (this.pixelX < radius) {
-            this.pixelX = radius;
+        if (this.logicX < radius) {
+            this.logicX = radius;
             this.knockbackX = Math.abs(this.knockbackX) * 0.5 || 1;
             bounced = true;
-        } else if (this.pixelX > gameManager.canvas.width - radius) {
-            this.pixelX = gameManager.canvas.width - radius;
+        } else if (this.logicX > gameManager.canvas.width - radius) {
+            this.logicX = gameManager.canvas.width - radius;
             this.knockbackX = -Math.abs(this.knockbackX) * 0.5 || -1;
             bounced = true;
         }
 
-        if (this.pixelY < radius) {
-            this.pixelY = radius;
+        if (this.logicY < radius) {
+            this.logicY = radius;
             this.knockbackY = Math.abs(this.knockbackY) * 0.5 || 1;
             bounced = true;
-        } else if (this.pixelY > gameManager.canvas.height - radius) {
-            this.pixelY = gameManager.canvas.height - radius;
+        } else if (this.logicY > gameManager.canvas.height - radius) {
+            this.logicY = gameManager.canvas.height - radius;
             this.knockbackY = -Math.abs(this.knockbackY) * 0.5 || -1;
             bounced = true;
         }
@@ -338,8 +338,8 @@ export class Unit {
         // [NEW] A* 길찾기 로직 적용
         if (this.path.length > 0 && this.stuckTimer > 30) {
             const nextNode = this.path[0];
-            const targetPixelX = nextNode.x * GRID_SIZE + GRID_SIZE / 2;
-            const targetPixelY = nextNode.y * GRID_SIZE + GRID_SIZE / 2;
+            const targetPixelX = nextNode.x * GRID_SIZE + GRID_SIZE / 2; // This is a logic target
+            const targetPixelY = nextNode.y * GRID_SIZE + GRID_SIZE / 2; // This is a logic target
 
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
@@ -355,16 +355,16 @@ export class Unit {
 
             const angle = Math.atan2(dy, dx);
             this.facingAngle = angle;
-            this.pixelX += Math.cos(angle) * currentSpeed;
-            this.pixelY += Math.sin(angle) * currentSpeed;
+            this.logicX += Math.cos(angle) * currentSpeed;
+            this.logicY += Math.sin(angle) * currentSpeed;
             return; // A* 경로를 따라 이동 중에는 아래 로직을 건너뜁니다.
         }
 
-        const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
+        const dx = this.moveTarget.x - this.logicX, dy = this.moveTarget.y - this.logicY;
         const distance = Math.hypot(dx, dy);
         const currentSpeed = this.speed;
         if (distance < currentSpeed) {
-            this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
+            this.logicX = this.moveTarget.x; this.logicY = this.moveTarget.y;
             this.moveTarget = null; return;
         }
 
@@ -372,8 +372,8 @@ export class Unit {
 
         if (gameManager.isLavaAvoidanceEnabled && this.state !== 'FLEEING_FIELD' && this.state !== 'FLEEING_LAVA') {
             const lookAheadDist = GRID_SIZE * 1.2;
-            const lookAheadX = this.pixelX + Math.cos(angle) * lookAheadDist;
-            const lookAheadY = this.pixelY + Math.sin(angle) * lookAheadDist;
+            const lookAheadX = this.logicX + Math.cos(angle) * lookAheadDist;
+            const lookAheadY = this.logicY + Math.sin(angle) * lookAheadDist;
 
             const lookAheadGridX = Math.floor(lookAheadX / GRID_SIZE);
             const lookAheadGridY = Math.floor(lookAheadY / GRID_SIZE);
@@ -385,12 +385,12 @@ export class Unit {
                 const leftAngle = angle - detourAngle;
                 const rightAngle = angle + detourAngle;
 
-                const leftLookAheadX = this.pixelX + Math.cos(leftAngle) * lookAheadDist; // [수정] 오타 수정
-                const leftLookAheadY = this.pixelY + Math.sin(leftAngle) * lookAheadDist;
+                const leftLookAheadX = this.logicX + Math.cos(leftAngle) * lookAheadDist;
+                const leftLookAheadY = this.logicY + Math.sin(leftAngle) * lookAheadDist;
                 const isLeftSafe = !gameManager.isPosInLavaForUnit(Math.floor(leftLookAheadX / GRID_SIZE), Math.floor(leftLookAheadY / GRID_SIZE));
 
-                const rightLookAheadX = this.pixelX + Math.cos(rightAngle) * lookAheadDist;
-                const rightLookAheadY = this.pixelY + Math.sin(rightAngle) * lookAheadDist;
+                const rightLookAheadX = this.logicX + Math.cos(rightAngle) * lookAheadDist;
+                const rightLookAheadY = this.logicY + Math.sin(rightAngle) * lookAheadDist;
                 const isRightSafe = !gameManager.isPosInLavaForUnit(Math.floor(rightLookAheadX / GRID_SIZE), Math.floor(rightLookAheadY / GRID_SIZE));
 
                 if (isLeftSafe && isRightSafe) {
@@ -409,8 +409,8 @@ export class Unit {
         }
 
 
-        const nextPixelX = this.pixelX + Math.cos(angle) * currentSpeed;
-        const nextPixelY = this.pixelY + Math.sin(angle) * currentSpeed;
+        const nextPixelX = this.logicX + Math.cos(angle) * currentSpeed;
+        const nextPixelY = this.logicY + Math.sin(angle) * currentSpeed;
         const nextGridX = Math.floor(nextPixelX / GRID_SIZE);
         const nextGridY = Math.floor(nextPixelY / GRID_SIZE);
 
@@ -431,7 +431,7 @@ export class Unit {
             }
         }
 
-        this.facingAngle = angle; this.pixelX = nextPixelX; this.pixelY = nextPixelY;
+        this.facingAngle = angle; this.logicX = nextPixelX; this.logicY = nextPixelY;
     }
 
     attack(target) {
@@ -441,8 +441,8 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        const targetGridX = Math.floor(target.pixelX / GRID_SIZE);
-        const targetGridY = Math.floor(target.pixelY / GRID_SIZE);
+        const targetGridX = Math.floor(target.logicX / GRID_SIZE);
+        const targetGridY = Math.floor(target.logicY / GRID_SIZE);
         if (targetGridY < 0 || targetGridY >= gameManager.ROWS || targetGridX < 0 || targetGridX >= gameManager.COLS) return;
 
         const tile = gameManager.map[targetGridY][targetGridX];
@@ -475,7 +475,7 @@ export class Unit {
 
             // [NEW] 공격받았을 때 기본 넉백 효과 추가
             if (!effectInfo.force && damage > 0 && !effectInfo.isTileDamage && !effectInfo.noKnockback) {
-                const angle = Math.atan2(this.pixelY - attacker.pixelY, this.pixelX - attacker.pixelX);
+                const angle = Math.atan2(this.logicY - attacker.logicY, this.logicX - attacker.logicX);
                 const force = 1.5; // 기본 넉백 강도
                 this.knockbackX += Math.cos(angle) * force;
                 this.knockbackY += Math.sin(angle) * force;
@@ -534,8 +534,8 @@ export class Unit {
 
             let safeSpot = null;
             const searchRadius = 8; // 타일 단위 검색 반경
-            const currentGridX = Math.floor(this.pixelX / GRID_SIZE);
-            const currentGridY = Math.floor(this.pixelY / GRID_SIZE);
+            const currentGridX = Math.floor(this.logicX / GRID_SIZE);
+            const currentGridY = Math.floor(this.logicY / GRID_SIZE);
 
             // 현재 위치에서 점점 넓은 반경으로 안전한 위치 탐색
             for (let r = 1; r <= searchRadius; r++) {
@@ -567,13 +567,13 @@ export class Unit {
             for (let i = 0; i < 25; i++) {
                 const angle = gameManager.random() * Math.PI * 2;
                 const speed = 2 + gameManager.random() * 4;
-                gameManager.addParticle({ x: this.pixelX, y: this.pixelY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
+                gameManager.addParticle({ x: this.logicX, y: this.logicY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
             }
             gameManager.audioManager.play('teleport');
 
             if (safeSpot) {
-                this.pixelX = safeSpot.x;
-                this.pixelY = safeSpot.y;
+                this.logicX = safeSpot.x;
+                this.logicY = safeSpot.y;
             }
             // 안전한 장소를 못 찾으면 제자리에서 효과만 발생
 
@@ -615,8 +615,8 @@ export class Unit {
                     const speed = 1 + gameManager.random() * 3;
                     const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
-                        x: this.pixelX,
-                        y: this.pixelY,
+                        x: this.logicX,
+                        y: this.logicY,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
@@ -647,9 +647,9 @@ export class Unit {
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
                 if (p.owner.team === this.team) continue;
-                const dist = Math.hypot(this.pixelX - p.pixelX, this.pixelY - p.pixelY);
+                const dist = Math.hypot(this.logicX - p.logicX, this.logicY - p.logicY);
                 if (dist < GRID_SIZE * 3) {
-                    const angleToUnit = Math.atan2(this.pixelY - p.pixelY, this.pixelX - p.pixelX);
+                    const angleToUnit = Math.atan2(this.logicY - p.logicY, this.logicX - p.logicX);
                     const angleDiff = Math.abs(angleToUnit - p.angle);
                     if (angleDiff < Math.PI / 4 || angleDiff > Math.PI * 1.75) {
                         if (this.gameManager.random() > 0.5) {
@@ -701,9 +701,9 @@ export class Unit {
                 const particleCount = (this.level - 1) * 2;
                 for (let i = 0; i < particleCount; i++) {
                     const angle = gameManager.visualPrng.next() * Math.PI * 2;
-                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
-                    const spawnX = this.pixelX + Math.cos(angle) * radius;
-                    const spawnY = this.pixelY + Math.sin(angle) * radius;
+                    const radius = GRID_SIZE / 1.67;
+                    const spawnX = this.logicX + Math.cos(angle) * radius;
+                    const spawnY = this.logicY + Math.sin(angle) * radius;
                     const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
 
                     gameManager.addParticle({ x: spawnX, y: spawnY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.6, color: teamColor, size: this.level * 0.5 + gameManager.visualPrng.next() * this.level, gravity: -0.02 });
@@ -731,15 +731,15 @@ export class Unit {
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
-                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist < this.detectionRange) {
                     this.isAimingMagicDagger = true;
                     this.magicDaggerAimTimer = 60;
-                    const angle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+                    const angle = Math.atan2(closestEnemy.logicY - this.logicY, this.logicX - this.logicX);
                     const dashDistance = GRID_SIZE * 4;
                     this.magicDaggerTargetPos = {
-                        x: this.pixelX + Math.cos(angle) * dashDistance,
-                        y: this.pixelY + Math.sin(angle) * dashDistance
+                        x: this.logicX + Math.cos(angle) * dashDistance,
+                        y: this.logicY + Math.sin(angle) * dashDistance
                     };
                 }
             }
@@ -752,18 +752,18 @@ export class Unit {
                 this.magicDaggerSkillCooldown = 420;
                 this.attackCooldown = 30;
  
-                const startPos = { x: this.pixelX, y: this.pixelY };
+                const startPos = { x: this.logicX, y: this.logicY };
                 const endPos = this.magicDaggerTargetPos;
  
                 enemies.forEach(enemy => {
-                    const distToLine = Math.abs((endPos.y - startPos.y) * enemy.pixelX - (endPos.x - startPos.x) * enemy.pixelY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
+                    const distToLine = Math.abs((endPos.y - startPos.y) * enemy.logicX - (endPos.x - startPos.x) * enemy.logicY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
                     if (distToLine < GRID_SIZE) {
                         enemy.takeDamage(this.attackPower * 1.2, { stun: 60 }, this);
                     }
                 });
  
-                this.pixelX = endPos.x;
-                this.pixelY = endPos.y;
+                this.logicX = endPos.x;
+                this.logicY = endPos.y;
  
                 gameManager.effects.push(new MagicDaggerDashEffect(gameManager, startPos, endPos));
                 gameManager.audioManager.play('rush');
@@ -789,7 +789,7 @@ export class Unit {
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
-                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist <= this.attackRange) {
                     this.boomerangCooldown = 480;
                     gameManager.createProjectile(this, closestEnemy, 'boomerang_projectile');
@@ -805,20 +805,20 @@ export class Unit {
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
-            if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+            if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
                 gameManager.audioManager.play('axe');
-                gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+                gameManager.createEffect('axe_spin_effect', this.logicX, this.logicY, this);
 
                 const damageRadius = GRID_SIZE * 3.5;
                 enemies.forEach(enemy => {
-                    if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
+                    if (Math.hypot(this.logicX - enemy.logicX, this.logicY - enemy.logicY) < damageRadius) {
                         enemy.takeDamage(this.attackPower * 1.5, {}, this);
                     }
                 });
                 gameManager.nexuses.forEach(nexus => {
-                    if (nexus.team !== this.team && !nexus.isDestroying && Math.hypot(this.pixelX - nexus.pixelX, this.pixelY - nexus.pixelY) < damageRadius) {
+                    if (nexus.team !== this.team && !nexus.isDestroying && Math.hypot(this.logicX - nexus.logicX, this.logicY - nexus.logicY) < damageRadius) {
                         nexus.takeDamage(this.attackPower * 1.5, {}, this);
                     }
                 });
@@ -829,7 +829,7 @@ export class Unit {
                     const angle = gameManager.random() * Math.PI * 2;
                     const speed = 2 + gameManager.random() * 4;
                     gameManager.addParticle({
-                        x: this.pixelX, y: this.pixelY,
+                        x: this.logicX, y: this.logicY,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                         life: 0.9,
                         color: ['#9ca3af', '#e5e7eb', '#6b7280'][Math.floor(gameManager.random() * 3)],
@@ -845,7 +845,7 @@ export class Unit {
             if (closestEnemy) {
                 this.poisonPotionCooldown = 300; // 5초 쿨다운
                 this.attack(closestEnemy);
-                this.facingAngle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+                this.facingAngle = Math.atan2(closestEnemy.logicY - this.logicY, this.logicX - this.logicX);
             }
         }
 
@@ -894,8 +894,8 @@ export class Unit {
             this.isSpecialAttackReady = false;
         }
 
-        const currentGridXBeforeMove = Math.floor(this.pixelX / GRID_SIZE);
-        const currentGridYBeforeMove = Math.floor(this.pixelY / GRID_SIZE);
+        const currentGridXBeforeMove = Math.floor(this.logicX / GRID_SIZE);
+        const currentGridYBeforeMove = Math.floor(this.logicY / GRID_SIZE);
         this.isInMagneticField = gameManager.isPosInAnyField(currentGridXBeforeMove, currentGridYBeforeMove);
         this.isInLava = gameManager.isPosInLavaForUnit(currentGridXBeforeMove, currentGridYBeforeMove);
 
@@ -915,8 +915,8 @@ export class Unit {
             let questionMarkDist = Infinity;
             if (!this.weapon) {
                 const questionMarkTiles = gameManager.getTilesOfType(TILE.QUESTION_MARK);
-                const questionMarkPositions = questionMarkTiles.map(pos => ({
-                    gridX: pos.x, gridY: pos.y,
+                const questionMarkPositions = questionMarkTiles.map(pos => ({ // These are logic targets
+                    gridX: pos.x, gridY: pos.y, // pixelX/Y are used by findClosest
                     pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
                     pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                 }));
@@ -934,8 +934,8 @@ export class Unit {
             } else if (this.hp < this.maxHp / 2) {
                 const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
                 if (healPacks.length > 0) {
-                    const healPackPositions = healPacks.map(pos => ({
-                        gridX: pos.x, gridY: pos.y,
+                    const healPackPositions = healPacks.map(pos => ({ // Logic targets
+                        gridX: pos.x, gridY: pos.y, // pixelX/Y are used by findClosest
                         pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
                         pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                     }));
@@ -960,7 +960,7 @@ export class Unit {
                 } else if (targetEnemy) {
                     newState = 'AGGRESSIVE';
                     newTarget = targetEnemy;
-                } else if (enemyNexus && gameManager.hasLineOfSight(this, enemyNexus) && Math.hypot(this.pixelX - enemyNexus.pixelX, this.pixelY - enemyNexus.pixelY) <= this.detectionRange) {
+                } else if (enemyNexus && gameManager.hasLineOfSight(this, enemyNexus) && Math.hypot(this.logicX - enemyNexus.logicX, this.logicY - enemyNexus.logicY) <= this.detectionRange) {
                     newState = 'ATTACKING_NEXUS';
                     newTarget = enemyNexus;
                 }
@@ -985,32 +985,32 @@ export class Unit {
 
         switch (this.state) {
             case 'FLEEING_FIELD':
-                this.moveTarget = gameManager.findClosestSafeSpot(this.pixelX, this.pixelY); // A* 사용 안함
+                this.moveTarget = gameManager.findClosestSafeSpot(this.logicX, this.logicY); // A* 사용 안함
                 break;
             case 'FLEEING_LAVA':
-                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.pixelX, this.pixelY); // A* 사용 안함
+                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.logicX, this.logicY); // A* 사용 안함
                 break;
             case 'FLEEING':
                 if (this.target) {
-                    const fleeAngle = Math.atan2(this.pixelY - this.target.pixelY, this.pixelX - this.target.pixelX);
-                    this.moveTarget = { x: this.pixelX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.pixelY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
+                    const fleeAngle = Math.atan2(this.logicY - this.target.logicY, this.logicX - this.target.logicX);
+                    this.moveTarget = { x: this.logicX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.logicY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
                 }
                 break;
             case 'SEEKING_HEAL_PACK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                 break;
             case 'SEEKING_QUESTION_MARK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                 break;
             case 'SEEKING_WEAPON':
                 if (this.target) { // 무기를 주으러 갈 때
-                    const distance = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                    const distance = Math.hypot(this.logicX - this.target.pixelX, this.logicY - this.target.pixelY);
                     if (distance < GRID_SIZE * 0.8 && !this.target.isEquipped) {
                         this.equipWeapon(this.target.type);
                         this.target.isEquipped = true;
                         this.target = null;
                     } else { // [수정] 무기를 주으러 갈 때도 일단 직선 이동
-                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                     }
                 }
                 break;
@@ -1018,7 +1018,7 @@ export class Unit {
             case 'AGGRESSIVE':
                 if (this.target) {
                     if (this.weapon && this.weapon.type === 'fire_staff' && this.fireStaffSpecialCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
                             gameManager.createProjectile(this, this.target, 'fireball_projectile');
                             gameManager.audioManager.play('fireball');
@@ -1029,10 +1029,10 @@ export class Unit {
                     }
 
                     // [수정] 표창 특수 공격 로직을 다른 무기들과 동일한 구조로 수정
-                    if (this.weapon?.type === 'shuriken' && this.shurikenSkillCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                    if (this.weapon?.type === 'shuriken' && this.shurikenSkillCooldown <= 0) { 
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
-                            const angleToTarget = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            const angleToTarget = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             const spread = 0.3;
                             const angles = [angleToTarget - spread, angleToTarget, angleToTarget + spread];
                             angles.forEach(angle => {
@@ -1046,11 +1046,11 @@ export class Unit {
 
                     if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
                         const { item: closestEnemy } = this.findClosest(enemies);
-                        if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+                        if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                             this.axeSkillCooldown = 240;
                             this.spinAnimationTimer = 30;
                             gameManager.audioManager.play('axe');
-                            gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+                            gameManager.createEffect('axe_spin_effect', this.logicX, this.logicY, this);
                             // ... (이하 파티클 및 데미지 로직은 기존과 동일)
                             break;
                         }
@@ -1058,12 +1058,12 @@ export class Unit {
 
                     // [수정] 마법창 특수 공격 로직을 use()를 거치지 않고 직접 발동하도록 수정
                     if (this.weapon?.type === 'magic_spear' && this.magicSpearSpecialCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
                             this.moveTarget = null;
                             gameManager.createProjectile(this, this.target, 'magic_spear_special');
                             gameManager.audioManager.play('spear');
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             this.magicSpearSpecialCooldown = 420; // 특수 공격 사용 후 쿨다운 설정
                             this.attackCooldown = this.cooldownTime; // 공격 애니메이션 및 후딜레이 적용
                             break;
@@ -1071,43 +1071,43 @@ export class Unit {
                     }
 
                     if (this.weapon && this.weapon.type === 'dual_swords' && this.dualSwordSkillCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.detectionRange && gameManager.hasLineOfSight(this, this.target)) {
                             gameManager.audioManager.play('shurikenShoot'); // [수정] 쌍검 특수 공격 효과음을 이전으로 복원
                             gameManager.createProjectile(this, this.target, 'bouncing_sword');
                             this.dualSwordSkillCooldown = 300;
                             this.attackCooldown = 60;
                             this.moveTarget = null;
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             break;
                         }
                     }
                     // [수정] 독 포션 유닛은 5초 쿨다운 공격만 하므로, 일반 근접 공격 로직에서 제외합니다.
                     if (this.weapon?.type === 'poison_potion') {
                         // 독 포션 유닛은 원거리 공격만 하므로, 적에게 다가가기만 합니다.
-                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                        this.moveTarget = { x: this.target.logicX, y: this.target.logicY };
                     } else {
                         let attackDistance = this.attackRange;
-                        if (Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY) <= attackDistance) {
+                        if (Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY) <= attackDistance) {
                             this.moveTarget = null;
                             this.attack(this.target);
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
-                        } else { this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; }
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
+                        } else { this.moveTarget = { x: this.target.logicX, y: this.target.logicY }; }
                     }
                 }
                 break;
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
-                if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
+                if (!this.moveTarget || Math.hypot(this.logicX - this.moveTarget.x, this.logicY - this.moveTarget.y) < GRID_SIZE) {
                     const angle = this.gameManager.random() * Math.PI * 2;
-                    this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
+                    this.moveTarget = { x: this.logicX + Math.cos(angle) * GRID_SIZE * 8, y: this.logicY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
         }
 
 
         if (this.moveTarget) {
-            const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
+            const distMoved = Math.hypot(this.logicX - this.lastPosition.x, this.logicY - this.lastPosition.y);
             if (distMoved < 0.2) {
                 this.stuckTimer += 1;
             } else {
@@ -1163,8 +1163,8 @@ export class Unit {
                 if (teleporters.length > 1) {
                     const otherTeleporter = teleporters.find(t => t.x !== finalGridX || t.y !== finalGridY);
                     if (otherTeleporter) {
-                        this.pixelX = otherTeleporter.x * GRID_SIZE + GRID_SIZE / 2;
-                        this.pixelY = otherTeleporter.y * GRID_SIZE + GRID_SIZE / 2;
+                        this.logicX = otherTeleporter.x * GRID_SIZE + GRID_SIZE / 2;
+                        this.logicY = otherTeleporter.y * GRID_SIZE + GRID_SIZE / 2;
                         this.teleportCooldown = 120;
                         gameManager.audioManager.play('teleport');
                     }
@@ -1179,9 +1179,9 @@ export class Unit {
             }
             if (currentTile.type === TILE.QUESTION_MARK) {
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
-                gameManager.createEffect('question_mark_effect', this.pixelX, this.pixelY);
+                gameManager.createEffect('question_mark_effect', this.logicX, this.logicY);
                 gameManager.audioManager.play('questionmark');
-                gameManager.spawnRandomWeaponNear({ x: this.pixelX, y: this.pixelY });
+                gameManager.spawnRandomWeaponNear({ x: this.logicX, y: this.logicY });
             }
             if (currentTile.type === TILE.DASH_TILE) {
                 this.isDashing = true;
@@ -1203,8 +1203,8 @@ export class Unit {
                     const speed = 1 + gameManager.random() * 3;
                     const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
-                        x: this.pixelX,
-                        y: this.pixelY,
+                        x: this.logicX,
+                        y: this.logicY,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
@@ -1225,8 +1225,8 @@ export class Unit {
         if (this.pathUpdateCooldown > 0 || !targetPos) return;
 
         const startNode = {
-            x: Math.floor(this.pixelX / GRID_SIZE),
-            y: Math.floor(this.pixelY / GRID_SIZE)
+            x: Math.floor(this.logicX / GRID_SIZE),
+            y: Math.floor(this.logicY / GRID_SIZE)
         };
         const endNode = {
             x: Math.floor(targetPos.x / GRID_SIZE),
@@ -1241,62 +1241,6 @@ export class Unit {
     updateVisuals() {
         const gameManager = this.gameManager;
         if (!gameManager) return;
-
-        if (this.isDashing) {
-            this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
-            if (this.dashTrail.length > 5) this.dashTrail.shift();
-
-            let moveX = 0, moveY = 0;
-            switch (this.dashDirection) {
-                case 'RIGHT': moveX = this.dashSpeed; break;
-                case 'LEFT': moveX = -this.dashSpeed; break;
-                case 'DOWN': moveY = this.dashSpeed; break;
-                case 'UP': moveY = -this.dashSpeed; break;
-            }
-
-            for (let i = 0; i < gameManager.gameSpeed; i++) {
-                const nextX = this.pixelX + moveX;
-                const nextY = this.pixelY + moveY;
-                const gridX = Math.floor(nextX / GRID_SIZE);
-                const gridY = Math.floor(nextY / GRID_SIZE);
-
-                if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS || gameManager.map[gridY][gridX].type === TILE.WALL) {
-                    this.isDashing = false;
-                    break;
-                }
-
-                if (gameManager.map[gridY][gridX].type === TILE.CRACKED_WALL) {
-                    gameManager.damageTile(gridX, gridY, 999);
-                }
-
-                this.pixelX = nextX;
-                this.pixelY = nextY;
-                this.dashDistanceRemaining -= this.dashSpeed;
-
-                if (this.dashDistanceRemaining <= 0) { this.isDashing = false; break; }
-            }
-            if (!this.isDashing) this.dashTrail = [];
-        }
-        // js/unit.js -> updateVisuals()
-        if (this.isBeingPulled && this.puller) {
-            const dx = this.pullTargetPos.x - this.pixelX;
-            const dy = this.pullTargetPos.y - this.pixelY;
-            const dist = Math.hypot(dx, dy);
-            const pullSpeed = 4; // 로직과 동일한 기본 속도
-            const visualPullSpeed = pullSpeed * gameManager.gameSpeed; // 시각적 이동 속도
-
-            if (dist > visualPullSpeed) {
-                const angle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(angle) * visualPullSpeed;
-                this.pixelY += Math.sin(angle) * visualPullSpeed;
-                this.knockbackX = 0; // 끌려가는 동안 넉백 무시
-                this.knockbackY = 0;
-            }
-            // [제거] 데미지 및 상태 변경 로직은 update()로 이동했으므로 여기선 삭제
-        }
-
-        this.move();
-        this.applyPhysics();
 
         // Smooth HP bar decrease
         if (this.displayHp > this.hp) {
@@ -1329,47 +1273,34 @@ export class Unit {
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
+
+        // [신규] 시각적 위치 보간 (Interpolation) 로직
+        // logicX/Y는 updateLogic()에서 1배속으로 계산된 "진짜" 위치입니다.
+        // pixelX/Y는 "보여지는" 위치이며, gameSpeed를 이용해 logicX/Y를 천천히 따라잡습니다.
+
+        const dx = this.logicX - this.pixelX;
+        const dy = this.logicY - this.pixelY;
+        const distance = Math.hypot(dx, dy);
+
+        // 1프레임(1/60초)당 최대 이동 속도 * gameSpeed
+        // (this.speed는 유닛의 논리적 기본 속도)
+        const moveSpeed = (this.speed * 2) * this.gameManager.gameSpeed; 
+
+        if (distance < moveSpeed || distance < 0.1) {
+            // 거리가 가까우면 즉시 위치 동기화
+            this.pixelX = this.logicX;
+            this.pixelY = this.logicY;
+        } else {
+            // 거리가 멀면 gameSpeed에 맞춰 따라감
+            const angle = Math.atan2(dy, dx);
+            this.pixelX += Math.cos(angle) * moveSpeed;
+            this.pixelY += Math.sin(angle) * moveSpeed;
+        }
     }
 
     update(enemies, weapons, projectiles) {
         const gameManager = this.gameManager;
         if (!gameManager) {
-            return;
-        }
-
-        if (this.isDashing) {
-            this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
-            if (this.dashTrail.length > 5) this.dashTrail.shift();
-
-            let moveX = 0, moveY = 0;
-            switch (this.dashDirection) {
-                case 'RIGHT': moveX = this.dashSpeed; break;
-                case 'LEFT': moveX = -this.dashSpeed; break;
-                case 'DOWN': moveY = this.dashSpeed; break;
-                case 'UP': moveY = -this.dashSpeed; break;
-            }
-
-            const nextX = this.pixelX + moveX;
-            const nextY = this.pixelY + moveY;
-            const gridX = Math.floor(nextX / GRID_SIZE);
-            const gridY = Math.floor(nextY / GRID_SIZE);
-
-            if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS || gameManager.map[gridY][gridX].type === TILE.WALL) {
-                this.isDashing = false;
-            } else {
-                if (gameManager.map[gridY][gridX].type === TILE.CRACKED_WALL) {
-                    gameManager.damageTile(gridX, gridY, 999);
-                }
-
-                this.pixelX = nextX;
-                this.pixelY = nextY;
-                this.dashDistanceRemaining -= this.dashSpeed;
-
-                if (this.dashDistanceRemaining <= 0) {
-                    this.isDashing = false;
-                }
-            }
-            if (!this.isDashing) this.dashTrail = [];
             return;
         }
 
@@ -1381,8 +1312,8 @@ export class Unit {
 
             let safeSpot = null;
             const searchRadius = 8; // 타일 단위 검색 반경
-            const currentGridX = Math.floor(this.pixelX / GRID_SIZE);
-            const currentGridY = Math.floor(this.pixelY / GRID_SIZE);
+            const currentGridX = Math.floor(this.logicX / GRID_SIZE);
+            const currentGridY = Math.floor(this.logicY / GRID_SIZE);
 
             // 현재 위치에서 점점 넓은 반경으로 안전한 위치 탐색
             for (let r = 1; r <= searchRadius; r++) {
@@ -1414,13 +1345,13 @@ export class Unit {
             for (let i = 0; i < 25; i++) {
                 const angle = gameManager.random() * Math.PI * 2;
                 const speed = 2 + gameManager.random() * 4;
-                gameManager.addParticle({ x: this.pixelX, y: this.pixelY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
+                gameManager.addParticle({ x: this.logicX, y: this.logicY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
             }
             gameManager.audioManager.play('teleport');
 
             if (safeSpot) {
-                this.pixelX = safeSpot.x;
-                this.pixelY = safeSpot.y;
+                this.logicX = safeSpot.x;
+                this.logicY = safeSpot.y;
             }
             // 안전한 장소를 못 찾으면 제자리에서 효과만 발생
 
@@ -1462,8 +1393,8 @@ export class Unit {
                     const speed = 1 + gameManager.random() * 3;
                     const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
-                        x: this.pixelX,
-                        y: this.pixelY,
+                        x: this.logicX,
+                        y: this.logicY,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
@@ -1494,9 +1425,9 @@ export class Unit {
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
                 if (p.owner.team === this.team) continue;
-                const dist = Math.hypot(this.pixelX - p.pixelX, this.pixelY - p.pixelY);
+                const dist = Math.hypot(this.logicX - p.logicX, this.logicY - p.logicY);
                 if (dist < GRID_SIZE * 3) {
-                    const angleToUnit = Math.atan2(this.pixelY - p.pixelY, this.pixelX - p.pixelX);
+                    const angleToUnit = Math.atan2(this.logicY - p.logicY, this.logicX - p.logicX);
                     const angleDiff = Math.abs(angleToUnit - p.angle);
                     if (angleDiff < Math.PI / 4 || angleDiff > Math.PI * 1.75) {
                         if (this.gameManager.random() > 0.5) {
@@ -1548,9 +1479,9 @@ export class Unit {
                 const particleCount = (this.level - 1) * 2;
                 for (let i = 0; i < particleCount; i++) {
                     const angle = gameManager.visualPrng.next() * Math.PI * 2;
-                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
-                    const spawnX = this.pixelX + Math.cos(angle) * radius;
-                    const spawnY = this.pixelY + Math.sin(angle) * radius;
+                    const radius = GRID_SIZE / 1.67;
+                    const spawnX = this.logicX + Math.cos(angle) * radius;
+                    const spawnY = this.logicY + Math.sin(angle) * radius;
                     const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
 
                     gameManager.addParticle({ x: spawnX, y: spawnY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.6, color: teamColor, size: this.level * 0.5 + gameManager.visualPrng.next() * this.level, gravity: -0.02 });
@@ -1578,15 +1509,15 @@ export class Unit {
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
-                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist < this.detectionRange) {
                     this.isAimingMagicDagger = true;
                     this.magicDaggerAimTimer = 60;
-                    const angle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+                    const angle = Math.atan2(closestEnemy.logicY - this.logicY, closestEnemy.logicX - this.logicX);
                     const dashDistance = GRID_SIZE * 4;
                     this.magicDaggerTargetPos = {
-                        x: this.pixelX + Math.cos(angle) * dashDistance,
-                        y: this.pixelY + Math.sin(angle) * dashDistance
+                        x: this.logicX + Math.cos(angle) * dashDistance,
+                        y: this.logicY + Math.sin(angle) * dashDistance
                     };
                 }
             }
@@ -1599,18 +1530,18 @@ export class Unit {
                 this.magicDaggerSkillCooldown = 420;
                 this.attackCooldown = 30;
  
-                const startPos = { x: this.pixelX, y: this.pixelY };
+                const startPos = { x: this.logicX, y: this.logicY };
                 const endPos = this.magicDaggerTargetPos;
  
                 enemies.forEach(enemy => {
-                    const distToLine = Math.abs((endPos.y - startPos.y) * enemy.pixelX - (endPos.x - startPos.x) * enemy.pixelY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
+                    const distToLine = Math.abs((endPos.y - startPos.y) * enemy.logicX - (endPos.x - startPos.x) * enemy.logicY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
                     if (distToLine < GRID_SIZE) {
                         enemy.takeDamage(this.attackPower * 1.2, { stun: 60 }, this);
                     }
                 });
  
-                this.pixelX = endPos.x;
-                this.pixelY = endPos.y;
+                this.logicX = endPos.x;
+                this.logicY = endPos.y;
  
                 gameManager.effects.push(new MagicDaggerDashEffect(gameManager, startPos, endPos));
                 gameManager.audioManager.play('rush');
@@ -1636,7 +1567,7 @@ export class Unit {
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
-                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist <= this.attackRange) {
                     this.boomerangCooldown = 480;
                     gameManager.createProjectile(this, closestEnemy, 'boomerang_projectile');
@@ -1652,20 +1583,20 @@ export class Unit {
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
             const { item: closestEnemy } = this.findClosest(enemies);
-            if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+            if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
                 gameManager.audioManager.play('axe');
-                gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+                gameManager.createEffect('axe_spin_effect', this.logicX, this.logicY, this);
 
                 const damageRadius = GRID_SIZE * 3.5;
                 enemies.forEach(enemy => {
-                    if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
+                    if (Math.hypot(this.logicX - enemy.logicX, this.logicY - enemy.logicY) < damageRadius) {
                         enemy.takeDamage(this.attackPower * 1.5, {}, this);
                     }
                 });
                 gameManager.nexuses.forEach(nexus => {
-                    if (nexus.team !== this.team && !nexus.isDestroying && Math.hypot(this.pixelX - nexus.pixelX, this.pixelY - nexus.pixelY) < damageRadius) {
+                    if (nexus.team !== this.team && !nexus.isDestroying && Math.hypot(this.logicX - nexus.logicX, this.logicY - nexus.logicY) < damageRadius) {
                         nexus.takeDamage(this.attackPower * 1.5, {}, this);
                     }
                 });
@@ -1676,7 +1607,7 @@ export class Unit {
                     const angle = gameManager.random() * Math.PI * 2;
                     const speed = 2 + gameManager.random() * 4;
                     gameManager.addParticle({
-                        x: this.pixelX, y: this.pixelY,
+                        x: this.logicX, y: this.logicY,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                         life: 0.9,
                         color: ['#9ca3af', '#e5e7eb', '#6b7280'][Math.floor(gameManager.random() * 3)],
@@ -1692,7 +1623,7 @@ export class Unit {
             if (closestEnemy) {
                 this.poisonPotionCooldown = 300; // 5초 쿨다운
                 this.attack(closestEnemy);
-                this.facingAngle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+                this.facingAngle = Math.atan2(closestEnemy.logicY - this.logicY, this.logicX - this.logicX);
             }
         }
 
@@ -1741,8 +1672,8 @@ export class Unit {
             this.isSpecialAttackReady = false;
         }
 
-        const currentGridXBeforeMove = Math.floor(this.pixelX / GRID_SIZE);
-        const currentGridYBeforeMove = Math.floor(this.pixelY / GRID_SIZE);
+        const currentGridXBeforeMove = Math.floor(this.logicX / GRID_SIZE);
+        const currentGridYBeforeMove = Math.floor(this.logicY / GRID_SIZE);
         this.isInMagneticField = gameManager.isPosInAnyField(currentGridXBeforeMove, currentGridYBeforeMove);
         this.isInLava = gameManager.isPosInLavaForUnit(currentGridXBeforeMove, currentGridYBeforeMove);
 
@@ -1762,8 +1693,8 @@ export class Unit {
             let questionMarkDist = Infinity;
             if (!this.weapon) {
                 const questionMarkTiles = gameManager.getTilesOfType(TILE.QUESTION_MARK);
-                const questionMarkPositions = questionMarkTiles.map(pos => ({
-                    gridX: pos.x, gridY: pos.y,
+                const questionMarkPositions = questionMarkTiles.map(pos => ({ // These are logic targets
+                    gridX: pos.x, gridY: pos.y, // pixelX/Y are used by findClosest
                     pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
                     pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                 }));
@@ -1781,8 +1712,8 @@ export class Unit {
             } else if (this.hp < this.maxHp / 2) {
                 const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
                 if (healPacks.length > 0) {
-                    const healPackPositions = healPacks.map(pos => ({
-                        gridX: pos.x, gridY: pos.y,
+                    const healPackPositions = healPacks.map(pos => ({ // Logic targets
+                        gridX: pos.x, gridY: pos.y, // pixelX/Y are used by findClosest
                         pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
                         pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
                     }));
@@ -1807,7 +1738,7 @@ export class Unit {
                 } else if (targetEnemy) {
                     newState = 'AGGRESSIVE';
                     newTarget = targetEnemy;
-                } else if (enemyNexus && gameManager.hasLineOfSight(this, enemyNexus) && Math.hypot(this.pixelX - enemyNexus.pixelX, this.pixelY - enemyNexus.pixelY) <= this.detectionRange) {
+                } else if (enemyNexus && gameManager.hasLineOfSight(this, enemyNexus) && Math.hypot(this.logicX - enemyNexus.logicX, this.logicY - enemyNexus.logicY) <= this.detectionRange) {
                     newState = 'ATTACKING_NEXUS';
                     newTarget = enemyNexus;
                 }
@@ -1832,32 +1763,32 @@ export class Unit {
 
         switch (this.state) {
             case 'FLEEING_FIELD':
-                this.moveTarget = gameManager.findClosestSafeSpot(this.pixelX, this.pixelY); // A* 사용 안함
+                this.moveTarget = gameManager.findClosestSafeSpot(this.logicX, this.logicY); // A* 사용 안함
                 break;
             case 'FLEEING_LAVA':
-                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.pixelX, this.pixelY); // A* 사용 안함
+                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.logicX, this.logicY); // A* 사용 안함
                 break;
             case 'FLEEING':
                 if (this.target) {
-                    const fleeAngle = Math.atan2(this.pixelY - this.target.pixelY, this.pixelX - this.target.pixelX);
-                    this.moveTarget = { x: this.pixelX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.pixelY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
+                    const fleeAngle = Math.atan2(this.logicY - this.target.logicY, this.logicX - this.target.logicX);
+                    this.moveTarget = { x: this.logicX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.logicY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
                 }
                 break;
             case 'SEEKING_HEAL_PACK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                 break;
             case 'SEEKING_QUESTION_MARK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                 break;
             case 'SEEKING_WEAPON':
                 if (this.target) { // 무기를 주으러 갈 때
-                    const distance = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                    const distance = Math.hypot(this.logicX - this.target.pixelX, this.logicY - this.target.pixelY);
                     if (distance < GRID_SIZE * 0.8 && !this.target.isEquipped) {
                         this.equipWeapon(this.target.type);
                         this.target.isEquipped = true;
                         this.target = null;
                     } else { // [수정] 무기를 주으러 갈 때도 일단 직선 이동
-                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; // target is a logic target
                     }
                 }
                 break;
@@ -1865,7 +1796,7 @@ export class Unit {
             case 'AGGRESSIVE':
                 if (this.target) {
                     if (this.weapon && this.weapon.type === 'fire_staff' && this.fireStaffSpecialCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
                             gameManager.createProjectile(this, this.target, 'fireball_projectile');
                             gameManager.audioManager.play('fireball');
@@ -1876,10 +1807,10 @@ export class Unit {
                     }
 
                     // [수정] 표창 특수 공격 로직을 다른 무기들과 동일한 구조로 수정
-                    if (this.weapon?.type === 'shuriken' && this.shurikenSkillCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                    if (this.weapon?.type === 'shuriken' && this.shurikenSkillCooldown <= 0) { 
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
-                            const angleToTarget = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            const angleToTarget = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             const spread = 0.3;
                             const angles = [angleToTarget - spread, angleToTarget, angleToTarget + spread];
                             angles.forEach(angle => {
@@ -1893,11 +1824,11 @@ export class Unit {
 
                     if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
                         const { item: closestEnemy } = this.findClosest(enemies);
-                        if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+                        if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                             this.axeSkillCooldown = 240;
                             this.spinAnimationTimer = 30;
                             gameManager.audioManager.play('axe');
-                            gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+                            gameManager.createEffect('axe_spin_effect', this.logicX, this.logicY, this);
                             // ... (이하 파티클 및 데미지 로직은 기존과 동일)
                             break;
                         }
@@ -1905,12 +1836,12 @@ export class Unit {
 
                     // [수정] 마법창 특수 공격 로직을 use()를 거치지 않고 직접 발동하도록 수정
                     if (this.weapon?.type === 'magic_spear' && this.magicSpearSpecialCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
                             this.moveTarget = null;
                             gameManager.createProjectile(this, this.target, 'magic_spear_special');
                             gameManager.audioManager.play('spear');
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             this.magicSpearSpecialCooldown = 420; // 특수 공격 사용 후 쿨다운 설정
                             this.attackCooldown = this.cooldownTime; // 공격 애니메이션 및 후딜레이 적용
                             break;
@@ -1918,43 +1849,43 @@ export class Unit {
                     }
 
                     if (this.weapon && this.weapon.type === 'dual_swords' && this.dualSwordSkillCooldown <= 0) {
-                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        const distanceToTarget = Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY);
                         if (distanceToTarget <= this.detectionRange && gameManager.hasLineOfSight(this, this.target)) {
                             gameManager.audioManager.play('shurikenShoot'); // [수정] 쌍검 특수 공격 효과음을 이전으로 복원
                             gameManager.createProjectile(this, this.target, 'bouncing_sword');
                             this.dualSwordSkillCooldown = 300;
                             this.attackCooldown = 60;
                             this.moveTarget = null;
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
                             break;
                         }
                     }
                     // [수정] 독 포션 유닛은 5초 쿨다운 공격만 하므로, 일반 근접 공격 로직에서 제외합니다.
                     if (this.weapon?.type === 'poison_potion') {
                         // 독 포션 유닛은 원거리 공격만 하므로, 적에게 다가가기만 합니다.
-                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                        this.moveTarget = { x: this.target.logicX, y: this.target.logicY };
                     } else {
                         let attackDistance = this.attackRange;
-                        if (Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY) <= attackDistance) {
+                        if (Math.hypot(this.logicX - this.target.logicX, this.logicY - this.target.logicY) <= attackDistance) {
                             this.moveTarget = null;
                             this.attack(this.target);
-                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
-                        } else { this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; }
+                            this.facingAngle = Math.atan2(this.target.logicY - this.logicY, this.logicX - this.logicX);
+                        } else { this.moveTarget = { x: this.target.logicX, y: this.target.logicY }; }
                     }
                 }
                 break;
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
-                if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
+                if (!this.moveTarget || Math.hypot(this.logicX - this.moveTarget.x, this.logicY - this.moveTarget.y) < GRID_SIZE) {
                     const angle = this.gameManager.random() * Math.PI * 2;
-                    this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
+                    this.moveTarget = { x: this.logicX + Math.cos(angle) * GRID_SIZE * 8, y: this.logicY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
         }
 
 
         if (this.moveTarget) {
-            const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
+            const distMoved = Math.hypot(this.logicX - this.lastPosition.x, this.logicY - this.lastPosition.y);
             if (distMoved < 0.2) {
                 this.stuckTimer += 1;
             } else {
@@ -1974,18 +1905,18 @@ export class Unit {
         } else {
             this.stuckTimer = 0;
         }
-        this.lastPosition = { x: this.pixelX, y: this.pixelY };
+        this.lastPosition = { x: this.logicX, y: this.logicY };
 
         // [수정] isBeingPulled 로직을 update()로 이동
         if (this.isBeingPulled && this.puller) {
-            const dx = this.pullTargetPos.x - this.pixelX;
-            const dy = this.pullTargetPos.y - this.pixelY;
+            const dx = this.pullTargetPos.x - this.logicX;
+            const dy = this.pullTargetPos.y - this.logicY;
             const dist = Math.hypot(dx, dy);
             const pullSpeed = 4; // gameSpeed 제거 (로직 속도 고정)
 
             if (dist < pullSpeed) {
-                this.pixelX = this.pullTargetPos.x;
-                this.pixelY = this.pullTargetPos.y;
+                this.logicX = this.pullTargetPos.x;
+                this.logicY = this.pullTargetPos.y;
                 this.isBeingPulled = false;
 
                 // 데미지 및 기절 적용
@@ -2000,8 +1931,8 @@ export class Unit {
         this.applyPhysics();
 
 
-        const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
-        const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
+        const finalGridX = Math.floor(this.logicX / GRID_SIZE);
+        const finalGridY = Math.floor(this.logicY / GRID_SIZE);
 
         if (this.isInMagneticField) {
             this.takeDamage(0.3, { isTileDamage: true });
@@ -2033,8 +1964,8 @@ export class Unit {
                 if (teleporters.length > 1) {
                     const otherTeleporter = teleporters.find(t => t.x !== finalGridX || t.y !== finalGridY);
                     if (otherTeleporter) {
-                        this.pixelX = otherTeleporter.x * GRID_SIZE + GRID_SIZE / 2;
-                        this.pixelY = otherTeleporter.y * GRID_SIZE + GRID_SIZE / 2;
+                        this.logicX = otherTeleporter.x * GRID_SIZE + GRID_SIZE / 2;
+                        this.logicY = otherTeleporter.y * GRID_SIZE + GRID_SIZE / 2;
                         this.teleportCooldown = 120;
                         gameManager.audioManager.play('teleport');
                     }
@@ -2049,9 +1980,9 @@ export class Unit {
             }
             if (currentTile.type === TILE.QUESTION_MARK) {
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
-                gameManager.createEffect('question_mark_effect', this.pixelX, this.pixelY);
+                gameManager.createEffect('question_mark_effect', this.logicX, this.logicY);
                 gameManager.audioManager.play('questionmark');
-                gameManager.spawnRandomWeaponNear({ x: this.pixelX, y: this.pixelY });
+                gameManager.spawnRandomWeaponNear({ x: this.logicX, y: this.logicY });
             }
             if (currentTile.type === TILE.DASH_TILE) {
                 this.isDashing = true;
@@ -2073,8 +2004,8 @@ export class Unit {
                     const speed = 1 + gameManager.random() * 3;
                     const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
-                        x: this.pixelX,
-                        y: this.pixelY,
+                        x: this.logicX,
+                        y: this.logicY,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
@@ -2099,7 +2030,7 @@ export class Unit {
 
         if (this.awakeningEffect.active) {
             ctx.save();
-            ctx.translate(this.pixelX, this.pixelY);
+            ctx.translate(this.logicX, this.logicY);
             ctx.scale(totalScale, totalScale);
 
             const auraRadius = (GRID_SIZE / 1.4);
@@ -2116,15 +2047,15 @@ export class Unit {
 
         if (this.isAimingMagicDagger) {
             const aimProgress = 1 - (this.magicDaggerAimTimer / 60);
-            const currentEndX = this.pixelX + (this.magicDaggerTargetPos.x - this.pixelX) * aimProgress;
-            const currentEndY = this.pixelY + (this.magicDaggerTargetPos.y - this.pixelY) * aimProgress;
+            const currentEndX = this.logicX + (this.magicDaggerTargetPos.x - this.logicX) * aimProgress;
+            const currentEndY = this.logicY + (this.magicDaggerTargetPos.y - this.logicY) * aimProgress;
 
             ctx.globalAlpha = 0.7;
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 3;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
-            ctx.moveTo(this.pixelX, this.pixelY);
+            ctx.moveTo(this.logicX, this.logicY);
             ctx.lineTo(currentEndX, currentEndY);
             ctx.stroke();
             ctx.setLineDash([]);
@@ -2141,7 +2072,7 @@ export class Unit {
                     case TEAM.C: ctx.fillStyle = COLORS.TEAM_C; break;
                     case TEAM.D: ctx.fillStyle = COLORS.TEAM_D; break;
                 }
-                ctx.beginPath(); ctx.arc(pos.x, pos.y, (GRID_SIZE / 1.67) * totalScale, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, (GRID_SIZE / 1.67) * totalScale, 0, Math.PI * 2); ctx.fill(); // Trail uses pixel positions
                 ctx.restore();
             });
         }
@@ -2155,7 +2086,7 @@ export class Unit {
         }
 
         if (this.isMarkedByDualSword.active) {
-            ctx.save();
+            ctx.save(); // Visual effect, uses pixelX
             ctx.translate(this.pixelX, this.pixelY - GRID_SIZE * 1.2 * totalScale);
             const markScale = 0.4 + Math.sin(this.gameManager.animationFrameCounter * 0.1) * 0.05;
             ctx.scale(markScale, markScale);
@@ -2186,15 +2117,15 @@ export class Unit {
 
         const radius = GRID_SIZE / 1.67;
         const gradient = ctx.createRadialGradient(
-            this.pixelX - radius * 0.2, this.pixelY - radius * 0.2, radius * 0.1, 
-            this.pixelX, this.pixelY, radius * 1.2
+            this.pixelX - radius * 0.2, this.pixelY - radius * 0.2, radius * 0.1, // Visual effect, uses pixelX
+            this.pixelX, this.pixelY, radius * 1.2 // Visual effect, uses pixelX
         );
         gradient.addColorStop(0, `hsl(0, 0%, 100%)`); // 밝은 하이라이트
         gradient.addColorStop(0.4, teamColor);
         gradient.addColorStop(1, DEEP_COLORS[`TEAM_${this.team}`] || teamColor); // 어두운 부분
 
         ctx.fillStyle = gradient;
-        ctx.beginPath(); ctx.arc(this.pixelX, this.pixelY, GRID_SIZE / 1.67, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(this.pixelX, this.pixelY, radius, 0, Math.PI * 2); ctx.fill();
 
         if (isOutlineEnabled) {
             ctx.strokeStyle = 'black';
@@ -2235,7 +2166,7 @@ export class Unit {
             ctx.fillStyle = this.nameColor;
             ctx.font = `bold 10px Arial`;
             ctx.textAlign = 'center';
-            ctx.fillText(this.name, this.pixelX, this.pixelY + GRID_SIZE);
+            ctx.fillText(this.name, this.pixelX, this.pixelY + GRID_SIZE); // Visual, uses pixelX
         }
 
         if (this.isBeingPulled && this.puller) {
@@ -2243,7 +2174,7 @@ export class Unit {
             ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(this.puller.pixelX, this.puller.pixelY);
+            ctx.moveTo(this.puller.pixelX, this.puller.pixelY); // Visual, uses pixelX
             ctx.lineTo(this.pixelX, this.pixelY);
             ctx.stroke();
             ctx.restore();
@@ -2251,7 +2182,7 @@ export class Unit {
 
         if (this.isStunned > 0) {
             ctx.save();
-            ctx.translate(this.pixelX, this.pixelY - GRID_SIZE);
+            ctx.translate(this.pixelX, this.pixelY - GRID_SIZE); // Visual, uses pixelX
             const rotation = gameManager.animationFrameCounter * 0.1;
             ctx.rotate(rotation);
             ctx.strokeStyle = '#c084fc';
@@ -2287,7 +2218,7 @@ export class Unit {
         const barWidth = GRID_SIZE * 0.8 * totalScale;
         const barHeight = 4;
         const barGap = 1;
-        const barX = this.pixelX - barWidth / 2;
+        const barX = this.pixelX - barWidth / 2; // Visual, uses pixelX
 
         const healthBarIsVisible = this.hpBarAlpha > 0;
         const normalAttackIsVisible = (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown > 0) || (this.weapon?.type !== 'poison_potion' && this.attackCooldown > 0);
@@ -2315,7 +2246,7 @@ export class Unit {
             const totalBarsHeight = (barsToShow.length * barHeight) + ((barsToShow.length - 1) * barGap);
             
             // [수정] 체력바 위치를 더 위로 조정 (기존 0.6 -> 0.9)
-            let currentBarY = this.pixelY - (GRID_SIZE * 0.9 * totalScale) - totalBarsHeight - kingYOffset;
+            let currentBarY = this.pixelY - (GRID_SIZE * 0.9 * totalScale) - totalBarsHeight - kingYOffset; // Visual, uses pixelY
 
 
             if (normalAttackIsVisible) {
@@ -2381,7 +2312,7 @@ export class Unit {
         }
 
         if (kingSpawnBarIsVisible) {
-            const spawnBarY = this.pixelY + GRID_SIZE + (this.name ? 5 : 0);
+            const spawnBarY = this.pixelY + GRID_SIZE + (this.name ? 5 : 0); // Visual, uses pixelY
             ctx.fillStyle = '#450a0a';
             ctx.fillRect(barX, spawnBarY, barWidth, barHeight);
             const progress = 1 - (this.spawnCooldown / this.spawnInterval);
@@ -2437,14 +2368,14 @@ export class Unit {
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
                 const radius = (GRID_SIZE / 1.67 + 3) * totalScale;
                 ctx.beginPath();
-                ctx.arc(this.pixelX, this.pixelY, radius, 0, Math.PI * 2);
+                ctx.arc(this.pixelX, this.pixelY, radius, 0, Math.PI * 2); // Visual, uses pixelX
                 ctx.stroke();
 
                 ctx.strokeStyle = fgColor;
                 ctx.beginPath();
                 const startAngle = -Math.PI / 2;
                 const endAngle = startAngle + (progress / max) * Math.PI * 2;
-                ctx.arc(this.pixelX, this.pixelY, radius, startAngle, endAngle);
+                ctx.arc(this.pixelX, this.pixelY, radius, startAngle, endAngle); // Visual, uses pixelX
                 ctx.stroke();
                 ctx.restore();
             }
@@ -2456,21 +2387,21 @@ export class Unit {
             ctx.fillStyle = 'yellow';
             ctx.font = `bold 20px Arial`;
             ctx.textAlign = 'center';
-            ctx.fillText(this.state === 'SEEKING_HEAL_PACK' ? '+' : '!', this.pixelX, this.pixelY + yOffset);
+            ctx.fillText(this.state === 'SEEKING_HEAL_PACK' ? '+' : '!', this.pixelX, this.pixelY + yOffset); // Visual, uses pixelX
         }
     }
 
     performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
-            const teleportPos = this.gameManager.findEmptySpotNear(target);
-            this.pixelX = teleportPos.x;
-            this.pixelY = teleportPos.y;
+            const teleportPos = this.gameManager.findEmptySpotNear(target); // findEmptySpotNear uses pixelX, but should use logicX
+            this.logicX = teleportPos.x;
+            this.logicY = teleportPos.y;
             this.dualSwordSpinAttackTimer = 20;
 
             const damageRadius = GRID_SIZE * 2;
-            enemies.forEach(enemy => {
-                if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
+            enemies.forEach(enemy => { // This should use logicX
+                if (Math.hypot(this.logicX - enemy.logicX, this.logicY - enemy.logicY) < damageRadius) {
                     enemy.takeDamage(this.attackPower * 1.5, {}, this);
                 }
             });
@@ -2496,7 +2427,7 @@ Unit.prototype.drawEyes = function(ctx) {
     const isMoving = !!this.moveTarget && !isFighting && !this.isDashing;
 
     ctx.save();
-    ctx.translate(this.pixelX, this.pixelY);
+    ctx.translate(this.pixelX, this.pixelY); // This is a draw function, it should use pixelX
 
     if (isDead) {
         ctx.strokeStyle = '#0f172a';
@@ -2559,11 +2490,11 @@ Unit.prototype.drawEyes = function(ctx) {
             // 눈동자 시선 처리
             let targetX = 0, targetY = 0;
             if (isFighting && this.target) {
-                targetX = this.target.pixelX - this.pixelX;
-                targetY = this.target.pixelY - this.pixelY;
+                targetX = this.target.pixelX - this.pixelX; // Visual, uses pixelX
+                targetY = this.target.pixelY - this.pixelY; // Visual, uses pixelX
             } else if (isMoving && this.moveTarget) {
-                targetX = this.moveTarget.x - this.pixelX;
-                targetY = this.moveTarget.y - this.pixelY;
+                targetX = this.moveTarget.x - this.pixelX; // Visual, uses pixelX
+                targetY = this.moveTarget.y - this.pixelY; // Visual, uses pixelX
             } else {
                 const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001; // This is visual and deterministic based on frame
                 targetX = Math.cos(t);
