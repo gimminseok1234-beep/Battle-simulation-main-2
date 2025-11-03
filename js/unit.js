@@ -1130,8 +1130,8 @@ export class Unit {
         this.lastPosition = { x: this.pixelX, y: this.pixelY };
 
 
-        const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
-        const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
+        const finalGridX = Math.floor(this.logicX / GRID_SIZE);
+        const finalGridY = Math.floor(this.logicY / GRID_SIZE);
 
         if (this.isInMagneticField) {
             this.takeDamage(0.3, { isTileDamage: true });
