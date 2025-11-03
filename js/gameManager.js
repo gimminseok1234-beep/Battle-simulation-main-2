@@ -444,7 +444,7 @@ export class GameManager {
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
-        return;
+        return; // 액션캠 클릭 시 다른 동작(applyTool 등)을 막기 위해 여기서 종료
     }
 
     resizeCanvas(width, height) {
