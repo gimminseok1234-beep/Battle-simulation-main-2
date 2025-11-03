@@ -977,8 +977,8 @@ export class Projectile {
             this.rotationAngle += this.lingerRotationSpeed * gameManager.gameSpeed;
 
             if (this.state === 'MOVING_OUT') {
-                const moveX = Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
-                const moveY = Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
+                const moveX = Math.cos(this.angle) * this.speed;
+                const moveY = Math.sin(this.angle) * this.speed;
                 this.pixelX += moveX;
                 this.pixelY += moveY;
                 this.distanceTraveled += Math.hypot(moveX, moveY);
@@ -994,8 +994,8 @@ export class Projectile {
                     this.state = 'LINGERING';
                 }
             } else if (this.state === 'LINGERING') {
-                this.lingerDuration -= gameManager.gameSpeed;
-                this.damageCooldown -= gameManager.gameSpeed;
+                this.lingerDuration -= 1;
+                this.damageCooldown -= 1;
 
                 if (this.damageCooldown <= 0) {
                     for (const unit of gameManager.units) {
@@ -1018,14 +1018,14 @@ export class Projectile {
                 const dy = this.owner.pixelY - this.pixelY;
                 const dist = Math.hypot(dx, dy);
 
-                if (dist < this.speed * gameManager.gameSpeed) {
+                if (dist < this.speed) {
                     this.destroyed = true;
                     return;
                 }
 
                 const returnAngle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(returnAngle) * this.speed * gameManager.gameSpeed;
-                this.pixelY += Math.sin(returnAngle) * this.speed * gameManager.gameSpeed;
+                this.pixelX += Math.cos(returnAngle) * this.speed;
+                this.pixelY += Math.sin(returnAngle) * this.speed;
 
                 for (const unit of gameManager.units) {
                     if (unit.team !== this.owner.team && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
@@ -1078,7 +1078,7 @@ export class Projectile {
                 while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
                 const turnSpeed = 0.03; // 프레임당 회전 속도 (라디안)
-                if (Math.abs(angleDiff) > turnSpeed) {
+                if (Math.abs(angleDiff) > turnSpeed * gameManager.gameSpeed) { // Visual turning can be affected by gameSpeed
                     this.angle += Math.sign(angleDiff) * turnSpeed * gameManager.gameSpeed;
                 } else {
                     this.angle = targetAngle;
@@ -1102,8 +1102,8 @@ export class Projectile {
             });
         }
 
-        const nextX = this.pixelX + Math.cos(this.angle) * gameManager.gameSpeed * this.speed;
-        const nextY = this.pixelY + Math.sin(this.angle) * gameManager.gameSpeed * this.speed;
+        const nextX = this.pixelX + Math.cos(this.angle) * this.speed;
+        const nextY = this.pixelY + Math.sin(this.angle) * this.speed;
         const gridX = Math.floor(nextX / GRID_SIZE);
         const gridY = Math.floor(nextY / GRID_SIZE);
 

@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
-            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
+            const nextX = this.pixelX + this.knockbackX;
+            const nextY = this.pixelY + this.knockbackY;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -344,7 +344,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed * gameManager.gameSpeed;
+            const currentSpeed = this.speed;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -362,7 +362,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * gameManager.gameSpeed;
+        const currentSpeed = this.speed;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -1240,7 +1240,7 @@ export class Unit {
 
         if (this.moveTarget) {
             const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
-            if (distMoved < 0.2 * gameManager.gameSpeed) {
+            if (distMoved < 0.2) {
                 this.stuckTimer += 1;
             } else {
                 this.stuckTimer = 0;
@@ -1266,12 +1266,12 @@ export class Unit {
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
 
         if (this.isInMagneticField) {
-            this.takeDamage(0.3 * gameManager.gameSpeed, { isTileDamage: true });
+            this.takeDamage(0.3, { isTileDamage: true });
         }
 
         // [신규] 독 장판 데미지 처리
         if (this.poisonPuddleDamageCooldown > 0) {
-            this.poisonPuddleDamageCooldown -= 1;
+            this.poisonPuddleDamageCooldown -= 1; // This is already correct (logic tick based)
         }
         const isOnPuddle = gameManager.isPosInPoisonPuddle(finalGridX, finalGridY);
         if (isOnPuddle && this.poisonPuddleDamageCooldown <= 0) {
@@ -1284,7 +1284,7 @@ export class Unit {
 
         if (finalGridY >= 0 && finalGridY < gameManager.ROWS && finalGridX >= 0 && finalGridX < gameManager.COLS) {
             const currentTile = gameManager.map[finalGridY][finalGridX];
-            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2 * gameManager.gameSpeed, { isTileDamage: true });
+            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2, { isTileDamage: true });
             if (currentTile.type === TILE.HEAL_PACK) {
                 this.hp = this.maxHp;
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
