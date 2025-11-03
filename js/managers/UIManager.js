@@ -404,6 +404,96 @@ export class UIManager {
     }
 
     setupEventListeners() {
+        // Modal Buttons
+        document.getElementById('cancelNewMapBtn').addEventListener('click', () => this.closeModal('newMapModal'));
+        document.getElementById('cancelRenameBtn').addEventListener('click', () => this.closeModal('renameMapModal'));
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => this.closeModal('deleteConfirmModal'));
+        document.getElementById('closeMapSettingsModal').addEventListener('click', () => this.closeModal('mapSettingsModal'));
+        document.getElementById('closeDashTileModal').addEventListener('click', () => {
+            this.gameManager.dashTileSettings.direction = document.getElementById('dashTileDirection').value;
+            this.closeModal('dashTileModal');
+        });
+        document.getElementById('cancelSaveReplayBtn').addEventListener('click', () => this.closeModal('saveReplayModal'));
+        document.getElementById('confirmSaveReplayBtn').addEventListener('click', () => this.persistenceManager.saveLastReplay());
+        document.getElementById('closeLavaSettingsModal').addEventListener('click', () => {
+            this.gameManager.isLavaAvoidanceEnabled = document.getElementById('lavaAvoidanceToggle').checked;
+            this.closeModal('lavaSettingsModal');
+        });
+
+        // Home Screen
+        document.getElementById('addNewMapCard').addEventListener('click', () => {
+            document.getElementById('newMapName').value = '';
+            document.getElementById('newMapWidth').value = '460';
+            document.getElementById('newMapHeight').value = '800';
+            this.openModal('newMapModal');
+        });
+        document.getElementById('defaultMapsBtn').addEventListener('click', () => this.gameManager.showDefaultMapsScreen());
+        document.getElementById('replaysBtn').addEventListener('click', () => this.gameManager.showReplayScreen());
+        document.getElementById('backToHomeFromDefaultBtn').addEventListener('click', () => this.gameManager.showHomeScreen());
+        document.getElementById('backToHomeFromReplayBtn').addEventListener('click', () => this.gameManager.showHomeScreen());
+
+        // New Map Creation
+        document.getElementById('confirmNewMapBtn').addEventListener('click', async () => {
+            const name = document.getElementById('newMapName').value.trim() || '새로운 맵';
+            const width = parseInt(document.getElementById('newMapWidth').value) || 460;
+            const height = parseInt(document.getElementById('newMapHeight').value) || 800;
+            this.closeModal('newMapModal');
+            await this.persistenceManager.createNewMap(name, width, height);
+        });
+
+        // Editor Screen
+        document.getElementById('backToHomeBtn').addEventListener('click', () => this.gameManager.showHomeScreen());
+        document.getElementById('saveMapBtn').addEventListener('click', () => this.persistenceManager.saveCurrentMap());
+        document.getElementById('saveReplayBtn').addEventListener('click', () => this.openSaveReplayModal());
+        document.getElementById('mapSettingsBtn').addEventListener('click', () => {
+            document.getElementById('widthInput').value = this.gameManager.canvas.width;
+            document.getElementById('heightInput').value = this.gameManager.canvas.height;
+            this.openModal('mapSettingsModal');
+        });
+
+        // Audio Settings
+        document.getElementById('killSoundToggle').addEventListener('change', (e) => this.gameManager.audioManager.toggleKillSound(e.target.checked));
+        document.getElementById('volumeControl').addEventListener('input', (e) => this.gameManager.audioManager.setVolume(parseFloat(e.target.value)));
+        document.getElementById('muteBtn').addEventListener('click', () => this.gameManager.audioManager.toggleMute());
+
+        // Simulation Controls
+        document.getElementById('simStartBtn').addEventListener('click', () => this.gameManager.simulationManager.startSimulation());
+        document.getElementById('simPauseBtn').addEventListener('click', () => this.gameManager.simulationManager.pauseSimulation());
+        document.getElementById('simPlayBtn').addEventListener('click', () => this.gameManager.simulationManager.playSimulation());
+        document.getElementById('simPlacementResetBtn').addEventListener('click', () => this.gameManager.resetPlacement());
+        document.getElementById('simResetBtn').addEventListener('click', () => this.gameManager.resetMap());
+        document.getElementById('resizeBtn').addEventListener('click', () => {
+            this.gameManager.resizeCanvas(parseInt(document.getElementById('widthInput').value), parseInt(document.getElementById('heightInput').value));
+            this.closeModal('mapSettingsModal');
+        });
+
+        // Home Settings
+        this.setupHomeSettingsModal();
+
+        // Toolbox
+        this.setupToolboxListeners();
+
+        // Nametag Settings
+        this.setupNametagSettingsModal();
+
+        // Unit Name Modal
+        document.getElementById('cancelUnitNameBtn').addEventListener('click', () => this.closeModal('unitNameModal'));
+        document.getElementById('confirmUnitNameBtn').addEventListener('click', () => {
+            if (this.gameManager.editingUnit) {
+                this.gameManager.editingUnit.name = document.getElementById('unitNameInput').value;
+                this.gameManager.editingUnit = null;
+                this.gameManager.draw();
+            }
+            this.closeModal('unitNameModal');
+        });
+
+        // 전역 클릭 리스너 (맵 메뉴 닫기)
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.map-menu-button')) {
+               document.querySelectorAll('.map-menu').forEach(menu => menu.style.display = 'none');
+           }
+       }, true);
+
         // ... (existing event listeners)
 
         // Action Cam Controls (Replay Mode)
