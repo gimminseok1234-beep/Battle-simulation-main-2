@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX;
-            const nextY = this.pixelY + this.knockbackY;
+            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
+            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -257,8 +257,8 @@ export class Unit {
             }
         }
 
-        this.knockbackX *= 0.9;
-        this.knockbackY *= 0.9;
+        this.knockbackX *= (1 - 0.1 * gameManager.gameSpeed);
+        this.knockbackY *= (1 - 0.1 * gameManager.gameSpeed);
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
@@ -275,10 +275,10 @@ export class Unit {
                     const moveX = (overlap / 2) * Math.cos(angle);
                     const moveY = (overlap / 2) * Math.sin(angle);
 
-                    const myNextX = this.pixelX - moveX;
-                    const myNextY = this.pixelY - moveY;
-                    const otherNextX = otherUnit.pixelX + moveX;
-                    const otherNextY = otherUnit.pixelY + moveY;
+                    const myNextX = this.pixelX - moveX * gameManager.gameSpeed;
+                    const myNextY = this.pixelY - moveY * gameManager.gameSpeed;
+                    const otherNextX = otherUnit.pixelX + moveX * gameManager.gameSpeed;
+                    const otherNextY = otherUnit.pixelY + moveY * gameManager.gameSpeed;
 
                     const myGridX = Math.floor(myNextX / GRID_SIZE);
                     const myGridY = Math.floor(myNextY / GRID_SIZE);
@@ -344,7 +344,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed;
+            const currentSpeed = this.speed * gameManager.gameSpeed;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -362,7 +362,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed;
+        const currentSpeed = this.speed * gameManager.gameSpeed;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -523,47 +523,6 @@ export class Unit {
     update(enemies, weapons, projectiles) {
         const gameManager = this.gameManager;
         if (!gameManager) {
-            return;
-        }
-
-        if (this.isDashing) {
-            this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
-            if (this.dashTrail.length > 5) this.dashTrail.shift();
-
-            let moveX = 0, moveY = 0;
-            switch (this.dashDirection) {
-                case 'RIGHT': moveX = this.dashSpeed; break;
-                case 'LEFT': moveX = -this.dashSpeed; break;
-                case 'DOWN': moveY = this.dashSpeed; break;
-                case 'UP': moveY = -this.dashSpeed; break;
-            }
-
-            const nextX = this.pixelX + moveX;
-            const nextY = this.pixelY + moveY;
-            const gridX = Math.floor(nextX / GRID_SIZE);
-            const gridY = Math.floor(nextY / GRID_SIZE);
-
-            if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS) {
-                this.isDashing = false;
-            } else {
-                const tile = gameManager.map[gridY][gridX];
-                if (tile.type === TILE.WALL) {
-                    this.isDashing = false;
-                } else {
-                    if (tile.type === TILE.CRACKED_WALL) {
-                        gameManager.damageTile(gridX, gridY, 999);
-                    }
-
-                    this.pixelX = nextX;
-                    this.pixelY = nextY;
-                    this.dashDistanceRemaining -= this.dashSpeed;
-
-                    if (this.dashDistanceRemaining <= 0) {
-                        this.isDashing = false;
-                    }
-                }
-            }
-            if (!this.isDashing) this.dashTrail = [];
             return;
         }
 
@@ -1170,29 +1129,6 @@ export class Unit {
         }
         this.lastPosition = { x: this.pixelX, y: this.pixelY };
 
-        // [수정] isBeingPulled 로직을 update()로 이동
-        if (this.isBeingPulled && this.puller) {
-            const dx = this.pullTargetPos.x - this.pixelX;
-            const dy = this.pullTargetPos.y - this.pixelY;
-            const dist = Math.hypot(dx, dy);
-            const pullSpeed = 4; // gameSpeed 제거 (로직 속도 고정)
-
-            if (dist < pullSpeed) {
-                this.pixelX = this.pullTargetPos.x;
-                this.pixelY = this.pullTargetPos.y;
-                this.isBeingPulled = false;
-
-                // 데미지 및 기절 적용
-                const damage = 20 + (this.puller.specialAttackLevelBonus || 0);
-                this.takeDamage(damage, { stun: 120 }, this.puller);
-                this.puller = null;
-            }
-        }
-
-        // [수정] 로직 업데이트의 마지막 단계로 이동/물리 적용
-        this.move();
-        this.applyPhysics();
-
 
         const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
@@ -1310,6 +1246,41 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
+        if (this.isDashing) {
+            this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
+            if (this.dashTrail.length > 5) this.dashTrail.shift();
+
+            let moveX = 0, moveY = 0;
+            switch (this.dashDirection) {
+                case 'RIGHT': moveX = this.dashSpeed; break;
+                case 'LEFT': moveX = -this.dashSpeed; break;
+                case 'DOWN': moveY = this.dashSpeed; break;
+                case 'UP': moveY = -this.dashSpeed; break;
+            }
+
+            for (let i = 0; i < gameManager.gameSpeed; i++) {
+                const nextX = this.pixelX + moveX;
+                const nextY = this.pixelY + moveY;
+                const gridX = Math.floor(nextX / GRID_SIZE);
+                const gridY = Math.floor(nextY / GRID_SIZE);
+
+                if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS || gameManager.map[gridY][gridX].type === TILE.WALL) {
+                    this.isDashing = false;
+                    break;
+                }
+
+                if (gameManager.map[gridY][gridX].type === TILE.CRACKED_WALL) {
+                    gameManager.damageTile(gridX, gridY, 999);
+                }
+
+                this.pixelX = nextX;
+                this.pixelY = nextY;
+                this.dashDistanceRemaining -= this.dashSpeed;
+
+                if (this.dashDistanceRemaining <= 0) { this.isDashing = false; break; }
+            }
+            if (!this.isDashing) this.dashTrail = [];
+        }
         // js/unit.js -> updateVisuals()
         if (this.isBeingPulled && this.puller) {
             const dx = this.pullTargetPos.x - this.pixelX;
@@ -1327,6 +1298,9 @@ export class Unit {
             }
             // [제거] 데미지 및 상태 변경 로직은 update()로 이동했으므로 여기선 삭제
         }
+
+        this.move();
+        this.applyPhysics();
 
         // Smooth HP bar decrease
         if (this.displayHp > this.hp) {
