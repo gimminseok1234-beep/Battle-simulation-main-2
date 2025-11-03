@@ -1136,7 +1136,7 @@ export class GameManager {
 
     updatePoisonPuddles() {
         this.poisonPuddles.forEach(puddle => {
-            puddle.duration -= this.gameSpeed;
+            puddle.duration -= 1; // 슬로우 모션(gameSpeed)의 영향을 받지 않도록 고정값으로 변경
         });
         this.poisonPuddles = this.poisonPuddles.filter(puddle => puddle.duration > 0);
     }
