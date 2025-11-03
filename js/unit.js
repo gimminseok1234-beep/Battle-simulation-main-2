@@ -10,6 +10,11 @@ export class Unit {
         this.gridX = x; this.gridY = y;
         this.pixelX = x * GRID_SIZE + GRID_SIZE / 2;
         this.pixelY = y * GRID_SIZE + GRID_SIZE / 2;
+
+        // [신규] 이것이 유닛의 "진짜(논리적)" 위치입니다.
+        this.logicX = this.pixelX;
+        this.logicY = this.pixelY;
+
         this.team = team;
         this.hp = 100;
         this.maxHp = 100;
@@ -1273,28 +1278,20 @@ export class Unit {
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
-
+ 
         // [신규] 시각적 위치 보간 (Interpolation) 로직
-        // logicX/Y는 updateLogic()에서 1배속으로 계산된 "진짜" 위치입니다.
-        // pixelX/Y는 "보여지는" 위치이며, gameSpeed를 이용해 logicX/Y를 천천히 따라잡습니다.
-
         const dx = this.logicX - this.pixelX;
         const dy = this.logicY - this.pixelY;
         const distance = Math.hypot(dx, dy);
-
-        // 1프레임(1/60초)당 최대 이동 속도 * gameSpeed
-        // (this.speed는 유닛의 논리적 기본 속도)
-        const moveSpeed = (this.speed * 2) * this.gameManager.gameSpeed; 
-
-        if (distance < moveSpeed || distance < 0.1) {
-            // 거리가 가까우면 즉시 위치 동기화
+ 
+        const interpFactor = Math.min(0.25 * gameManager.gameSpeed, 1);
+ 
+        if (distance < 0.5) {
             this.pixelX = this.logicX;
             this.pixelY = this.logicY;
         } else {
-            // 거리가 멀면 gameSpeed에 맞춰 따라감
-            const angle = Math.atan2(dy, dx);
-            this.pixelX += Math.cos(angle) * moveSpeed;
-            this.pixelY += Math.sin(angle) * moveSpeed;
+            this.pixelX += dx * interpFactor;
+            this.pixelY += dy * interpFactor;
         }
     }
 
@@ -1305,6 +1302,34 @@ export class Unit {
         }
 
         if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
+
+        // [수정] isDashing 로직이 'logicX/Y'를 변경하도록 수정
+        if (this.isDashing) {
+            const moveAmount = this.dashSpeed;
+            this.dashDistanceRemaining -= moveAmount;
+
+            let moveX = 0, moveY = 0;
+            if (this.dashDirection === 'UP') moveY = -moveAmount;
+            else if (this.dashDirection === 'DOWN') moveY = moveAmount;
+            else if (this.dashDirection === 'LEFT') moveX = -moveAmount;
+            else if (this.dashDirection === 'RIGHT') moveX = moveAmount;
+
+            const nextX = this.logicX + moveX;
+            const nextY = this.logicY + moveY;
+            const nextGridX = Math.floor(nextX / GRID_SIZE);
+            const nextGridY = Math.floor(nextY / GRID_SIZE);
+
+            if (nextGridY >= 0 && nextGridY < gameManager.ROWS && nextGridX >= 0 && nextGridX < gameManager.COLS &&
+                (gameManager.map[nextGridY][nextGridX].type !== TILE.WALL && gameManager.map[nextGridY][nextGridX].type !== TILE.CRACKED_WALL)) {
+                this.logicX = nextX;
+                this.logicY = nextY;
+            } else {
+                this.isDashing = false;
+            }
+
+            if (this.dashDistanceRemaining <= 0) this.isDashing = false;
+            return;
+        }
 
         // [신규] 마법창 비전 이동 로직
         if (this.weapon?.type === 'magic_spear' && !this.hasUsedBlink && this.hp < this.maxHp * 0.3) {

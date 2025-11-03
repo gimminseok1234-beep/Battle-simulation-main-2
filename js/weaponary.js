@@ -747,11 +747,11 @@ export class Projectile {
         this.gameManager = gameManager; // [수정] 중복된 코드 제거
         this.owner = owner;
         this.target = target;
-        this.pixelX = options.startX !== undefined ? options.startX : owner.logicX;
-        this.pixelY = options.startY !== undefined ? options.startY : owner.logicY;
+        this.pixelX = options.startX !== undefined ? options.startX : owner.pixelX;
+        this.pixelY = options.startY !== undefined ? options.startY : owner.pixelY;
         // [신규] 논리적(결과) 위치
-        this.logicX = this.pixelX;
-        this.logicY = this.pixelY;
+        this.logicX = options.startX !== undefined ? options.startX : owner.logicX;
+        this.logicY = options.startY !== undefined ? options.startY : owner.logicY;
 
         this.type = type;
         
@@ -848,10 +848,11 @@ export class Projectile {
         
         let targetX, targetY;
         // [수정] Math.random() 대신 gameManager.prng.next() 사용
-        targetX = target.logicX + (gameManager.prng.next() - 0.5) * inaccuracy;
-        targetY = target.logicY + (gameManager.prng.next() - 0.5) * inaccuracy;
+        targetX = (target.logicX || target.pixelX) + (gameManager.prng.next() - 0.5) * inaccuracy;
+        targetY = (target.logicY || target.pixelY) + (gameManager.prng.next() - 0.5) * inaccuracy;
 
-        const dx = targetX - this.logicX; const dy = targetY - this.logicY;
+        const dx = targetX - this.logicX;
+        const dy = targetY - this.logicY;
         this.angle = options.angle !== undefined ? options.angle : Math.atan2(dy, dx);
         this.destroyed = false;
         this.trail = [];
@@ -1075,20 +1076,20 @@ export class Projectile {
             this.handleBoomerangTrail();
         }
         // [남겨둠] 잔상(trail) 로직 (시각 효과)
-        if (this.isSpecial || ['hadoken', 'lightning_bolt', 'magic_spear', 'ice_diamond_projectile', 'fireball_projectile', 'mini_fireball_projectile', 'black_sphere_projectile', 'sword_wave'].some(t => this.type.startsWith(t))) {
+        if (this.isSpecial || ['hadoken', 'lightning_bolt', 'magic_spear_special', 'magic_spear_fragment', 'ice_diamond_projectile', 'fireball_projectile', 'mini_fireball_projectile', 'black_sphere_projectile', 'sword_wave'].some(t => this.type.startsWith(t))) {
             this.trail.push({x: this.pixelX, y: this.pixelY});
             if (this.trail.length > 10) this.trail.shift();
         }
 
         // [남겨둠] 회전(rotation) 로직 (시각 효과)
-        if (this.type.includes('shuriken') || this.type.includes('boomerang') || this.type.includes('bouncing_sword')) {
+        if (this.type.includes('shuriken') || this.type.includes('boomerang') || this.type.includes('bouncing_sword') || this.type === 'axe') {
             this.rotationAngle += 0.4 * gameManager.gameSpeed;
         }
 
         if (this.type === 'ice_diamond_projectile' && gameManager.visualPrng.next() > 0.4) {
             gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (gameManager.visualPrng.next() - 0.5) * 1, vy: (gameManager.visualPrng.next() - 0.5) * 1,
+                vx: (gameManager.visualPrng.next() - 0.5) * 1, vy: (gameManager.visualPrng.next() - 0.5) * 1, // This is visual, so visualPrng is fine
                 life: 0.6, color: '#3b82f6', size: gameManager.visualPrng.next() * 2 + 1,
             });
         }
@@ -1097,15 +1098,14 @@ export class Projectile {
         const dy = this.logicY - this.pixelY;
         const distance = Math.hypot(dx, dy);
 
-        const moveSpeed = (this.speed * 2) * this.gameManager.gameSpeed;
+        const interpFactor = Math.min(0.5 * this.gameManager.gameSpeed, 1);
 
-        if (distance < moveSpeed || distance < 0.1) {
-            this.pixelX = this.logicX;
-            this.pixelY = this.logicY;
+        if (distance < 0.5) {
+             this.pixelX = this.logicX;
+             this.pixelY = this.logicY;
         } else {
-            const angle = Math.atan2(dy, dx);
-            this.pixelX += Math.cos(angle) * moveSpeed;
-            this.pixelY += Math.sin(angle) * moveSpeed;
+            this.pixelX += dx * interpFactor;
+            this.pixelY += dy * interpFactor;
         }
     }
     

@@ -8,8 +8,8 @@ export class Nexus {
         this.gridX = x; this.gridY = y;
         this.pixelX = x * GRID_SIZE + GRID_SIZE / 2;
         this.pixelY = y * GRID_SIZE + GRID_SIZE / 2;
-        this.logicX = this.pixelX; // 넥서스는 움직이지 않으므로 동일하게 설정
-        this.logicY = this.pixelY; // 넥서스는 움직이지 않으므로 동일하게 설정
+        this.logicX = this.pixelX;
+        this.logicY = this.pixelY;
         this.team = team;
         this.hp = 500;
         this.maxHp = 500;
