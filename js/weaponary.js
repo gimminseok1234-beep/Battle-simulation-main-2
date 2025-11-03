@@ -851,7 +851,7 @@ export class Projectile {
         targetX = target.logicX + (gameManager.prng.next() - 0.5) * inaccuracy;
         targetY = target.logicY + (gameManager.prng.next() - 0.5) * inaccuracy;
 
-        const dx = targetX - this.logicX; const dy = targetY - this.logicY;
+        const dx = targetX - this.logicX; const dy = targetY - this.logicY; // this.pixelX -> this.logicX
         this.angle = options.angle !== undefined ? options.angle : Math.atan2(dy, dx);
         this.destroyed = false;
         this.trail = [];
