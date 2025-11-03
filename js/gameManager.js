@@ -58,6 +58,7 @@ export class GameManager {
         this.initialAutoFieldState = {};
         this.animationFrameId = null;
         this.animationFrameCounter = 0;
+        this.simulationUpdateAccumulator = 0; // [NEW] 시뮬레이션 업데이트 누적 변수
         this.gameSpeed = 1;
         this.currentWallColor = COLORS.WALL;
         this.currentFloorColor = COLORS.FLOOR;

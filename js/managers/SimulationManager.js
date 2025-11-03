@@ -193,10 +193,8 @@ export class SimulationManager {
     update() {
         const gm = this.gameManager;
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
-
-        if (gm.state === 'SIMULATE') {
-            gm.simulationTime += 1 / 60;
-        }
+        
+        gm.simulationTime += 1 / 60;
 
         if (gm.state === 'ENDING') {
             gm.nexuses.forEach(n => n.update());
