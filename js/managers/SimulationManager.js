@@ -205,8 +205,6 @@ export class SimulationManager {
             return;
         }
 
-        gm.gameSpeed = 1;
-
         if (gm.autoMagneticField.isActive) {
             gm.autoMagneticField.simulationTime++;
             const progress = Math.min(1, gm.autoMagneticField.simulationTime / gm.autoMagneticField.totalShrinkTime);

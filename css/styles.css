@@ -198,3 +198,30 @@ body {
 .replay-mode > #category-utils {
     display: block; /* '기타' 카테고리와 내용만 보이도록 설정 */
 }
+
+/* 설정 모달 탭 버튼 스타일 */
+.settings-tab {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem 0.375rem 0 0; /* rounded-t-md */
+    font-weight: 600; /* font-semibold */
+    color: #d1d5db; /* text-gray-300 */
+    transition: background-color 0.2s, color 0.2s;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+/* 각 탭의 기본 색상 */
+.settings-tab[data-tab="gameplay"] { background-color: #4338ca; } /* bg-indigo-700 */
+.settings-tab[data-tab="graphics"] { background-color: #047857; } /* bg-emerald-700 */
+.settings-tab[data-tab="camera"] { background-color: #9d174d; } /* bg-pink-800 */
+
+/* 각 탭의 호버 색상 */
+.settings-tab[data-tab="gameplay"]:hover { background-color: #4f46e5; } /* hover:bg-indigo-600 */
+.settings-tab[data-tab="graphics"]:hover { background-color: #059669; } /* hover:bg-emerald-600 */
+.settings-tab[data-tab="camera"]:hover { background-color: #be185d; } /* hover:bg-pink-700 */
+
+/* 활성화된 탭 스타일 */
+.settings-tab.active-tab {
+    color: #ffffff; /* text-white */
+    border-bottom-color: #a78bfa; /* border-violet-400 */
+}
