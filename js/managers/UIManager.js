@@ -520,4 +520,75 @@ export class UIManager {
         this.gameManager.nametagList = this.gameManager.nametagList.filter(name => name !== nameToDelete);
         this.renderNametagList();
     }
+
+    updateUIToReplayMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.add('replay-mode');
+    
+        // 리플레이 모드에서는 '기타' 카테고리의 '이름표' 기능만 남기고 모든 툴박스 기능을 숨깁니다.
+        const allCategoryHeaders = toolbox.querySelectorAll('.category-header');
+        allCategoryHeaders.forEach(header => {
+            const content = header.nextElementSibling;
+            if (header.dataset.target !== 'category-utils') {
+                header.style.display = 'none';
+                if (content) content.style.display = 'none';
+            } else {
+                // '기타' 카테고리는 항상 보이도록 설정합니다.
+                header.style.display = 'block';
+                header.classList.remove('collapsed');
+                if (content) {
+                    content.classList.remove('collapsed');
+                    // '기타' 카테고리 내에서 '지우개' 버튼 숨기기
+                    const eraseButton = content.querySelector('[data-tool="erase"]');
+                    if (eraseButton) eraseButton.style.display = 'none';
+                }
+            }
+        });
+
+        // '이름표' 버튼을 기본 선택 툴로 설정합니다.
+        const nametagButton = toolbox.querySelector('[data-tool="nametag"]');
+        if (nametagButton) {
+            this.selectTool(nametagButton);
+        }
+
+        document.getElementById('editor-controls').style.display = 'none';
+        document.getElementById('simResetBtn').style.display = 'none';
+        const placementResetBtn = document.getElementById('simPlacementResetBtn');
+        placementResetBtn.textContent = '리플레이 초기화';
+        placementResetBtn.style.display = 'inline-block';
+
+        document.getElementById('actionCamControls').classList.remove('hidden');
+        document.getElementById('actionCamControls').classList.add('flex');
+    }
+
+    updateUIToEditorMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.remove('replay-mode');
+
+        // 모든 카테고리와 버튼을 다시 보이게 합니다.
+        const allCategoryHeaders = toolbox.querySelectorAll('.category-header');
+        allCategoryHeaders.forEach(header => {
+            header.style.display = 'block';
+
+            // [신규] 카테고리 '콘텐츠'의 display 스타일을 초기화(제거)합니다.
+            const content = header.nextElementSibling;
+            if (content) {
+                content.style.display = ''; // 'display: none' 속성 제거
+            }
+
+            const eraseButton = content?.querySelector('[data-tool="erase"]');
+            if (eraseButton) eraseButton.style.display = 'block';
+        });
+
+        document.getElementById('editor-controls').style.display = 'flex';
+        document.getElementById('simResetBtn').style.display = 'inline-block';
+        const placementResetBtn = document.getElementById('simPlacementResetBtn');
+        placementResetBtn.textContent = '배치 초기화';
+        placementResetBtn.style.display = 'inline-block';
+
+        document.getElementById('actionCamControls').classList.add('hidden');
+        document.getElementById('actionCamControls').classList.remove('flex');
+    }
 }

@@ -198,7 +198,7 @@ export class Unit {
     findClosest(items) {
         let closestItem = null, minDistance = Infinity;
         for (const item of items) {
-            const distance = Math.hypot(this.logicX - (item.logicX || item.pixelX), this.logicY - (item.logicY || item.pixelY));
+            const distance = Math.hypot(this.logicX - item.pixelX, this.logicY - item.pixelY);
             if (distance < minDistance) { minDistance = distance; closestItem = item; }
         }
         return { item: closestItem, distance: minDistance };
