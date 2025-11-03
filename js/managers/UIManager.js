@@ -313,7 +313,9 @@ export class UIManager {
             document.getElementById('homeUnitOutlineWidthValue').textContent = this.gameManager.unitOutlineWidth.toFixed(1);
             document.getElementById('homeUnitEyeSizeControl').value = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
             document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
-            
+            this.openModal('homeSettingsModal');
+        });
+
         document.getElementById('settingsTabs').addEventListener('click', (e) => {
             if (e.target.classList.contains('settings-tab')) {
                 const tabName = e.target.dataset.tab;
@@ -347,38 +349,29 @@ export class UIManager {
             document.getElementById('homeUnitEyeSizeValue').textContent = this.gameManager.unitEyeScale.toFixed(2);
             this.gameManager.draw();
         });
-
-        // 
-
-            this.gameManager.actionCam.maxZoom = parseFloat(e.target.value);
-            document.getElementById('actionCamZoomMaxValue').textContent = this.gameManager.actionCam.maxZoom.toFixed(2);
-        });
         document.getElementById('actionCamZoomSpeed').addEventListener('input', (e) => {
             this.gameManager.actionCam.zoomSpeed = parseFloat(e.target.value);
-            document.getElementById('actionCamZoomSpeedValue').textContent = this.gameManager.actionCam.zoomSpeed.toFixed(2);
+            document.getElementById('homeActionCamZoomSpeedValue').textContent = this.gameManager.actionCam.zoomSpeed.toFixed(2);
         });
-        document.getElementById('actionCamSlowdownFactor').addEventListener('input', (e) => {
-            this.gameManager.actionCam.slowdownFactor = parseFloat(e.target.value);
-            document.getElementById('actionCamSlowdownFactorValue').textContent = this.gameManager.actionCam.slowdownFactor.toFixed(2);
-            if (this.gameManager.isActionCam && this.gameManager.actionCam.target.scale > 1) this.gameManager.gameSpeed = 1 / this.gameManager.actionCam.slowdownFactor;
-        });
+
         document.getElementById('saveHomeSettingsBtn').addEventListener('click', () => {
             this.gameManager.isLevelUpEnabled = document.getElementById('homeLevelUpToggle').checked;
             this.gameManager.isUnitOutlineEnabled = document.getElementById('homeUnitOutlineToggle').checked;
             this.gameManager.unitOutlineWidth = parseFloat(document.getElementById('homeUnitOutlineWidthControl').value);
             this.gameManager.unitEyeScale = parseFloat(document.getElementById('homeUnitEyeSizeControl').value);
+            this.gameManager.actionCam.slowdownRate = parseFloat(document.getElementById('homeActionCamSlowdownRate').value);
             
             localStorage.setItem('levelUpEnabled', String(this.gameManager.isLevelUpEnabled));
             localStorage.setItem('unitOutlineEnabled', String(this.gameManager.isUnitOutlineEnabled));
             localStorage.setItem('unitOutlineWidth', String(this.gameManager.unitOutlineWidth));
             localStorage.setItem('unitEyeScale', String(this.gameManager.unitEyeScale));
-            localStorage.setItem('actionCamMaxZoom', String(this.gameManager.actionCam.maxZoom));
-            localStorage.setItem('actionCamZoomSpeed', String(this.gameManager.actionCam.zoomSpeed));
-            
- this.gameManager.draw();
+            localStorage.setItem('actionCamSlowdownRate', String(this.gameManager.actionCam.slowdownRate));
+
+            this.gameManager.draw();
             this.closeModal('homeSettingsModal');
         });
     }
+
     setupNametagSettingsModal() {
         document.getElementById('nametagSettingsBtn').addEventListener('click', () => this.openModal('nametagSettingsModal'));
         document.getElementById('closeNametagSettingsModal').addEventListener('click', () => this.closeModal('nametagSettingsModal'));

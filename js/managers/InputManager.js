@@ -39,7 +39,7 @@ export class InputManager {
         const pos = this.getMousePos(e);
 
         if (gm.isActionCam) {
-            gm.handleActionCamClick(pos);
+            gm.handleActionCamClick(pos); // GameManager에서 isReplayMode를 체크하므로 여기서는 항상 호출
             return; // 액션캠 클릭 시 다른 동작을 막기 위해 여기서 종료
         }
         if (gm.state === 'EDIT') {
