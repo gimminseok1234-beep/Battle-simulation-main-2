@@ -195,13 +195,6 @@ export class SimulationManager {
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
-            gm.projectiles.forEach(p => p.update());
-            gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
-            return;
-        }
-
-        if (gm.autoMagneticField.isActive) {
-            gm.autoMagneticField.simulationTime += 1; // Use fixed step
             const progress = Math.min(1, gm.autoMagneticField.simulationTime / gm.autoMagneticField.totalShrinkTime);
 
             if (gm.autoMagneticField.shrinkType === 'vertical') {
@@ -228,6 +221,15 @@ export class SimulationManager {
                     maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
                 };
             }
+        }
+
+        if (gm.state === 'ENDING') {
+            // In ending state, only projectiles and visuals update.
+            // Logic for units stops.
+            gm.projectiles.forEach(p => p.update());
+            gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
+            // Other visual effects are handled in updateVisuals
+            return;
         }
         
         const unitsBeforeUpdate = gm.units.length;
@@ -261,9 +263,6 @@ export class SimulationManager {
         
         gm.units = gm.units.filter(u => u.hp > 0);
         
-        gm.projectiles.forEach(p => p.update());
-        gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
-
         for (let i = gm.projectiles.length - 1; i >= 0; i--) {
             const p = gm.projectiles[i];
             let hit = false;
@@ -442,6 +441,7 @@ export class SimulationManager {
             }
         }
         
+        gm.projectiles.forEach(p => p.update());
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
         
         gm.magicCircles.forEach(circle => circle.update());
@@ -449,11 +449,33 @@ export class SimulationManager {
         
         gm.poisonClouds.forEach(cloud => cloud.update());
         gm.poisonClouds = gm.poisonClouds.filter(c => c.duration > 0);
-
+        
         // [신규] 독 장판 업데이트 로직 추가
         gm.updatePoisonPuddles();
 
         gm.weapons = gm.weapons.filter(w => !w.isEquipped);
+    }
+
+    updateVisuals() {
+        const gm = this.gameManager;
+        if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
+
+        if (gm.state === 'SIMULATE') {
+            gm.simulationTime += 1 / 60;
+        }
+
+        if (gm.autoMagneticField.isActive) {
+            gm.autoMagneticField.simulationTime += 1;
+        }
+
+        const unitsBeforeUpdate = gm.units.length;
+
+        gm.growingFields.forEach(field => field.update());
+        gm.nexuses.forEach(n => n.update());
+
+        if (gm.units.length < unitsBeforeUpdate) {
+            gm.audioManager.play('unitDeath');
+        }
 
         gm.effects.forEach(e => e.update());
         gm.effects = gm.effects.filter(e => e.duration > 0);
@@ -463,4 +485,5 @@ export class SimulationManager {
         gm.particles.forEach(p => p.update(gm.gameSpeed));
         gm.particles = gm.particles.filter(p => p.isAlive());
     }
+
 }
