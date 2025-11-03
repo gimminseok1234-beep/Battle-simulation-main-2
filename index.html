@@ -103,29 +103,28 @@
             </div>
         </div>
         <div class="flex items-start gap-4 w-full">
-            <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto flex-shrink-0"></div>
-            <div class="flex-grow flex justify-start items-start gap-4">
-                <div class="flex-grow flex justify-center ml-auto">
-                    <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+            <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto flex-shrink-0">
+            </div>
+            <div class="flex-grow flex justify-center">
+                <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+            </div>
+            <div id="actionCamControls" class="hidden p-4 bg-gray-800 rounded-lg shadow-lg w-64 flex-col gap-4 flex-shrink-0">
+                <h4 class="text-lg font-bold text-center text-white">액션캠 제어</h4>
+                <div class="flex items-center justify-between">
+                    <label for="actionCamToggle" class="font-semibold">활성화</label>
+                    <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
                 </div>
-                <div id="actionCamControls" class="hidden ml-4 p-4 bg-gray-800 rounded-lg shadow-lg w-64 flex-col gap-4">
-                    <h4 class="text-lg font-bold text-center text-white">액션캠 제어</h4>
-                    <div class="flex items-center justify-between">
-                        <label for="actionCamToggle" class="font-semibold">활성화</label>
-                        <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <label for="actionCamZoomMax" class="font-semibold whitespace-nowrap">확대 배율: <span id="actionCamZoomMaxValue">1.40</span>x</label>
-                        <input type="range" id="actionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <label for="actionCamZoomSpeed" class="font-semibold whitespace-nowrap">줌 속도: <span id="actionCamZoomSpeedValue">0.05</span></label>
-                        <input type="range" id="actionCamZoomSpeed" min="0.01" max="0.2" step="0.01" value="0.05" class="w-full">
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <label for="actionCamSlowdownFactor" class="font-semibold whitespace-nowrap">슬로우 모션: <span id="actionCamSlowdownFactorValue">1.00</span>x</label>
-                        <input type="range" id="actionCamSlowdownFactor" min="1.0" max="2.0" step="0.05" value="1.0" class="w-full">
-                    </div>
+                <div class="flex flex-col gap-2">
+                    <label for="actionCamZoomMax" class="font-semibold whitespace-nowrap">확대 배율: <span id="actionCamZoomMaxValue">1.40</span>x</label>
+                    <input type="range" id="actionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="actionCamZoomSpeed" class="font-semibold whitespace-nowrap">줌 속도: <span id="actionCamZoomSpeedValue">0.05</span></label>
+                    <input type="range" id="actionCamZoomSpeed" min="0.01" max="0.2" step="0.01" value="0.05" class="w-full">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="actionCamSlowdownFactor" class="font-semibold whitespace-nowrap">슬로우 모션: <span id="actionCamSlowdownFactorValue">1.00</span>x</label>
+                    <input type="range" id="actionCamSlowdownFactor" min="1.0" max="2.0" step="0.05" value="1.0" class="w-full">
                 </div>
             </div>
         </div>
