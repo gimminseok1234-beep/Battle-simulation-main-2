@@ -109,7 +109,7 @@ export class GameManager {
         
         this.prng = new SeededRandom(Date.now());
         this.uiPrng = new SeededRandom(Date.now());
-        this.visualPrng = new SeededRandom(Date.now());
+        this.visualPrng = new SeededRandom(Date.now()); // This was already applied, but keeping for context
         this.simulationSeed = null;
         this.rngPolicy = 'legacy'; // 'legacy' | 'seeded_v2'
         this._originalMathRandom = null;
@@ -1147,7 +1147,7 @@ export class GameManager {
             puddle.draw(ctx);
         });
     }
-
+    
     spawnMagicCircle(team) {
         const availableTiles = [];
         for (let y = 0; y < this.ROWS; y++) {
@@ -1164,18 +1164,18 @@ export class GameManager {
         }
 
         if (availableTiles.length > 0) {
-            const pos = availableTiles[Math.floor(this.random() * availableTiles.length)];
+            const pos = availableTiles[Math.floor(this.prng.next() * availableTiles.length)];
             this.magicCircles.push(new MagicCircle(this, pos.x, pos.y, team));
         }
     }
 
     spawnRandomWeaponNear(pos) {
         const weaponTypes = ['sword', 'bow', 'dual_swords', 'fire_staff', 'lightning', 'magic_spear', 'boomerang', 'poison_potion', 'magic_dagger', 'axe', 'hadoken', 'shuriken', 'ice_diamond'];
-        const randomType = weaponTypes[Math.floor(this.random() * weaponTypes.length)];
+        const randomType = weaponTypes[Math.floor(this.prng.next() * weaponTypes.length)];
 
         for (let i = 0; i < 10; i++) {
-            const angle = this.random() * Math.PI * 2;
-            const radius = GRID_SIZE * (this.random() * 2 + 1);
+            const angle = this.prng.next() * Math.PI * 2;
+            const radius = GRID_SIZE * (this.prng.next() * 2 + 1);
             const spawnX = Math.floor((pos.x + Math.cos(angle) * radius) / GRID_SIZE);
             const spawnY = Math.floor((pos.y + Math.sin(angle) * radius) / GRID_SIZE);
 

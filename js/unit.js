@@ -569,11 +569,11 @@ export class Unit {
 
                 const particleCount = (this.level - 1) * 2;
                 for (let i = 0; i < particleCount; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
+                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
                     const radius = GRID_SIZE / 1.67; // 유닛 반지름
                     const spawnX = this.pixelX + Math.cos(angle) * radius;
                     const spawnY = this.pixelY + Math.sin(angle) * radius;
-                    const speed = 0.5 + gameManager.random() * 0.5;
+                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
 
                     gameManager.addParticle({
                         x: spawnX,
@@ -582,7 +582,7 @@ export class Unit {
                         vy: Math.sin(angle) * speed,
                         life: 0.6,
                         color: teamColor,
-                        size: this.level * 0.5 + gameManager.random() * this.level,
+                        size: this.level * 0.5 + gameManager.visualPrng.next() * this.level,
                         gravity: -0.02
                     });
                 }
