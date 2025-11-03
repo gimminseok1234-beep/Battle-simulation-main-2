@@ -195,11 +195,6 @@ export class SimulationManager {
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
-            gm.simulationTime += 1 / 60; // This should be tied to logic ticks, not frames. It's correct here.
-        }
-
-        if (gm.state === 'ENDING') {
-            gm.nexuses.forEach(n => n.update());
             gm.projectiles.forEach(p => p.update());
             gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
             return;
@@ -266,9 +261,6 @@ export class SimulationManager {
         
         gm.units = gm.units.filter(u => u.hp > 0);
         
-        // Visual/Audio updates are moved to updateVisuals
-        // gm.nexuses.forEach(n => n.update());
-
         gm.projectiles.forEach(p => p.update());
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
 

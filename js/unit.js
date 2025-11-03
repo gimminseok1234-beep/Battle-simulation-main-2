@@ -734,7 +734,7 @@ export class Unit {
         }
 
         if (this.isStunned > 0) {
-            this.isStunned -= gameManager.gameSpeed;
+            this.isStunned -= 1;
             if (this.isStunned <= 0) {
                 this.stunnedByMagicCircle = false;
             }
@@ -743,18 +743,18 @@ export class Unit {
         }
 
         if (this.isSlowed > 0) {
-            this.isSlowed -= gameManager.gameSpeed;
+            this.isSlowed -= 1;
         }
 
         if (this.isMarkedByDualSword.active) {
-            this.isMarkedByDualSword.timer -= gameManager.gameSpeed;
+            this.isMarkedByDualSword.timer -= 1;
             if (this.isMarkedByDualSword.timer <= 0) {
                 this.isMarkedByDualSword.active = false;
             }
         }
 
         if (this.awakeningEffect.active && this.awakeningEffect.stacks < 3) {
-            this.awakeningEffect.timer += gameManager.gameSpeed;
+            this.awakeningEffect.timer += 1;
             if (this.awakeningEffect.timer >= 300) {
                 this.awakeningEffect.timer = 0;
                 this.awakeningEffect.stacks++;
@@ -785,7 +785,7 @@ export class Unit {
         if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= gameManager.gameSpeed;
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
         if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= 1;
-        if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= gameManager.gameSpeed;
+        if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= 1;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackCooldown > 0) this.attackCooldown -= 1;
         if (this.teleportCooldown > 0) this.teleportCooldown -= 1;
@@ -800,7 +800,7 @@ export class Unit {
         if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= 1; // [신규] 독 포션 쿨다운 감소
         if (this.fleeingCooldown > 0) this.fleeingCooldown -= 1;
 
-        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
+        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= 1;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
                 if (p.owner.team === this.team) continue;
@@ -1240,7 +1240,7 @@ export class Unit {
 
         if (this.moveTarget) {
             const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
-            if (distMoved < 0.2 * gameManager.gameSpeed) {
+            if (distMoved < 0.2) { // gameSpeed removed for logic tick
                 this.stuckTimer += 1;
             } else {
                 this.stuckTimer = 0;
@@ -1266,7 +1266,7 @@ export class Unit {
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
 
         if (this.isInMagneticField) {
-            this.takeDamage(0.3 * gameManager.gameSpeed, { isTileDamage: true });
+            this.takeDamage(0.3, { isTileDamage: true }); // gameSpeed removed for logic tick
         }
 
         // [신규] 독 장판 데미지 처리
@@ -1284,7 +1284,7 @@ export class Unit {
 
         if (finalGridY >= 0 && finalGridY < gameManager.ROWS && finalGridX >= 0 && finalGridX < gameManager.COLS) {
             const currentTile = gameManager.map[finalGridY][finalGridX];
-            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2 * gameManager.gameSpeed, { isTileDamage: true });
+            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2, { isTileDamage: true }); // gameSpeed removed
             if (currentTile.type === TILE.HEAL_PACK) {
                 this.hp = this.maxHp;
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
