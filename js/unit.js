@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
-            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
+            const nextX = this.pixelX + this.knockbackX;
+            const nextY = this.pixelY + this.knockbackY;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -257,8 +257,8 @@ export class Unit {
             }
         }
 
-        this.knockbackX *= (1 - 0.1 * gameManager.gameSpeed);
-        this.knockbackY *= (1 - 0.1 * gameManager.gameSpeed);
+        this.knockbackX *= 0.9;
+        this.knockbackY *= 0.9;
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
@@ -275,10 +275,10 @@ export class Unit {
                     const moveX = (overlap / 2) * Math.cos(angle);
                     const moveY = (overlap / 2) * Math.sin(angle);
 
-                    const myNextX = this.pixelX - moveX * gameManager.gameSpeed;
-                    const myNextY = this.pixelY - moveY * gameManager.gameSpeed;
-                    const otherNextX = otherUnit.pixelX + moveX * gameManager.gameSpeed;
-                    const otherNextY = otherUnit.pixelY + moveY * gameManager.gameSpeed;
+                    const myNextX = this.pixelX - moveX;
+                    const myNextY = this.pixelY - moveY;
+                    const otherNextX = otherUnit.pixelX + moveX;
+                    const otherNextY = otherUnit.pixelY + moveY;
 
                     const myGridX = Math.floor(myNextX / GRID_SIZE);
                     const myGridY = Math.floor(myNextY / GRID_SIZE);
@@ -344,7 +344,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed * gameManager.gameSpeed;
+            const currentSpeed = this.speed;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -362,7 +362,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * gameManager.gameSpeed;
+        const currentSpeed = this.speed;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -1238,10 +1238,6 @@ export class Unit {
         this.pathUpdateCooldown = 15; // 0.25초마다 경로 재계산
     }
 
-    /**
-     * [NEW] Updates visual timers and effects that are dependent on gameSpeed (for slow-motion).
-     * This is called from SimulationManager.updateVisuals().
-     */
     updateVisuals() {
         const gameManager = this.gameManager;
         if (!gameManager) return;
@@ -1323,7 +1319,7 @@ export class Unit {
         }
 
         // Level up particle cooldown
-        if (this.levelUpParticleCooldown > 0) this.levelUpParticleCooldown -= gameManager.gameSpeed;
+        // if (this.levelUpParticleCooldown > 0) this.levelUpParticleCooldown -= gameManager.gameSpeed;
 
         // Eye blinking timer
         if (this.blinkTimer > 0) this.blinkTimer -= gameManager.gameSpeed;
@@ -1333,6 +1329,762 @@ export class Unit {
         if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
         if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
+    }
+
+    update(enemies, weapons, projectiles) {
+        const gameManager = this.gameManager;
+        if (!gameManager) {
+            return;
+        }
+
+        if (this.isDashing) {
+            this.dashTrail.push({ x: this.pixelX, y: this.pixelY });
+            if (this.dashTrail.length > 5) this.dashTrail.shift();
+
+            let moveX = 0, moveY = 0;
+            switch (this.dashDirection) {
+                case 'RIGHT': moveX = this.dashSpeed; break;
+                case 'LEFT': moveX = -this.dashSpeed; break;
+                case 'DOWN': moveY = this.dashSpeed; break;
+                case 'UP': moveY = -this.dashSpeed; break;
+            }
+
+            const nextX = this.pixelX + moveX;
+            const nextY = this.pixelY + moveY;
+            const gridX = Math.floor(nextX / GRID_SIZE);
+            const gridY = Math.floor(nextY / GRID_SIZE);
+
+            if (gridY < 0 || gridY >= gameManager.ROWS || gridX < 0 || gridX >= gameManager.COLS || gameManager.map[gridY][gridX].type === TILE.WALL) {
+                this.isDashing = false;
+            } else {
+                if (gameManager.map[gridY][gridX].type === TILE.CRACKED_WALL) {
+                    gameManager.damageTile(gridX, gridY, 999);
+                }
+
+                this.pixelX = nextX;
+                this.pixelY = nextY;
+                this.dashDistanceRemaining -= this.dashSpeed;
+
+                if (this.dashDistanceRemaining <= 0) {
+                    this.isDashing = false;
+                }
+            }
+            if (!this.isDashing) this.dashTrail = [];
+            return;
+        }
+
+        if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
+
+        // [신규] 마법창 비전 이동 로직
+        if (this.weapon?.type === 'magic_spear' && !this.hasUsedBlink && this.hp < this.maxHp * 0.3) {
+            this.hasUsedBlink = true;
+
+            let safeSpot = null;
+            const searchRadius = 8; // 타일 단위 검색 반경
+            const currentGridX = Math.floor(this.pixelX / GRID_SIZE);
+            const currentGridY = Math.floor(this.pixelY / GRID_SIZE);
+
+            // 현재 위치에서 점점 넓은 반경으로 안전한 위치 탐색
+            for (let r = 1; r <= searchRadius; r++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+
+                        const checkX = currentGridX + dx;
+                        const checkY = currentGridY + dy;
+
+                        if (checkY >= 0 && checkY < gameManager.ROWS && checkX >= 0 && checkX < gameManager.COLS) {
+                            const tile = gameManager.map[checkY][checkX];
+                            const isWall = tile.type === TILE.WALL || tile.type === TILE.CRACKED_WALL;
+                            const isInField = gameManager.isPosInAnyField(checkX, checkY);
+                            const isInLava = gameManager.isPosInLavaForUnit(checkX, checkY);
+
+                            if (!isWall && !isInField && !isInLava) {
+                                safeSpot = { x: checkX * GRID_SIZE + GRID_SIZE / 2, y: checkY * GRID_SIZE + GRID_SIZE / 2 };
+                                break;
+                            }
+                        }
+                    }
+                    if (safeSpot) break;
+                }
+                if (safeSpot) break;
+            }
+
+            // 이펙트 생성
+            for (let i = 0; i < 25; i++) {
+                const angle = gameManager.random() * Math.PI * 2;
+                const speed = 2 + gameManager.random() * 4;
+                gameManager.addParticle({ x: this.pixelX, y: this.pixelY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
+            }
+            gameManager.audioManager.play('teleport');
+
+            if (safeSpot) {
+                this.pixelX = safeSpot.x;
+                this.pixelY = safeSpot.y;
+            }
+            // 안전한 장소를 못 찾으면 제자리에서 효과만 발생
+
+            this.knockbackX = 0;
+            this.knockbackY = 0;
+        }
+
+        if (this.isStunned > 0) {
+            this.isStunned -= 1;
+            if (this.isStunned <= 0) {
+                this.stunnedByMagicCircle = false;
+            }
+            // this.applyPhysics();
+            return;
+        }
+
+        if (this.isSlowed > 0) {
+            this.isSlowed -= 1;
+        }
+
+        if (this.isMarkedByDualSword.active) {
+            this.isMarkedByDualSword.timer -= 1;
+            if (this.isMarkedByDualSword.timer <= 0) {
+                this.isMarkedByDualSword.active = false;
+            }
+        }
+
+        if (this.awakeningEffect.active && this.awakeningEffect.stacks < 3) {
+            this.awakeningEffect.timer += 1;
+            if (this.awakeningEffect.timer >= 300) {
+                this.awakeningEffect.timer = 0;
+                this.awakeningEffect.stacks++;
+                this.maxHp += 20;
+                this.hp = Math.min(this.maxHp, this.hp + 20);
+                this.baseAttackPower += 3;
+                gameManager.audioManager.play('Arousal');
+                for (let i = 0; i < 30; i++) {
+                    const angle = gameManager.random() * Math.PI * 2;
+                    const speed = 1 + gameManager.random() * 3;
+                    const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
+                    gameManager.addParticle({
+                        x: this.pixelX,
+                        y: this.pixelY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 0.8,
+                        color: color,
+                        size: gameManager.random() * 2 + 1.5,
+                        gravity: 0.05
+                    });
+                }
+            }
+        }
+
+        if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= 1;
+        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= 1; if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= 1;
+        if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= 1;
+        if (this.attackCooldown > 0) this.attackCooldown -= 1;
+        if (this.teleportCooldown > 0) this.teleportCooldown -= 1;
+        if (this.alertedCounter > 0) this.alertedCounter -= 1; // [수정] 마법창 특수 공격 쿨다운
+        if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= 1;
+        if (this.evasionCooldown > 0) this.evasionCooldown -= 1;
+        if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= 1;
+        if (this.boomerangCooldown > 0) this.boomerangCooldown -= 1;
+        if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= 1;
+        if (this.fireStaffSpecialCooldown > 0) this.fireStaffSpecialCooldown -= 1;
+        if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= 1; // [신규] 독 포션 쿨다운 감소
+        if (this.fleeingCooldown > 0) this.fleeingCooldown -= 1;
+
+        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= 1;
+        if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
+            for (const p of projectiles) {
+                if (p.owner.team === this.team) continue;
+                const dist = Math.hypot(this.pixelX - p.pixelX, this.pixelY - p.pixelY);
+                if (dist < GRID_SIZE * 3) {
+                    const angleToUnit = Math.atan2(this.pixelY - p.pixelY, this.pixelX - p.pixelX);
+                    const angleDiff = Math.abs(angleToUnit - p.angle);
+                    if (angleDiff < Math.PI / 4 || angleDiff > Math.PI * 1.75) {
+                        if (this.gameManager.random() > 0.5) {
+                            const dodgeAngle = p.angle + (Math.PI / 2) * (gameManager.random() < 0.5 ? 1 : -1);
+                            const dodgeForce = 4;
+                            this.knockbackX += Math.cos(dodgeAngle) * dodgeForce;
+                            this.knockbackY += Math.sin(dodgeAngle) * dodgeForce;
+                            this.evasionCooldown = 30;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (this.poisonEffect.active) {
+            this.poisonEffect.duration -= 1;
+            this.takeDamage(this.poisonEffect.damage, { isTileDamage: true });
+            if (this.poisonEffect.duration <= 0) {
+                this.poisonEffect.active = false;
+            }
+        }
+
+        if (this.weapon && this.weapon.type === 'ice_diamond') {
+            if (this.iceDiamondCharges < 5) {
+                this.iceDiamondChargeTimer += 1;
+                if (this.iceDiamondChargeTimer >= 240) {
+                    this.iceDiamondCharges++;
+                    this.iceDiamondChargeTimer = 0;
+                }
+            }
+        }
+
+        // [수정] update() 함수 내부 (예: 쿨다운 감소시키는 곳)
+        if (this.level >= 2 && gameManager.isLevelUpEnabled) {
+            this.levelUpParticleCooldown -= 1; // gameSpeed 제거
+            if (this.levelUpParticleCooldown <= 0) {
+                this.levelUpParticleCooldown = 15 - this.level;
+
+                let teamColor;
+                switch(this.team) {
+                    case TEAM.A: teamColor = DEEP_COLORS.TEAM_A; break;
+                    case TEAM.B: teamColor = DEEP_COLORS.TEAM_B; break;
+                    case TEAM.C: teamColor = DEEP_COLORS.TEAM_C; break;
+                    case TEAM.D: teamColor = DEEP_COLORS.TEAM_D; break;
+                    default: teamColor = '#FFFFFF'; break;
+                }
+
+                const particleCount = (this.level - 1) * 2;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
+                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
+                    const spawnX = this.pixelX + Math.cos(angle) * radius;
+                    const spawnY = this.pixelY + Math.sin(angle) * radius;
+                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
+
+                    gameManager.addParticle({ x: spawnX, y: spawnY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.6, color: teamColor, size: this.level * 0.5 + gameManager.visualPrng.next() * this.level, gravity: -0.02 });
+                }
+            }
+        }
+
+        if (this.dualSwordTeleportDelayTimer > 0) {
+            this.dualSwordTeleportDelayTimer -= 1;
+            if (this.dualSwordTeleportDelayTimer <= 0) {
+                this.performDualSwordTeleportAttack(enemies);
+            }
+        }
+
+        if (this.isKing && this.spawnCooldown <= 0) {
+            this.spawnCooldown = this.spawnInterval;
+            gameManager.spawnUnit(this, false);
+        }
+
+        if (this.isCasting) { // [수정] 독 포션 캐스팅 로직 제거
+            this.applyPhysics();
+            return;
+        }
+
+        if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
+            const { item: closestEnemy } = this.findClosest(enemies);
+            if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
+                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                if (dist < this.detectionRange) {
+                    this.isAimingMagicDagger = true;
+                    this.magicDaggerAimTimer = 60;
+                    const angle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+                    const dashDistance = GRID_SIZE * 4;
+                    this.magicDaggerTargetPos = {
+                        x: this.pixelX + Math.cos(angle) * dashDistance,
+                        y: this.pixelY + Math.sin(angle) * dashDistance
+                    };
+                }
+            }
+        }
+
+        if (this.isAimingMagicDagger) {
+            this.magicDaggerAimTimer -= 1;
+            if (this.magicDaggerAimTimer <= 0) {
+                this.isAimingMagicDagger = false;
+                this.magicDaggerSkillCooldown = 420;
+                this.attackCooldown = 30;
+ 
+                const startPos = { x: this.pixelX, y: this.pixelY };
+                const endPos = this.magicDaggerTargetPos;
+ 
+                enemies.forEach(enemy => {
+                    const distToLine = Math.abs((endPos.y - startPos.y) * enemy.pixelX - (endPos.x - startPos.x) * enemy.pixelY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
+                    if (distToLine < GRID_SIZE) {
+                        enemy.takeDamage(this.attackPower * 1.2, { stun: 60 }, this);
+                    }
+                });
+ 
+                this.pixelX = endPos.x;
+                this.pixelY = endPos.y;
+ 
+                gameManager.effects.push(new MagicDaggerDashEffect(gameManager, startPos, endPos));
+                gameManager.audioManager.play('rush');
+ 
+                // [MODIFIED] 마법 단검 특수 공격 이펙트 강화
+                gameManager.createEffect('axe_spin_effect', endPos.x, endPos.y, this, {
+                    color: 'rgba(168, 85, 247, 0.8)', maxRadius: GRID_SIZE * 2.5, duration: 20, lineWidth: 2
+                });
+                for (let i = 0; i < 25; i++) {
+                    const angle = gameManager.random() * Math.PI * 2;
+                    const speed = 1 + gameManager.random() * 3;
+                    gameManager.addParticle({
+                        x: endPos.x, y: endPos.y,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 0.8, color: ['#5b21b6', '#a855f7', '#1e293b'][Math.floor(gameManager.random() * 3)],
+                        size: gameManager.random() * 2.5 + 1, gravity: 0.03
+                    });
+                }
+                return;
+            }
+        }
+
+        if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
+            const { item: closestEnemy } = this.findClosest(enemies);
+            if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
+                const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
+                if (dist <= this.attackRange) {
+                    this.boomerangCooldown = 480;
+                    gameManager.createProjectile(this, closestEnemy, 'boomerang_projectile');
+                    gameManager.audioManager.play('boomerang');
+                    this.state = 'IDLE';
+                    this.moveTarget = null;
+                    this.attackCooldown = 60;
+                    this.applyPhysics();
+                    return;
+                }
+            }
+        }
+
+        if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
+            const { item: closestEnemy } = this.findClosest(enemies);
+            if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+                this.axeSkillCooldown = 240;
+                this.spinAnimationTimer = 30;
+                gameManager.audioManager.play('axe');
+                gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+
+                const damageRadius = GRID_SIZE * 3.5;
+                enemies.forEach(enemy => {
+                    if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
+                        enemy.takeDamage(this.attackPower * 1.5, {}, this);
+                    }
+                });
+                gameManager.nexuses.forEach(nexus => {
+                    if (nexus.team !== this.team && !nexus.isDestroying && Math.hypot(this.pixelX - nexus.pixelX, this.pixelY - nexus.pixelY) < damageRadius) {
+                        nexus.takeDamage(this.attackPower * 1.5, {}, this);
+                    }
+                });
+                gameManager.audioManager.play('swordHit');
+
+                // [MODIFIED] 도끼 특수 공격 이펙트 강화 (조건문 안으로 이동)
+                for (let i = 0; i < 30; i++) {
+                    const angle = gameManager.random() * Math.PI * 2;
+                    const speed = 2 + gameManager.random() * 4;
+                    gameManager.addParticle({
+                        x: this.pixelX, y: this.pixelY,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 0.9,
+                        color: ['#9ca3af', '#e5e7eb', '#6b7280'][Math.floor(gameManager.random() * 3)],
+                        size: gameManager.random() * 2 + 1, gravity: 0.1
+                    });
+                }
+            }
+        }
+
+        // [신규] 독 포션 공격 로직
+        if (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown <= 0) {
+            const { item: closestEnemy } = this.findClosest(enemies);
+            if (closestEnemy) {
+                this.poisonPotionCooldown = 300; // 5초 쿨다운
+                this.attack(closestEnemy);
+                this.facingAngle = Math.atan2(closestEnemy.pixelY - this.pixelY, closestEnemy.pixelX - this.pixelX);
+            }
+        }
+
+
+
+        let newState = 'IDLE';
+        let newTarget = null;
+        let targetEnemyForAlert = null;
+
+        // [수정] isSpecialAttackReady 업데이트 로직을 상태 결정 로직 이전으로 이동하여 매 프레임마다 상태가 정확히 갱신되도록 합니다.
+        if (this.weapon) {
+            switch (this.weapon.type) {
+                case 'sword':
+                case 'bow':
+                    // 3타마다 특수 공격이므로, 2번 공격하면 다음 공격이 특수 공격임
+                    this.isSpecialAttackReady = (this.attackCount === 2);
+                    break;
+                case 'shuriken':
+                    this.isSpecialAttackReady = (this.shurikenSkillCooldown <= 0);
+                    break;
+                case 'axe':
+                    this.isSpecialAttackReady = (this.axeSkillCooldown <= 0);
+                    break;
+                case 'fire_staff':
+                    this.isSpecialAttackReady = (this.fireStaffSpecialCooldown <= 0);
+                    break;
+                case 'boomerang':
+                    this.isSpecialAttackReady = (this.boomerangCooldown <= 0);
+                    break;
+                case 'magic_dagger':
+                    this.isSpecialAttackReady = (this.magicDaggerSkillCooldown <= 0 && !this.isAimingMagicDagger);
+                    break;
+                case 'dual_swords':
+                    this.isSpecialAttackReady = (this.dualSwordSkillCooldown <= 0);
+                    break;
+                case 'magic_spear':
+                    this.isSpecialAttackReady = (this.magicSpearSpecialCooldown <= 0);
+                    break;
+                case 'poison_potion':
+                    this.isSpecialAttackReady = (this.poisonPotionCooldown <= 0);
+                    break;
+                default:
+                    this.isSpecialAttackReady = false;
+            }
+        } else {
+            this.isSpecialAttackReady = false;
+        }
+
+        const currentGridXBeforeMove = Math.floor(this.pixelX / GRID_SIZE);
+        const currentGridYBeforeMove = Math.floor(this.pixelY / GRID_SIZE);
+        this.isInMagneticField = gameManager.isPosInAnyField(currentGridXBeforeMove, currentGridYBeforeMove);
+        this.isInLava = gameManager.isPosInLavaForUnit(currentGridXBeforeMove, currentGridYBeforeMove);
+
+        if (this.isInMagneticField) {
+            newState = 'FLEEING_FIELD';
+        } else if (gameManager.isLavaAvoidanceEnabled && this.isInLava) {
+            newState = 'FLEEING_LAVA';
+            this.fleeingCooldown = 60;
+        } else if (this.fleeingCooldown <= 0) {
+            const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
+            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
+
+            const visibleWeapons = weapons.filter(w => !w.isEquipped && gameManager.hasLineOfSightForWeapon(this, w));
+            const { item: targetWeapon, distance: weaponDist } = this.findClosest(visibleWeapons); // 무기는 가장 가까운 것
+
+            let closestQuestionMark = null;
+            let questionMarkDist = Infinity;
+            if (!this.weapon) {
+                const questionMarkTiles = gameManager.getTilesOfType(TILE.QUESTION_MARK);
+                const questionMarkPositions = questionMarkTiles.map(pos => ({
+                    gridX: pos.x, gridY: pos.y,
+                    pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
+                    pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
+                }));
+                ({ item: closestQuestionMark, distance: questionMarkDist } = this.findClosest(questionMarkPositions));
+            }
+
+            let targetEnemy = null;
+            if (bestEnemy) { // findBestTarget는 이미 범위와 시야를 확인합니다.
+                targetEnemy = bestEnemy;
+                targetEnemyForAlert = bestEnemy;
+            }
+
+            if (this.isKing && targetEnemy) {
+                newState = 'FLEEING'; newTarget = targetEnemy; // 왕은 도망
+            } else if (this.hp < this.maxHp / 2) {
+                const healPacks = gameManager.getTilesOfType(TILE.HEAL_PACK);
+                if (healPacks.length > 0) {
+                    const healPackPositions = healPacks.map(pos => ({
+                        gridX: pos.x, gridY: pos.y,
+                        pixelX: pos.x * GRID_SIZE + GRID_SIZE / 2,
+                        pixelY: pos.y * GRID_SIZE + GRID_SIZE / 2
+                    }));
+
+                const visibleHealPacks = healPackPositions.filter(pack => gameManager.hasLineOfSight(this, pack));
+                const { item: closestPack, distance: packDist } = this.findClosest(visibleHealPacks);
+
+                    if (closestPack && packDist < this.detectionRange * 1.5) {
+                        newState = 'SEEKING_HEAL_PACK';
+                        newTarget = closestPack;
+                    }
+                }
+            }
+
+            if (newState === 'IDLE') {
+                if (closestQuestionMark && questionMarkDist <= this.detectionRange) {
+                    newState = 'SEEKING_QUESTION_MARK';
+                    newTarget = closestQuestionMark;
+                } else if (!this.weapon && targetWeapon && weaponDist <= this.detectionRange) {
+                    newState = 'SEEKING_WEAPON';
+                    newTarget = targetWeapon;
+                } else if (targetEnemy) {
+                    newState = 'AGGRESSIVE';
+                    newTarget = targetEnemy;
+                } else if (enemyNexus && gameManager.hasLineOfSight(this, enemyNexus) && Math.hypot(this.pixelX - enemyNexus.pixelX, this.pixelY - enemyNexus.pixelY) <= this.detectionRange) {
+                    newState = 'ATTACKING_NEXUS';
+                    newTarget = enemyNexus;
+                }
+            }
+        } else {
+            if (this.moveTarget) {
+                newState = this.state;
+            } else {
+                newState = 'IDLE';
+            }
+        }
+
+
+        if (this.state !== newState && newState !== 'IDLE' && newState !== 'FLEEING_FIELD' && newState !== 'FLEEING_LAVA') {
+            // [수정] 마법진 관련 로직 제거
+            if (this.alertedCounter <= 0) {
+                this.alertedCounter = 60;
+            }
+        }
+        this.state = newState;
+        this.target = newTarget;
+
+        switch (this.state) {
+            case 'FLEEING_FIELD':
+                this.moveTarget = gameManager.findClosestSafeSpot(this.pixelX, this.pixelY); // A* 사용 안함
+                break;
+            case 'FLEEING_LAVA':
+                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.pixelX, this.pixelY); // A* 사용 안함
+                break;
+            case 'FLEEING':
+                if (this.target) {
+                    const fleeAngle = Math.atan2(this.pixelY - this.target.pixelY, this.pixelX - this.target.pixelX);
+                    this.moveTarget = { x: this.pixelX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.pixelY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
+                }
+                break;
+            case 'SEEKING_HEAL_PACK':
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                break;
+            case 'SEEKING_QUESTION_MARK':
+                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                break;
+            case 'SEEKING_WEAPON':
+                if (this.target) { // 무기를 주으러 갈 때
+                    const distance = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                    if (distance < GRID_SIZE * 0.8 && !this.target.isEquipped) {
+                        this.equipWeapon(this.target.type);
+                        this.target.isEquipped = true;
+                        this.target = null;
+                    } else { // [수정] 무기를 주으러 갈 때도 일단 직선 이동
+                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                    }
+                }
+                break;
+            case 'ATTACKING_NEXUS':
+            case 'AGGRESSIVE':
+                if (this.target) {
+                    if (this.weapon && this.weapon.type === 'fire_staff' && this.fireStaffSpecialCooldown <= 0) {
+                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
+                            gameManager.createProjectile(this, this.target, 'fireball_projectile');
+                            gameManager.audioManager.play('fireball');
+                            this.fireStaffSpecialCooldown = 240;
+                            this.attackCooldown = 60;
+                            break;
+                        }
+                    }
+
+                    // [수정] 표창 특수 공격 로직을 다른 무기들과 동일한 구조로 수정
+                    if (this.weapon?.type === 'shuriken' && this.shurikenSkillCooldown <= 0) {
+                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
+                            const angleToTarget = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            const spread = 0.3;
+                            const angles = [angleToTarget - spread, angleToTarget, angleToTarget + spread];
+                            angles.forEach(angle => {
+                                gameManager.createProjectile(this, this.target, 'returning_shuriken', { angle: angle, state: 'MOVING_OUT', maxDistance: GRID_SIZE * 8 });
+                            });
+                            this.shurikenSkillCooldown = 480; // 8초 쿨다운
+                            this.attackCooldown = this.cooldownTime;
+                            break;
+                        }
+                    }
+
+                    if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
+                        const { item: closestEnemy } = this.findClosest(enemies);
+                        if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
+                            this.axeSkillCooldown = 240;
+                            this.spinAnimationTimer = 30;
+                            gameManager.audioManager.play('axe');
+                            gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
+                            // ... (이하 파티클 및 데미지 로직은 기존과 동일)
+                            break;
+                        }
+                    }
+
+                    // [수정] 마법창 특수 공격 로직을 use()를 거치지 않고 직접 발동하도록 수정
+                    if (this.weapon?.type === 'magic_spear' && this.magicSpearSpecialCooldown <= 0) {
+                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        if (distanceToTarget <= this.attackRange && gameManager.hasLineOfSight(this, this.target)) {
+                            this.moveTarget = null;
+                            gameManager.createProjectile(this, this.target, 'magic_spear_special');
+                            gameManager.audioManager.play('spear');
+                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            this.magicSpearSpecialCooldown = 420; // 특수 공격 사용 후 쿨다운 설정
+                            this.attackCooldown = this.cooldownTime; // 공격 애니메이션 및 후딜레이 적용
+                            break;
+                        }
+                    }
+
+                    if (this.weapon && this.weapon.type === 'dual_swords' && this.dualSwordSkillCooldown <= 0) {
+                        const distanceToTarget = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
+                        if (distanceToTarget <= this.detectionRange && gameManager.hasLineOfSight(this, this.target)) {
+                            gameManager.audioManager.play('shurikenShoot'); // [수정] 쌍검 특수 공격 효과음을 이전으로 복원
+                            gameManager.createProjectile(this, this.target, 'bouncing_sword');
+                            this.dualSwordSkillCooldown = 300;
+                            this.attackCooldown = 60;
+                            this.moveTarget = null;
+                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                            break;
+                        }
+                    }
+                    // [수정] 독 포션 유닛은 5초 쿨다운 공격만 하므로, 일반 근접 공격 로직에서 제외합니다.
+                    if (this.weapon?.type === 'poison_potion') {
+                        // 독 포션 유닛은 원거리 공격만 하므로, 적에게 다가가기만 합니다.
+                        this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
+                    } else {
+                        let attackDistance = this.attackRange;
+                        if (Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY) <= attackDistance) {
+                            this.moveTarget = null;
+                            this.attack(this.target);
+                            this.facingAngle = Math.atan2(this.target.pixelY - this.pixelY, this.target.pixelX - this.pixelX);
+                        } else { this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY }; }
+                    }
+                }
+                break;
+            case 'IDLE': default:
+                // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
+                if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
+                    const angle = this.gameManager.random() * Math.PI * 2;
+                    this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
+                }
+                break;
+        }
+
+
+        if (this.moveTarget) {
+            const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
+            if (distMoved < 0.2) {
+                this.stuckTimer += 1;
+            } else {
+                this.stuckTimer = 0;
+            }
+
+            if (this.stuckTimer > 30) {
+                // [수정] 막혔을 때만 A* 경로 탐색
+                if (this.path.length === 0) {
+                    this.updatePathTo(this.moveTarget);
+                } else {
+                    // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도
+                    this.path = [];
+                    this.stuckTimer = 0;
+                }
+            }
+        } else {
+            this.stuckTimer = 0;
+        }
+        this.lastPosition = { x: this.pixelX, y: this.pixelY };
+
+        // [수정] isBeingPulled 로직을 update()로 이동
+        if (this.isBeingPulled && this.puller) {
+            const dx = this.pullTargetPos.x - this.pixelX;
+            const dy = this.pullTargetPos.y - this.pixelY;
+            const dist = Math.hypot(dx, dy);
+            const pullSpeed = 4; // gameSpeed 제거 (로직 속도 고정)
+
+            if (dist < pullSpeed) {
+                this.pixelX = this.pullTargetPos.x;
+                this.pixelY = this.pullTargetPos.y;
+                this.isBeingPulled = false;
+
+                // 데미지 및 기절 적용
+                const damage = 20 + (this.puller.specialAttackLevelBonus || 0);
+                this.takeDamage(damage, { stun: 120 }, this.puller);
+                this.puller = null;
+            }
+        }
+
+        // [수정] 로직 업데이트의 마지막 단계로 이동/물리 적용
+        this.move();
+        this.applyPhysics();
+
+
+        const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
+        const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
+
+        if (this.isInMagneticField) {
+            this.takeDamage(0.3, { isTileDamage: true });
+        }
+
+        // [신규] 독 장판 데미지 처리
+        if (this.poisonPuddleDamageCooldown > 0) {
+            this.poisonPuddleDamageCooldown -= 1; // This is already correct (logic tick based)
+        }
+        const isOnPuddle = gameManager.isPosInPoisonPuddle(finalGridX, finalGridY);
+        if (isOnPuddle && this.poisonPuddleDamageCooldown <= 0) {
+            this.takeDamage(1, { isTileDamage: true }); // 0.5초마다 1의 데미지
+            this.poisonEffect.active = true; // 독 이펙트(속도 감소 등) 활성화
+            this.poisonEffect.duration = 120; // 2초간 유지
+            this.poisonEffect.damage = 0; // 장판 자체 데미지만 적용
+            this.poisonPuddleDamageCooldown = 30; // 0.5초 쿨다운
+        }
+
+        if (finalGridY >= 0 && finalGridY < gameManager.ROWS && finalGridX >= 0 && finalGridX < gameManager.COLS) {
+            const currentTile = gameManager.map[finalGridY][finalGridX];
+            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2, { isTileDamage: true });
+            if (currentTile.type === TILE.HEAL_PACK) {
+                this.hp = this.maxHp;
+                gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
+                gameManager.audioManager.play('heal');
+            }
+            if (currentTile.type === TILE.TELEPORTER && this.teleportCooldown <= 0) {
+                const teleporters = gameManager.getTilesOfType(TILE.TELEPORTER);
+                if (teleporters.length > 1) {
+                    const otherTeleporter = teleporters.find(t => t.x !== finalGridX || t.y !== finalGridY);
+                    if (otherTeleporter) {
+                        this.pixelX = otherTeleporter.x * GRID_SIZE + GRID_SIZE / 2;
+                        this.pixelY = otherTeleporter.y * GRID_SIZE + GRID_SIZE / 2;
+                        this.teleportCooldown = 120;
+                        gameManager.audioManager.play('teleport');
+                    }
+                }
+            }
+            if (currentTile.type === TILE.REPLICATION_TILE && !this.isKing) {
+                for (let i = 0; i < currentTile.replicationValue; i++) {
+                    gameManager.spawnUnit(this, true);
+                }
+                gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
+                gameManager.audioManager.play('replication');
+            }
+            if (currentTile.type === TILE.QUESTION_MARK) {
+                gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
+                gameManager.createEffect('question_mark_effect', this.pixelX, this.pixelY);
+                gameManager.audioManager.play('questionmark');
+                gameManager.spawnRandomWeaponNear({ x: this.pixelX, y: this.pixelY });
+            }
+            if (currentTile.type === TILE.DASH_TILE) {
+                this.isDashing = true;
+                this.dashDirection = currentTile.direction;
+                this.dashDistanceRemaining = 5 * GRID_SIZE;
+                this.state = 'IDLE';
+                this.moveTarget = null;
+                gameManager.audioManager.play('rush');
+                return;
+            }
+            if (currentTile.type === TILE.AWAKENING_POTION && !this.awakeningEffect.active) {
+                this.awakeningEffect.active = true;
+                this.awakeningEffect.stacks = 0;
+                this.awakeningEffect.timer = 0;
+                gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
+                gameManager.audioManager.play('Arousal');
+                for (let i = 0; i < 30; i++) {
+                    const angle = gameManager.random() * Math.PI * 2;
+                    const speed = 1 + gameManager.random() * 3;
+                    const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
+                    gameManager.addParticle({
+                        x: this.pixelX,
+                        y: this.pixelY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 0.8,
+                        color: color,
+                        size: gameManager.random() * 2 + 1.5,
+                        gravity: 0.05
+                    });
+                }
+            }
+        }
     }
 
     draw(ctx, isOutlineEnabled, outlineWidth) {
@@ -1360,20 +2112,6 @@ export class Unit {
             ctx.fill();
 
             ctx.restore();
-        }
-
-        // [NEW] 눈 깜빡임 타이머 업데이트 (draw에서 처리)
-        // This is purely visual and deterministic based on frame, so it's safe here.
-        if (!this.isBlinking && this.hp > 0) {
-            if (this.blinkTimer <= 0) {
-                this.isBlinking = true;
-                this.blinkTimer = 10; // 깜빡임 지속 시간 (짧게)
-            }
-        } else if (this.isBlinking) {
-            if (this.blinkTimer <= 0) {
-                this.isBlinking = false;
-                this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120; // 다음 깜빡임까지의 시간
-            }
         }
 
         if (this.isAimingMagicDagger) {
@@ -1476,6 +2214,20 @@ export class Unit {
 
         // [NEW] 눈 그리기 로직을 별도 메소드로 분리
         this.drawEyes(ctx);
+
+        // [NEW] 눈 깜빡임 타이머 업데이트 (draw에서 처리)
+        // This is purely visual and deterministic based on frame, so it's safe here.
+        if (!this.isBlinking && this.hp > 0) {
+            if (this.blinkTimer <= 0) {
+                this.isBlinking = true;
+                this.blinkTimer = 10; // 깜빡임 지속 시간 (짧게)
+            }
+        } else if (this.isBlinking) {
+            if (this.blinkTimer <= 0) {
+                this.isBlinking = false;
+                this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120; // 다음 깜빡임까지의 시간
+            }
+        }
 
         ctx.restore();
 
