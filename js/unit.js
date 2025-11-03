@@ -729,7 +729,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist < this.detectionRange) {
@@ -787,7 +787,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY);
                 if (dist <= this.attackRange) {
@@ -804,7 +804,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
             if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
@@ -1045,7 +1045,7 @@ export class Unit {
                     }
 
                     if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
-                        const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findBestTarget(enemies); // 'findClosest' -> 'findBestTarget'
                         if (closestEnemy && Math.hypot(this.logicX - closestEnemy.logicX, this.logicY - closestEnemy.logicY) < GRID_SIZE * 3) {
                             this.axeSkillCooldown = 240;
                             this.spinAnimationTimer = 30;

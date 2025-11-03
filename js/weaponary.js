@@ -747,8 +747,8 @@ export class Projectile {
         this.gameManager = gameManager; // [수정] 중복된 코드 제거
         this.owner = owner;
         this.target = target;
-        this.pixelX = options.startX !== undefined ? options.startX : owner.logicX;
-        this.pixelY = options.startY !== undefined ? options.startY : owner.logicY;
+        this.pixelX = options.startX !== undefined ? options.startX : owner.logicX; // 시각적 위치
+        this.pixelY = options.startY !== undefined ? options.startY : owner.logicY; // 시각적 위치
         // [신규] 논리적(결과) 위치
         this.logicX = this.pixelX;
         this.logicY = this.pixelY;
