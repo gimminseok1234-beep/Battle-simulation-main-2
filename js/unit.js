@@ -394,8 +394,8 @@ export class Unit {
                 const isRightSafe = !gameManager.isPosInLavaForUnit(Math.floor(rightLookAheadX / GRID_SIZE), Math.floor(rightLookAheadY / GRID_SIZE));
 
                 if (isLeftSafe && isRightSafe) {
-                    // [MODIFIED] Math.random()을 gameManager.random()으로 변경하여 결정성을 보장합니다.
-                    bestAngle = this.gameManager.random() < 0.5 ? leftAngle : rightAngle;
+                    // [MODIFIED] 시각적 회피 로직이므로 논리 RNG(random) 대신 시각 RNG(visualPrng)를 사용합니다.
+                    bestAngle = this.gameManager.visualPrng.next() < 0.5 ? leftAngle : rightAngle;
                 } else if (isLeftSafe) {
                     bestAngle = leftAngle;
                 } else if (isRightSafe) {
@@ -1338,6 +1338,42 @@ export class Unit {
                 this.pixelY += Math.sin(angle) * pullSpeed;
                 this.knockbackX = 0;
                 this.knockbackY = 0;
+            }
+        }
+
+        // [MODIFIED] 레벨 2 이상일 때 유닛 주변에서 파티클이 생성되도록 수정
+        if (this.level >= 2 && gameManager.isLevelUpEnabled) {
+            if (this.levelUpParticleCooldown <= 0) {
+                this.levelUpParticleCooldown = 15 - this.level;
+
+                let teamColor;
+                switch(this.team) {
+                    case TEAM.A: teamColor = DEEP_COLORS.TEAM_A; break;
+                    case TEAM.B: teamColor = DEEP_COLORS.TEAM_B; break;
+                    case TEAM.C: teamColor = DEEP_COLORS.TEAM_C; break;
+                    case TEAM.D: teamColor = DEEP_COLORS.TEAM_D; break;
+                    default: teamColor = '#FFFFFF'; break;
+                }
+
+                const particleCount = (this.level - 1) * 2;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = gameManager.visualPrng.next() * Math.PI * 2;
+                    const radius = GRID_SIZE / 1.67; // 유닛 반지름
+                    const spawnX = this.pixelX + Math.cos(angle) * radius;
+                    const spawnY = this.pixelY + Math.sin(angle) * radius;
+                    const speed = 0.5 + gameManager.visualPrng.next() * 0.5;
+
+                    gameManager.addParticle({
+                        x: spawnX,
+                        y: spawnY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 0.6,
+                        color: teamColor,
+                        size: this.level * 0.5 + gameManager.visualPrng.next() * this.level,
+                        gravity: -0.02
+                    });
+                }
             }
         }
 

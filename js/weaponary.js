@@ -1314,8 +1314,8 @@ export class Projectile {
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.moveTo(-GRID_SIZE * 0.6, 0);
-            for(let i = -GRID_SIZE * 0.6; i < GRID_SIZE * 0.6; i += 5) {
-                ctx.lineTo(i, (this.gameManager.random() - 0.5) * 6);
+            for (let i = -GRID_SIZE * 0.6; i < GRID_SIZE * 0.6; i += 5) {
+                ctx.lineTo(i, (this.gameManager.visualPrng.next() - 0.5) * 6);
             }
             ctx.lineTo(GRID_SIZE * 0.6, 0);
             ctx.stroke();
