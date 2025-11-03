@@ -1174,11 +1174,11 @@ export class GameManager {
 
     spawnRandomWeaponNear(pos) {
         const weaponTypes = ['sword', 'bow', 'dual_swords', 'fire_staff', 'lightning', 'magic_spear', 'boomerang', 'poison_potion', 'magic_dagger', 'axe', 'hadoken', 'shuriken', 'ice_diamond'];
-        const randomType = weaponTypes[Math.floor(this.prng.next() * weaponTypes.length)];
+        const randomType = weaponTypes[Math.floor(this.random() * weaponTypes.length)];
 
         for (let i = 0; i < 10; i++) {
-            const angle = this.prng.next() * Math.PI * 2;
-            const radius = GRID_SIZE * (this.prng.next() * 2 + 1);
+            const angle = this.random() * Math.PI * 2;
+            const radius = GRID_SIZE * (this.random() * 2 + 1);
             const spawnX = Math.floor((pos.x + Math.cos(angle) * radius) / GRID_SIZE);
             const spawnY = Math.floor((pos.y + Math.sin(angle) * radius) / GRID_SIZE);
 

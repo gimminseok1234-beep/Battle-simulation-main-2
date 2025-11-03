@@ -843,13 +843,9 @@ export class Projectile {
         const inaccuracy = (type === 'shuriken' || type === 'lightning_bolt' || type === 'sword_wave') ? 0 : GRID_SIZE * 0.8;
         
         let targetX, targetY;
-        if (type === 'returning_shuriken') {
-            targetX = this.pixelX + Math.cos(options.angle);
-            targetY = this.pixelY + Math.sin(options.angle);
-        } else {
-            targetX = target.pixelX + (gameManager.prng.next() - 0.5) * inaccuracy;
-            targetY = target.pixelY + (gameManager.prng.next() - 0.5) * inaccuracy;
-        }
+        // [수정] Math.random() 대신 gameManager.prng.next() 사용
+        targetX = target.pixelX + (gameManager.prng.next() - 0.5) * inaccuracy;
+        targetY = target.pixelY + (gameManager.prng.next() - 0.5) * inaccuracy;
 
         const dx = targetX - this.pixelX; const dy = targetY - this.pixelY;
         this.angle = options.angle !== undefined ? options.angle : Math.atan2(dy, dx);

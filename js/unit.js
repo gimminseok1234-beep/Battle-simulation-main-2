@@ -395,7 +395,7 @@ export class Unit {
 
                 if (isLeftSafe && isRightSafe) {
                     // [MODIFIED] Math.random()을 gameManager.random()으로 변경하여 결정성을 보장합니다.
-                    bestAngle = gameManager.random() < 0.5 ? leftAngle : rightAngle;
+                    bestAngle = this.gameManager.random() < 0.5 ? leftAngle : rightAngle;
                 } else if (isLeftSafe) {
                     bestAngle = leftAngle;
                 } else if (isRightSafe) {
@@ -422,7 +422,7 @@ export class Unit {
                 }
                 // [수정] A*를 사용하지 않을 때만 튕겨나가도록 수정
                 if (this.path.length === 0) {
-                    const bounceAngle = this.facingAngle + Math.PI + (gameManager.random() - 0.5);
+                    const bounceAngle = this.facingAngle + Math.PI + (this.gameManager.random() - 0.5);
                     this.knockbackX += Math.cos(bounceAngle) * 1.5;
                     this.knockbackY += Math.sin(bounceAngle) * 1.5;
                     this.moveTarget = null;
@@ -809,7 +809,7 @@ export class Unit {
                     const angleToUnit = Math.atan2(this.pixelY - p.pixelY, this.pixelX - p.pixelX);
                     const angleDiff = Math.abs(angleToUnit - p.angle);
                     if (angleDiff < Math.PI / 4 || angleDiff > Math.PI * 1.75) {
-                        if (gameManager.random() > 0.5) {
+                        if (this.gameManager.random() > 0.5) {
                             const dodgeAngle = p.angle + (Math.PI / 2) * (gameManager.random() < 0.5 ? 1 : -1);
                             const dodgeForce = 4;
                             this.knockbackX += Math.cos(dodgeAngle) * dodgeForce;
@@ -1228,7 +1228,7 @@ export class Unit {
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
-                    const angle = gameManager.random() * Math.PI * 2;
+                    const angle = this.gameManager.random() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
@@ -1889,4 +1889,3 @@ Unit.prototype.drawEyes = function(ctx) {
     }
     ctx.restore();
 }
-

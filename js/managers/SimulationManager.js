@@ -195,31 +195,34 @@ export class SimulationManager {
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
-            const progress = Math.min(1, gm.autoMagneticField.simulationTime / gm.autoMagneticField.totalShrinkTime);
+            if (gm.autoMagneticField.isActive) {
+                gm.autoMagneticField.simulationTime += 1; // Use fixed step
+                const progress = Math.min(1, gm.autoMagneticField.simulationTime / gm.autoMagneticField.totalShrinkTime);
 
-            if (gm.autoMagneticField.shrinkType === 'vertical') {
-                const finalHeight = gm.autoMagneticField.safeZoneSize;
-                const finalMinY = (gm.ROWS - finalHeight) / 2;
-                const finalMaxY = (gm.ROWS + finalHeight) / 2;
-                gm.autoMagneticField.currentBounds = {
-                    minX: 0,
-                    maxX: gm.COLS,
-                    minY: 0 + (finalMinY - 0) * progress,
-                    maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
-                };
-            } else { // 'all'
-                const finalWidth = gm.autoMagneticField.safeZoneSize;
-                const finalHeight = gm.autoMagneticField.safeZoneSize;
-                const finalMinX = (gm.COLS - finalWidth) / 2;
-                const finalMaxX = (gm.COLS + finalWidth) / 2;
-                const finalMinY = (gm.ROWS - finalHeight) / 2;
-                const finalMaxY = (gm.ROWS + finalHeight) / 2;
-                gm.autoMagneticField.currentBounds = {
-                    minX: 0 + (finalMinX - 0) * progress,
-                    maxX: gm.COLS - (gm.COLS - finalMaxX) * progress,
-                    minY: 0 + (finalMinY - 0) * progress,
-                    maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
-                };
+                if (gm.autoMagneticField.shrinkType === 'vertical') {
+                    const finalHeight = gm.autoMagneticField.safeZoneSize;
+                    const finalMinY = (gm.ROWS - finalHeight) / 2;
+                    const finalMaxY = (gm.ROWS + finalHeight) / 2;
+                    gm.autoMagneticField.currentBounds = {
+                        minX: 0,
+                        maxX: gm.COLS,
+                        minY: 0 + (finalMinY - 0) * progress,
+                        maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
+                    };
+                } else { // 'all'
+                    const finalWidth = gm.autoMagneticField.safeZoneSize;
+                    const finalHeight = gm.autoMagneticField.safeZoneSize;
+                    const finalMinX = (gm.COLS - finalWidth) / 2;
+                    const finalMaxX = (gm.COLS + finalWidth) / 2;
+                    const finalMinY = (gm.ROWS - finalHeight) / 2;
+                    const finalMaxY = (gm.ROWS + finalHeight) / 2;
+                    gm.autoMagneticField.currentBounds = {
+                        minX: 0 + (finalMinX - 0) * progress,
+                        maxX: gm.COLS - (gm.COLS - finalMaxX) * progress,
+                        minY: 0 + (finalMinY - 0) * progress,
+                        maxY: gm.ROWS - (gm.ROWS - finalMaxY) * progress,
+                    };
+                }
             }
         }
 
@@ -461,11 +464,11 @@ export class SimulationManager {
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
         if (gm.state === 'SIMULATE') {
-            gm.simulationTime += 1 / 60;
+            gm.simulationTime += (1 / 60) * gm.gameSpeed;
         }
 
         if (gm.autoMagneticField.isActive) {
-            gm.autoMagneticField.simulationTime += 1;
+            gm.autoMagneticField.simulationTime += gm.gameSpeed;
         }
 
         const unitsBeforeUpdate = gm.units.length;
