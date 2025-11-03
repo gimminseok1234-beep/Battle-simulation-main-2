@@ -201,7 +201,7 @@ export class SimulationManager {
         if (gm.state === 'ENDING') {
             // In ending state, only projectiles and visuals update.
             // Logic for units stops.
-            gm.projectiles.forEach(p => p.update());
+            // gm.projectiles.forEach(p => p.update()); // Projectile movement is visual
             gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
             // Other visual effects are handled in updateVisuals
             return;
@@ -221,7 +221,7 @@ export class SimulationManager {
         gm.units.forEach(unit => {
             const enemyTeams = allTeamKeys.filter(key => key !== unit.team);
             const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
-            unit.update(enemies, gm.weapons, gm.projectiles);
+            unit.update(enemies, gm.weapons, gm.projectiles); // This now only handles logic
         });
         
         const deadUnits = gm.units.filter(u => u.hp <= 0);
@@ -416,7 +416,6 @@ export class SimulationManager {
             }
         }
         
-        gm.projectiles.forEach(p => p.update());
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
         
         gm.magicCircles.forEach(circle => circle.update());
@@ -425,6 +424,9 @@ export class SimulationManager {
         gm.poisonClouds.forEach(cloud => cloud.update());
         gm.poisonClouds = gm.poisonClouds.filter(c => c.duration > 0);
         
+        gm.areaEffects.forEach(e => e.updateLogic());
+        gm.areaEffects = gm.areaEffects.filter(e => e.duration > 0);
+
         // [신규] 독 장판 업데이트 로직 추가
         gm.updatePoisonPuddles();
 
@@ -474,14 +476,19 @@ export class SimulationManager {
         gm.growingFields.forEach(field => field.update());
         gm.nexuses.forEach(n => n.update());
 
+        // [NEW] Call updateVisuals for each unit
+        gm.units.forEach(unit => unit.updateVisuals());
+
+        // Projectile movement is visual and affected by gameSpeed
+        gm.projectiles.forEach(p => p.update());
+
         if (gm.units.length < unitsBeforeUpdate) {
             gm.audioManager.play('unitDeath');
         }
 
         gm.effects.forEach(e => e.update());
         gm.effects = gm.effects.filter(e => e.duration > 0);
-        gm.areaEffects.forEach(e => e.update());
-        gm.areaEffects = gm.areaEffects.filter(e => e.duration > 0);
+        gm.areaEffects.forEach(e => e.updateVisuals());
 
         gm.particles.forEach(p => p.update(gm.gameSpeed));
         gm.particles = gm.particles.filter(p => p.isAlive());

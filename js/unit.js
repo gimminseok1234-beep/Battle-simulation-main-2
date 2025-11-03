@@ -239,8 +239,8 @@ export class Unit {
         if (!gameManager) return;
 
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX;
-            const nextY = this.pixelY + this.knockbackY;
+            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
+            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -257,8 +257,8 @@ export class Unit {
             }
         }
 
-        this.knockbackX *= 0.9;
-        this.knockbackY *= 0.9;
+        this.knockbackX *= (1 - 0.1 * gameManager.gameSpeed);
+        this.knockbackY *= (1 - 0.1 * gameManager.gameSpeed);
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
@@ -275,10 +275,10 @@ export class Unit {
                     const moveX = (overlap / 2) * Math.cos(angle);
                     const moveY = (overlap / 2) * Math.sin(angle);
 
-                    const myNextX = this.pixelX - moveX;
-                    const myNextY = this.pixelY - moveY;
-                    const otherNextX = otherUnit.pixelX + moveX;
-                    const otherNextY = otherUnit.pixelY + moveY;
+                    const myNextX = this.pixelX - moveX * gameManager.gameSpeed;
+                    const myNextY = this.pixelY - moveY * gameManager.gameSpeed;
+                    const otherNextX = otherUnit.pixelX + moveX * gameManager.gameSpeed;
+                    const otherNextY = otherUnit.pixelY + moveY * gameManager.gameSpeed;
 
                     const myGridX = Math.floor(myNextX / GRID_SIZE);
                     const myGridY = Math.floor(myNextY / GRID_SIZE);
@@ -344,7 +344,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed;
+            const currentSpeed = this.speed * gameManager.gameSpeed;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -362,7 +362,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed;
+        const currentSpeed = this.speed * gameManager.gameSpeed;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -526,31 +526,6 @@ export class Unit {
             return;
         }
 
-        // [추가] 부드러운 체력바 감소 및 피격 효과 처리
-        if (this.displayHp > this.hp) {
-            // 현재 체력과 표시 체력의 차이에 비례하여 빠르게 감소 (0.1은 속도 조절 계수)
-            this.displayHp -= (this.displayHp - this.hp) * 0.1 * this.gameManager.gameSpeed;
-        } else {
-            this.displayHp = this.hp;
-        }
-        if (this.damageFlash > 0) {
-            this.damageFlash -= 0.05 * this.gameManager.gameSpeed;
-        }
-
-        // [NEW] 체력바 알파값 부드럽게 조절
-        const healthBarShouldBeVisible = this.hp < this.maxHp || this.hpBarVisibleTimer > 0;
-        if (healthBarShouldBeVisible) {
-            if (this.hpBarAlpha < 1) {
-                this.hpBarAlpha += 0.1 * this.gameManager.gameSpeed;
-                if (this.hpBarAlpha > 1) this.hpBarAlpha = 1;
-            }
-        } else {
-            if (this.hpBarAlpha > 0) {
-                this.hpBarAlpha -= 0.05 * this.gameManager.gameSpeed;
-                if (this.hpBarAlpha < 0) this.hpBarAlpha = 0;
-            }
-        }
-
 
         // [MODIFIED] 레벨 2 이상일 때 유닛 주변에서 파티클이 생성되도록 수정
         if (this.level >= 2 && gameManager.isLevelUpEnabled) {
@@ -586,23 +561,6 @@ export class Unit {
                         gravity: -0.02
                     });
                 }
-            }
-        }
-
-        // [NEW] 눈 깜빡임 타이머 업데이트
-        if (!this.isBlinking && this.hp > 0) {
-            this.blinkTimer -= gameManager.gameSpeed;
-            if (this.blinkTimer <= 0) {
-                this.isBlinking = true;
-                // 깜빡임 지속 시간 (짧게)
-                this.blinkTimer = 10;
-            }
-        } else if (this.isBlinking) {
-            this.blinkTimer -= gameManager.gameSpeed;
-            if (this.blinkTimer <= 0) {
-                this.isBlinking = false;
-                // 다음 깜빡임까지의 시간
-                this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120;
             }
         }
 
@@ -660,7 +618,7 @@ export class Unit {
             const dist = Math.hypot(dx, dy);
             const pullSpeed = 4;
 
-            if (dist < pullSpeed * gameManager.gameSpeed) {
+            if (dist < pullSpeed) { // 로직은 gameSpeed 영향 X
                 this.pixelX = this.pullTargetPos.x;
                 this.pixelY = this.pullTargetPos.y;
                 this.isBeingPulled = false;
@@ -670,13 +628,10 @@ export class Unit {
 
                 this.puller = null;
             } else {
-                const angle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(angle) * pullSpeed * gameManager.gameSpeed;
-                this.pixelY += Math.sin(angle) * pullSpeed * gameManager.gameSpeed;
-                this.knockbackX = 0;
-                this.knockbackY = 0;
+                // 움직임은 updateVisuals에서 처리
             }
-            this.applyPhysics();
+            // this.applyPhysics(); // This is logic, so it's fine here.
+            // applyPhysics는 시각적 요소이므로 updateVisuals에서 처리
             return;
         }
 
@@ -738,7 +693,7 @@ export class Unit {
             if (this.isStunned <= 0) {
                 this.stunnedByMagicCircle = false;
             }
-            this.applyPhysics();
+            // this.applyPhysics();
             return;
         }
 
@@ -781,18 +736,13 @@ export class Unit {
         }
 
         if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= 1;
-        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= 1;
-        if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= gameManager.gameSpeed;
-        if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
-        if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= 1;
+        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= 1; if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= 1;
         if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= 1;
-        if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
         if (this.attackCooldown > 0) this.attackCooldown -= 1;
         if (this.teleportCooldown > 0) this.teleportCooldown -= 1;
         if (this.alertedCounter > 0) this.alertedCounter -= 1; // [수정] 마법창 특수 공격 쿨다운
         if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= 1;
         if (this.evasionCooldown > 0) this.evasionCooldown -= 1;
-        if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
         if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= 1;
         if (this.boomerangCooldown > 0) this.boomerangCooldown -= 1;
         if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= 1;
@@ -1234,9 +1184,6 @@ export class Unit {
                 break;
         }
 
-        this.move();
-
-        this.applyPhysics();
 
         if (this.moveTarget) {
             const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
@@ -1370,6 +1317,66 @@ export class Unit {
         this.pathUpdateCooldown = 15; // 0.25초마다 경로 재계산
     }
 
+    /**
+     * [NEW] Updates visual timers and effects that are dependent on gameSpeed (for slow-motion).
+     * This is called from SimulationManager.updateVisuals().
+     */
+    updateVisuals() {
+        const gameManager = this.gameManager;
+        if (!gameManager) return;
+
+        // Smooth HP bar decrease
+        if (this.isBeingPulled && this.puller) {
+            const dx = this.pullTargetPos.x - this.pixelX;
+            const dy = this.pullTargetPos.y - this.pixelY;
+            const dist = Math.hypot(dx, dy);
+            const pullSpeed = 4 * gameManager.gameSpeed;
+
+            if (dist > pullSpeed) {
+                const angle = Math.atan2(dy, dx);
+                this.pixelX += Math.cos(angle) * pullSpeed;
+                this.pixelY += Math.sin(angle) * pullSpeed;
+                this.knockbackX = 0;
+                this.knockbackY = 0;
+            }
+        }
+
+        this.move();
+        this.applyPhysics();
+
+        // Smooth HP bar decrease
+        if (this.displayHp > this.hp) {
+            this.displayHp -= (this.displayHp - this.hp) * 0.1 * gameManager.gameSpeed;
+        } else {
+            this.displayHp = this.hp;
+        }
+
+        // Damage flash effect
+        if (this.damageFlash > 0) {
+            this.damageFlash -= 0.05 * gameManager.gameSpeed;
+        }
+
+        // HP bar alpha
+        const healthBarShouldBeVisible = this.hp < this.maxHp || this.hpBarVisibleTimer > 0;
+        if (healthBarShouldBeVisible) {
+            if (this.hpBarAlpha < 1) this.hpBarAlpha = Math.min(1, this.hpBarAlpha + 0.1 * gameManager.gameSpeed);
+        } else {
+            if (this.hpBarAlpha > 0) this.hpBarAlpha = Math.max(0, this.hpBarAlpha - 0.05 * gameManager.gameSpeed);
+        }
+
+        // Level up particle cooldown
+        if (this.levelUpParticleCooldown > 0) this.levelUpParticleCooldown -= gameManager.gameSpeed;
+
+        // Eye blinking timer
+        if (this.blinkTimer > 0) this.blinkTimer -= gameManager.gameSpeed;
+
+        // Animation timers
+        if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= gameManager.gameSpeed;
+        if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
+        if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
+        if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
+    }
+
     draw(ctx, isOutlineEnabled, outlineWidth) {
         const gameManager = this.gameManager;
         if (!gameManager) return;
@@ -1395,6 +1402,20 @@ export class Unit {
             ctx.fill();
 
             ctx.restore();
+        }
+
+        // [NEW] 눈 깜빡임 타이머 업데이트 (draw에서 처리)
+        // This is purely visual and deterministic based on frame, so it's safe here.
+        if (!this.isBlinking && this.hp > 0) {
+            if (this.blinkTimer <= 0) {
+                this.isBlinking = true;
+                this.blinkTimer = 10; // 깜빡임 지속 시간 (짧게)
+            }
+        } else if (this.isBlinking) {
+            if (this.blinkTimer <= 0) {
+                this.isBlinking = false;
+                this.blinkTimer = this.gameManager.visualPrng.next() * 300 + 120; // 다음 깜빡임까지의 시간
+            }
         }
 
         if (this.isAimingMagicDagger) {

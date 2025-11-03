@@ -976,8 +976,8 @@ export class Projectile {
             this.rotationAngle += this.lingerRotationSpeed * gameManager.gameSpeed;
 
             if (this.state === 'MOVING_OUT') {
-                const moveX = Math.cos(this.angle) * this.speed;
-                const moveY = Math.sin(this.angle) * this.speed;
+                const moveX = Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
+                const moveY = Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
                 this.pixelX += moveX;
                 this.pixelY += moveY;
                 this.distanceTraveled += Math.hypot(moveX, moveY);
@@ -993,7 +993,7 @@ export class Projectile {
                     this.state = 'LINGERING';
                 }
             } else if (this.state === 'LINGERING') {
-                this.lingerDuration -= 1;
+                this.lingerDuration -= gameManager.gameSpeed;
                 this.damageCooldown -= 1;
 
                 if (this.damageCooldown <= 0) {
@@ -1023,8 +1023,8 @@ export class Projectile {
                 }
 
                 const returnAngle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(returnAngle) * this.speed;
-                this.pixelY += Math.sin(returnAngle) * this.speed;
+                this.pixelX += Math.cos(returnAngle) * this.speed * gameManager.gameSpeed;
+                this.pixelY += Math.sin(returnAngle) * this.speed * gameManager.gameSpeed;
 
                 for (const unit of gameManager.units) {
                     if (unit.team !== this.owner.team && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
@@ -1101,8 +1101,8 @@ export class Projectile {
             });
         }
 
-        const nextX = this.pixelX + Math.cos(this.angle) * this.speed;
-        const nextY = this.pixelY + Math.sin(this.angle) * this.speed;
+        const nextX = this.pixelX + Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
+        const nextY = this.pixelY + Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
         const gridX = Math.floor(nextX / GRID_SIZE);
         const gridY = Math.floor(nextY / GRID_SIZE);
 
@@ -1727,20 +1727,15 @@ export class AreaEffect {
             }
         }
     }
-    update() {
+
+    updateLogic() {
         const gameManager = this.gameManager;
         if (!gameManager) return;
-        this.duration -= gameManager.gameSpeed;
-        this.currentRadius = this.maxRadius * (1 - (this.duration / 30));
-        
-        if (this.type === 'fire_pillar') {
-            this.particles.forEach(p => {
-                p.y -= p.speed * gameManager.gameSpeed;
-                p.lifespan -= gameManager.gameSpeed;
-                p.x += (this.gameManager.visualPrng.next() - 0.5) * 0.5;
-            });
-            this.particles = this.particles.filter(p => p.lifespan > 0);
 
+        this.duration -= 1;
+        this.currentRadius = this.maxRadius * (1 - (this.duration / 30));
+
+        if (this.type === 'fire_pillar') {
             gameManager.units.forEach(unit => {
                 if (unit.team !== this.ownerTeam && !this.damagedUnits.has(unit)) {
                     const dist = Math.hypot(unit.pixelX - this.pixelX, unit.pixelY - this.pixelY);
@@ -1750,7 +1745,7 @@ export class AreaEffect {
                     }
                 }
             });
-            
+
             gameManager.nexuses.forEach(nexus => {
                 if (nexus.team !== this.ownerTeam && !this.damagedNexuses.has(nexus)) {
                     const dist = Math.hypot(nexus.pixelX - this.pixelX, nexus.pixelY - this.pixelY);
@@ -1762,6 +1757,21 @@ export class AreaEffect {
             });
         }
     }
+
+    updateVisuals() {
+        const gameManager = this.gameManager;
+        if (!gameManager) return;
+
+        if (this.type === 'fire_pillar') {
+            this.particles.forEach(p => {
+                p.y -= p.speed * gameManager.gameSpeed;
+                p.lifespan -= gameManager.gameSpeed;
+                p.x += (this.gameManager.visualPrng.next() - 0.5) * 0.5;
+            });
+            this.particles = this.particles.filter(p => p.lifespan > 0);
+        }
+    }
+
     draw(ctx) {
         const opacity = this.duration / 30;
         if (this.type === 'fire_pillar') {
