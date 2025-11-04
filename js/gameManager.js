@@ -67,7 +67,7 @@ export class GameManager {
             current: { x: 0, y: 0, scale: 1 },
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
-            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.8')
+            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4')
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -221,11 +221,11 @@ export class GameManager {
         this.isUnitOutlineEnabled = outlineEnabledPref !== null ? (outlineEnabledPref === 'true') : true;
 
         const outlineWidthPref = localStorage.getItem('unitOutlineWidth');
-        this.unitOutlineWidth = outlineWidthPref !== null ? parseFloat(outlineWidthPref) : 2.5;
+        this.unitOutlineWidth = outlineWidthPref !== null ? parseFloat(outlineWidthPref) : 2.7;
 
         // Eye size preference
         const eyeSizePref = localStorage.getItem('unitEyeScale');
-        this.unitEyeScale = eyeSizePref !== null ? parseFloat(eyeSizePref) : 1.04;
+        this.unitEyeScale = eyeSizePref !== null ? parseFloat(eyeSizePref) : 1.3;
 
         this.resetActionCam(true);
         

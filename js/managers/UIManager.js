@@ -314,11 +314,11 @@ export class UIManager {
             document.getElementById('homeLevelUpToggle').checked = !!this.gameManager.isLevelUpEnabled;
             document.getElementById('homeUnitOutlineToggle').checked = !!this.gameManager.isUnitOutlineEnabled;
             document.getElementById('homeUnitOutlineWidthControl').value = this.gameManager.unitOutlineWidth;
-            document.getElementById('homeUnitOutlineWidthValue').textContent = this.gameManager.unitOutlineWidth.toFixed(1);
-            document.getElementById('homeUnitEyeSizeControl').value = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
-            document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.0).toFixed(2);
-            document.getElementById('homeActionCamZoomMax').value = (this.gameManager.actionCam.maxZoom ?? 1.8);
-            document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.8).toFixed(2);
+            document.getElementById('homeUnitOutlineWidthValue').textContent = this.gameManager.unitOutlineWidth.toFixed(1); // 2.7
+            document.getElementById('homeUnitEyeSizeControl').value = (this.gameManager.unitEyeScale ?? 1.3).toFixed(2);
+            document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.3).toFixed(2);
+            document.getElementById('homeActionCamZoomMax').value = (this.gameManager.actionCam.maxZoom ?? 1.4);
+            document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.4).toFixed(2);
             this.openModal('homeSettingsModal');
         });
 
