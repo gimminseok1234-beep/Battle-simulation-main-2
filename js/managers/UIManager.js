@@ -369,10 +369,29 @@ export class UIManager {
         const speedControl = document.getElementById('actionCamSpeedControl');
         const speedValue = document.getElementById('actionCamSpeedValue');
         const vignetteToggle = document.getElementById('vignetteToggle');
+        const followCamToggle = document.getElementById('followCamToggle');
 
         actionCamToggle.addEventListener('change', (e) => {
             gm.isActionCam = e.target.checked;
-            if (!gm.isActionCam) gm.resetActionCam(false);
+            if (!gm.isActionCam) {
+                gm.isFollowCamEnabled = false;
+                gm.followedUnit = null;
+                followCamToggle.checked = false;
+                this.updateFollowedUnitInfo(null);
+                gm.resetActionCam(false);
+            }
+        });
+
+        followCamToggle.addEventListener('change', (e) => {
+            gm.isFollowCamEnabled = e.target.checked;
+            if (gm.isFollowCamEnabled) {
+                actionCamToggle.checked = true;
+                gm.isActionCam = true;
+            } else {
+                gm.followedUnit = null;
+                this.updateFollowedUnitInfo(null);
+                gm.resetActionCam(false);
+            }
         });
 
         zoomControl.addEventListener('input', (e) => {
@@ -390,6 +409,27 @@ export class UIManager {
         vignetteToggle.addEventListener('change', (e) => {
             gm.actionCam.vignetteEnabled = e.target.checked;
         });
+    }
+
+    updateFollowedUnitInfo(unit) {
+        const infoPanel = document.getElementById('followedUnitInfo');
+        const nameEl = document.getElementById('followedUnitName');
+        if (unit) {
+            let displayName = unit.name;
+            if (!displayName) {
+                switch(unit.team) {
+                    case 'A': displayName = "빨강 팀 유닛"; break;
+                    case 'B': displayName = "파랑 팀 유닛"; break;
+                    case 'C': displayName = "초록 팀 유닛"; break;
+                    case 'D': displayName = "노랑 팀 유닛"; break;
+                    default: displayName = "알 수 없는 유닛";
+                }
+            }
+            nameEl.textContent = displayName;
+            infoPanel.classList.remove('hidden');
+        } else {
+            infoPanel.classList.add('hidden');
+        }
     }
 
     setupNametagSettingsModal() {

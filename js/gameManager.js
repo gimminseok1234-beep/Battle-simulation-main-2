@@ -120,6 +120,9 @@ export class GameManager {
 
         instance = this;
 
+        this.isFollowCamEnabled = false;
+        this.followedUnit = null;
+
         // These were in UIManager, but they need access to GameManager state that is not yet initialized.
         // So we keep them here for now.
         this.recentWallColors = [];
@@ -428,19 +431,28 @@ export class GameManager {
     }
 
     handleActionCamClick(pos) {
-        // 줌인 중에도 재클릭하면 즉시 줌아웃되도록 수정
-        if (this.actionCam.target.scale > 1) {
-            this.actionCam.target.x = this.canvas.width / 2;
-            this.actionCam.target.y = this.canvas.height / 2;
-            this.actionCam.target.scale = 1;
+        if (this.isFollowCamEnabled) {
+            const clickedUnit = this.units.find(u => Math.hypot(u.pixelX - pos.pixelX, u.pixelY - pos.pixelY) < GRID_SIZE);
+            if (clickedUnit) {
+                this.followedUnit = clickedUnit;
+                this.uiManager.updateFollowedUnitInfo(clickedUnit);
+            } else {
+                this.followedUnit = null;
+                this.uiManager.updateFollowedUnitInfo(null);
+                this.resetActionCam(false);
+            }
         } else {
-            this.actionCam.target.x = pos.pixelX;
-            this.actionCam.target.y = pos.pixelY;
-            this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
+            if (this.actionCam.target.scale > 1) {
+                this.resetActionCam(false);
+            } else {
+                this.actionCam.target.x = pos.pixelX;
+                this.actionCam.target.y = pos.pixelY;
+                this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
+            }
         }
+
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
-        return;
     }
 
     resizeCanvas(width, height) {
@@ -621,6 +633,19 @@ export class GameManager {
     }
 
     gameLoop() {
+        // Follow Cam Logic
+        if (this.isFollowCamEnabled && this.followedUnit) {
+            if (this.followedUnit.hp > 0) {
+                this.actionCam.target.x = this.followedUnit.pixelX;
+                this.actionCam.target.y = this.followedUnit.pixelY;
+                this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
+            } else {
+                this.followedUnit = null;
+                this.uiManager.updateFollowedUnitInfo(null);
+                this.resetActionCam(false);
+            }
+        }
+
         this.animationFrameCounter++;
         
         if (this.actionCam.isAnimating) {

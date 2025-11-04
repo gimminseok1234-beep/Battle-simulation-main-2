@@ -83,9 +83,9 @@ export function drawImpl(mouseEvent) {
         const h = this.canvas.height;
         const outerRadius = Math.hypot(w, h) / 2;
         const gradient = this.ctx.createRadialGradient(w / 2, h / 2, h / 2.5, w / 2, h / 2, outerRadius);
-        const vignetteStrength = Math.min(1.0, (cam.current.scale - 1) * 1.2);
+        const vignetteStrength = Math.min(1.0, (cam.current.scale - 1) * 1.8); // 1.2 -> 1.8 (1.5배 강화)
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength})`);
+        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength})`); // 기존 로직은 vignetteStrength * 1.2 였으므로 제거
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, w, h);
         this.ctx.restore();
