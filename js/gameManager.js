@@ -441,7 +441,7 @@ export class GameManager {
                 this.uiManager.updateFollowedUnitInfo(null);
                 this.resetActionCam(false);
             }
-        } else if (this.isActionCam) { // 팔로우캠이 아닐 때만 일반 액션캠 로직 실행
+        } else if (this.isActionCam) {
             if (this.actionCam.target.scale > 1) {
                 this.resetActionCam(false);
             } else {
@@ -660,7 +660,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = cam.zoomSpeed / 10; 
+            const ease = cam.zoomSpeed / 20; 
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;
