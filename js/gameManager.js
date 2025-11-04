@@ -784,8 +784,8 @@ export class GameManager {
                     this.ctx.lineTo(x * GRID_SIZE + GRID_SIZE - 4, y * GRID_SIZE + GRID_SIZE - 4);
                     this.ctx.stroke();
                 }
-
-                if (this.state === 'EDIT' && !this.isReplayMode) {
+                
+                if (this.state === 'EDIT' && !this.isReplayMode) { // 리플레이 모드가 아닐 때만 격자선 그리기
                     this.ctx.strokeStyle = COLORS.GRID;
                     this.ctx.strokeRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
                 }
