@@ -379,6 +379,12 @@ export class UIManager {
                 followCamToggle.checked = false;
                 this.updateFollowedUnitInfo(null);
                 gm.resetActionCam(false);
+            } else {
+                // 액션캠을 껐을 때 팔로우캠도 같이 꺼지도록
+                if (gm.isFollowCamEnabled) {
+                    gm.isFollowCamEnabled = false;
+                    followCamToggle.checked = false;
+                }
             }
         });
 
@@ -386,6 +392,7 @@ export class UIManager {
             gm.isFollowCamEnabled = e.target.checked;
             if (gm.isFollowCamEnabled) {
                 actionCamToggle.checked = true;
+                // 팔로우캠을 켜면 액션캠도 활성화
                 gm.isActionCam = true;
             } else {
                 gm.followedUnit = null;

@@ -441,7 +441,7 @@ export class GameManager {
                 this.uiManager.updateFollowedUnitInfo(null);
                 this.resetActionCam(false);
             }
-        } else {
+        } else if (this.isActionCam) { // 팔로우캠이 아닐 때만 일반 액션캠 로직 실행
             if (this.actionCam.target.scale > 1) {
                 this.resetActionCam(false);
             } else {
