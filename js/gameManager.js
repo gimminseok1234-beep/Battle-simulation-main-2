@@ -636,8 +636,18 @@ export class GameManager {
         // Follow Cam Logic
         if (this.isFollowCamEnabled && this.followedUnit) {
             if (this.followedUnit.hp > 0) {
-                this.actionCam.target.x = this.followedUnit.pixelX;
-                this.actionCam.target.y = this.followedUnit.pixelY;
+                const unit = this.followedUnit;
+                let targetX = unit.pixelX;
+                let targetY = unit.pixelY;
+
+                // 유닛이 움직일 때만 이동 방향을 예측합니다.
+                if (unit.state === 'AGGRESSIVE' || unit.state === 'FLEEING' || unit.state === 'SEEKING_WEAPON') {
+                    const predictionFactor = 12; // 예측 강도 (프레임)
+                    targetX += unit.speed * Math.cos(unit.facingAngle) * predictionFactor;
+                    targetY += unit.speed * Math.sin(unit.facingAngle) * predictionFactor;
+                }
+                this.actionCam.target.x = targetX;
+                this.actionCam.target.y = targetY;
                 this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
             } else {
                 this.followedUnit = null;
