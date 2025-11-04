@@ -369,7 +369,6 @@ export class UIManager {
         const speedControl = document.getElementById('actionCamSpeedControl');
         const speedValue = document.getElementById('actionCamSpeedValue');
         const vignetteToggle = document.getElementById('vignetteToggle');
-        const screenShakeToggle = document.getElementById('screenShakeToggle');
 
         actionCamToggle.addEventListener('change', (e) => {
             gm.isActionCam = e.target.checked;
@@ -390,10 +389,6 @@ export class UIManager {
 
         vignetteToggle.addEventListener('change', (e) => {
             gm.actionCam.vignetteEnabled = e.target.checked;
-        });
-
-        screenShakeToggle.addEventListener('change', (e) => {
-            gm.actionCam.screenShakeEnabled = e.target.checked;
         });
     }
 

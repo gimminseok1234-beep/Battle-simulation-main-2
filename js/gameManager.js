@@ -69,8 +69,7 @@ export class GameManager {
             isAnimating: false,
             maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4'),
             zoomSpeed: 1.0,
-            vignetteEnabled: false,
-            screenShakeEnabled: false
+            vignetteEnabled: false
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -429,16 +428,15 @@ export class GameManager {
     }
 
     handleActionCamClick(pos) {
-        if (this.actionCam.isAnimating) return;
-        if (this.actionCam.target.scale === 1) {
-            this.actionCam.target.x = pos.pixelX;
-            this.actionCam.target.y = pos.pixelY;
-            const maxZ = this.actionCam.maxZoom || 1.8;
-            this.actionCam.target.scale = Math.min(maxZ, 3.0);
-        } else {
+        // 줌인 중에도 재클릭하면 즉시 줌아웃되도록 수정
+        if (this.actionCam.target.scale > 1) {
             this.actionCam.target.x = this.canvas.width / 2;
             this.actionCam.target.y = this.canvas.height / 2;
             this.actionCam.target.scale = 1;
+        } else {
+            this.actionCam.target.x = pos.pixelX;
+            this.actionCam.target.y = pos.pixelY;
+            this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
         }
         this.actionCam.isAnimating = true;
         if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
@@ -787,7 +785,7 @@ export class GameManager {
                     this.ctx.stroke();
                 }
 
-                if (this.state === 'EDIT') {
+                if (this.state === 'EDIT' && !this.isReplayMode) {
                     this.ctx.strokeStyle = COLORS.GRID;
                     this.ctx.strokeRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
                 }

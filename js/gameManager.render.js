@@ -14,16 +14,6 @@ export function drawImpl(mouseEvent) {
     this.ctx.scale(cam.current.scale, cam.current.scale);
     this.ctx.translate(-cam.current.x, -cam.current.y);
 
-    // [신규] 화면 흔들림 효과
-    if (this.actionCam.screenShakeEnabled && this.isActionCam && cam.current.scale > 1.05) {
-        const shakeIntensity = Math.min(5, (cam.current.scale - 1) * 5);
-        const shakeX = (this.random() - 0.5) * shakeIntensity;
-        const shakeY = (this.random() - 0.5) * shakeIntensity;
-        this.ctx.translate(shakeX, shakeY);
-    }
-
-
-
     this.drawMap();
     this.magicCircles.forEach(c => c.draw(this.ctx));
     this.poisonClouds.forEach(c => c.draw(this.ctx));
@@ -93,9 +83,9 @@ export function drawImpl(mouseEvent) {
         const h = this.canvas.height;
         const outerRadius = Math.hypot(w, h) / 2;
         const gradient = this.ctx.createRadialGradient(w / 2, h / 2, h / 2.5, w / 2, h / 2, outerRadius);
-        const vignetteStrength = Math.min(0.6, (cam.current.scale - 1) * 0.5);
+        const vignetteStrength = Math.min(0.8, (cam.current.scale - 1) * 0.8);
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength})`);
+        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength * 1.2})`);
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, w, h);
         this.ctx.restore();
