@@ -394,8 +394,7 @@ export class Unit {
                 const isRightSafe = !gameManager.isPosInLavaForUnit(Math.floor(rightLookAheadX / GRID_SIZE), Math.floor(rightLookAheadY / GRID_SIZE));
 
                 if (isLeftSafe && isRightSafe) {
-                    // [MODIFIED] Math.random()을 gameManager.random()으로 변경하여 결정성을 보장합니다.
-                    bestAngle = gameManager.random() < 0.5 ? leftAngle : rightAngle;
+                    bestAngle = this.gameManager.random() < 0.5 ? leftAngle : rightAngle;
                 } else if (isLeftSafe) {
                     bestAngle = leftAngle;
                 } else if (isRightSafe) {
@@ -813,10 +812,10 @@ export class Unit {
                             const dodgeAngle = p.angle + (Math.PI / 2) * (gameManager.random() < 0.5 ? 1 : -1);
                             const dodgeForce = 4;
                             this.knockbackX += Math.cos(dodgeAngle) * dodgeForce;
-                            this.knockbackY += Math.sin(dodgeAngle) * dodgeForce;
-                            this.evasionCooldown = 30;
-                            break;
-                        }
+                    this.knockbackY += Math.sin(dodgeAngle) * dodgeForce;
+                    this.evasionCooldown = 30;
+                    break;
+                }
                     }
                 }
             }

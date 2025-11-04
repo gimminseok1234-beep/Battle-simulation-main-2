@@ -451,7 +451,8 @@ export class GameManager {
             }
         }
 
-        if (this.isFollowCamEnabled || this.isActionCam) {
+        // 팔로우캠이 켜져 있거나, 일반 액션캠이 켜져 있을 때만 애니메이션 시작
+        if (this.isFollowCamEnabled || this.isActionCam) { 
             this.actionCam.isAnimating = true;
             if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
         }

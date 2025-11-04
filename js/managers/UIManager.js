@@ -394,8 +394,8 @@ export class UIManager {
                 if (actionCamToggle.checked) {
                     actionCamToggle.checked = false;
                 }
-                gm.isActionCam = false; // 일반 액션캠 비활성화
-                gm.resetActionCam(false);
+                gm.isActionCam = false; // 일반 액션캠 기능 비활성화
+                gm.resetActionCam(false); 
             } else {
                 // 팔로우캠을 끄면 카메라 리셋
                 gm.followedUnit = null;
