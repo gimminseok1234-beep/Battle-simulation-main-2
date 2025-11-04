@@ -92,12 +92,6 @@
             </div>
             <div id="statusText" class="text-lg font-semibold flex-grow text-center">에디터 모드</div>
             <div id="timerText" class="text-lg font-semibold text-white" style="display: none;">00:00</div>
-            <div class="flex items-center gap-4">
-                 <div class="flex items-center">
-                    <label for="actionCamToggle" class="mr-2 font-semibold">액션캠</label>
-                    <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
-                </div>
-            </div>
             <div class="flex items-center gap-2">
                 <button id="simStartBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">시작</button>
                 <button id="simPauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded hidden">일시정지</button>
@@ -109,8 +103,28 @@
         <div class="flex items-start gap-4 w-full">
             <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 w-64 overflow-y-auto"></div>
             <div class="flex flex-col items-center flex-grow">
-                <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700"></canvas>
+                <canvas id="gameCanvas" class="border-2 border-gray-600 rounded-lg bg-gray-700 transition-all duration-300"></canvas>
             </div>
+            <div id="actionCamPanel" class="hidden bg-gray-800 p-4 rounded-lg shadow-lg flex-col gap-4 w-72">
+                <h3 class="text-xl font-bold text-white text-center mb-2">액션캠 제어</h3>
+                <div class="flex items-center justify-between">
+                    <label for="actionCamToggle" class="font-semibold">액션캠 활성화</label>
+                    <input type="checkbox" id="actionCamToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="actionCamZoomControl" class="font-semibold">확대 배율: <span id="actionCamZoomValue">1.40</span>x</label>
+                    <input type="range" id="actionCamZoomControl" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="actionCamSpeedControl" class="font-semibold">줌인 속도: <span id="actionCamSpeedValue">0.15</span></label>
+                    <input type="range" id="actionCamSpeedControl" min="0.05" max="0.3" step="0.01" value="0.15" class="w-full">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label for="vignetteToggle" class="font-semibold">비네트 효과</label>
+                    <input type="checkbox" id="vignetteToggle" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                </div>
+            </div>
+
         </div>
     </div>
 

@@ -74,6 +74,22 @@ export function drawImpl(mouseEvent) {
     // [추가] 모든 요소가 그려진 후, 특수 공격 빛 효과를 마지막에 덧그립니다.
     drawSpecialAttackGlows.call(this);
 
+    // [신규] 비네트 효과 그리기
+    if (this.actionCam.vignetteEnabled && this.isActionCam) {
+        this.ctx.save();
+        // 카메라 변환을 초기화하고 캔버스 좌표계에서 그립니다.
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const outerRadius = Math.hypot(w, h) / 2;
+        const gradient = this.ctx.createRadialGradient(w / 2, h / 2, h / 2.5, w / 2, h / 2, outerRadius);
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.6)');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, w, h);
+        this.ctx.restore();
+    }
+
     this.ctx.restore();
 }
 

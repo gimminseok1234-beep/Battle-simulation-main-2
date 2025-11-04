@@ -67,7 +67,9 @@ export class GameManager {
             current: { x: 0, y: 0, scale: 1 },
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
-            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4')
+            maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4'),
+            zoomSpeed: 0.15,
+            vignetteEnabled: false
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -200,7 +202,7 @@ export class GameManager {
         this.isReplayMode = (mapId === 'replay');
         document.getElementById('homeScreen').style.display = 'none';
         document.getElementById('defaultMapsScreen').style.display = 'none';
-        document.getElementById('replayScreen').style.display = 'none';
+        document.getElementById('replayScreen').style.display = 'none'; // [수정]
         document.getElementById('editorScreen').style.display = 'flex';
         await this.audioManager.init();
         // Determine RNG policy for new sessions (do not alter existing replays)
@@ -624,7 +626,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = 0.15; 
+            const ease = cam.zoomSpeed; 
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;
@@ -1477,6 +1479,8 @@ export class GameManager {
         const placementResetBtn = document.getElementById('simPlacementResetBtn');
         placementResetBtn.textContent = '리플레이 초기화';
         placementResetBtn.style.display = 'inline-block';
+        document.getElementById('actionCamPanel').classList.remove('hidden');
+        document.getElementById('actionCamPanel').classList.add('flex');
     }
 
     updateUIToEditorMode() {
@@ -1489,5 +1493,7 @@ export class GameManager {
         const placementResetBtn = document.getElementById('simPlacementResetBtn');
         placementResetBtn.textContent = '배치 초기화';
         placementResetBtn.style.display = 'inline-block';
+        document.getElementById('actionCamPanel').classList.add('hidden');
+        document.getElementById('actionCamPanel').classList.remove('flex');
     }
 }

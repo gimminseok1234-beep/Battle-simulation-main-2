@@ -177,11 +177,7 @@ export class UIManager {
             this.gameManager.resizeCanvas(parseInt(document.getElementById('widthInput').value), parseInt(document.getElementById('heightInput').value));
             this.closeModal('mapSettingsModal');
         });
-        document.getElementById('actionCamToggle').addEventListener('change', (e) => {
-            this.gameManager.isActionCam = e.target.checked;
-            if (!this.gameManager.isActionCam) this.gameManager.resetActionCam(true);
-        });
-
+        
         // Home Settings
         this.setupHomeSettingsModal();
 
@@ -207,7 +203,10 @@ export class UIManager {
             if (!e.target.closest('.map-menu-button')) {
                document.querySelectorAll('.map-menu').forEach(menu => menu.style.display = 'none');
            }
-       }, true);
+        }, true);
+        
+        // Action Cam Panel (Replay Mode)
+        this.setupActionCamPanelListeners();
     }
 
     setupToolboxListeners() {
@@ -359,6 +358,37 @@ export class UIManager {
 
             this.gameManager.draw();
             this.closeModal('homeSettingsModal');
+        });
+    }
+
+    setupActionCamPanelListeners() {
+        const gm = this.gameManager;
+        const actionCamToggle = document.getElementById('actionCamToggle');
+        const zoomControl = document.getElementById('actionCamZoomControl');
+        const zoomValue = document.getElementById('actionCamZoomValue');
+        const speedControl = document.getElementById('actionCamSpeedControl');
+        const speedValue = document.getElementById('actionCamSpeedValue');
+        const vignetteToggle = document.getElementById('vignetteToggle');
+
+        actionCamToggle.addEventListener('change', (e) => {
+            gm.isActionCam = e.target.checked;
+            if (!gm.isActionCam) gm.resetActionCam(false);
+        });
+
+        zoomControl.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            gm.actionCam.maxZoom = val;
+            zoomValue.textContent = val.toFixed(2);
+        });
+
+        speedControl.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            gm.actionCam.zoomSpeed = val;
+            speedValue.textContent = val.toFixed(2);
+        });
+
+        vignetteToggle.addEventListener('change', (e) => {
+            gm.actionCam.vignetteEnabled = e.target.checked;
         });
     }
 
