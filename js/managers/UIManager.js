@@ -393,10 +393,11 @@ export class UIManager {
                 // 팔로우캠을 켜면 액션캠은 끈다.
                 if (actionCamToggle.checked) {
                     actionCamToggle.checked = false;
-                    gm.isActionCam = false;
                 }
-                gm.resetActionCam(false); // 혹시 모를 액션캠 상태 초기화
+                gm.isActionCam = false; // 일반 액션캠 비활성화
+                gm.resetActionCam(false);
             } else {
+                // 팔로우캠을 끄면 카메라 리셋
                 gm.followedUnit = null;
                 this.updateFollowedUnitInfo(null);
                 gm.resetActionCam(false);
