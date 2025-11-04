@@ -373,27 +373,30 @@ export class UIManager {
 
         actionCamToggle.addEventListener('change', (e) => {
             gm.isActionCam = e.target.checked;
-            if (!gm.isActionCam) {
+
+            if (gm.isActionCam) {
+                // 액션캠을 켜면, 팔로우캠은 끈다.
+                if (followCamToggle.checked) {
+                    followCamToggle.checked = false;
+                    gm.isFollowCamEnabled = false;
+                    gm.followedUnit = null;
+                    this.updateFollowedUnitInfo(null);
+                }
+            } else {
+                // 액션캠을 끄면, 팔로우캠도 같이 끈다.
+                followCamToggle.checked = false;
                 gm.isFollowCamEnabled = false;
                 gm.followedUnit = null;
-                followCamToggle.checked = false;
                 this.updateFollowedUnitInfo(null);
                 gm.resetActionCam(false);
-            } else {
-                // 액션캠을 껐을 때 팔로우캠도 같이 꺼지도록
-                if (gm.isFollowCamEnabled) {
-                    gm.isFollowCamEnabled = false;
-                    followCamToggle.checked = false;
-                }
             }
         });
 
         followCamToggle.addEventListener('change', (e) => {
             gm.isFollowCamEnabled = e.target.checked;
             if (gm.isFollowCamEnabled) {
-                actionCamToggle.checked = true;
-                // 팔로우캠을 켜면 액션캠도 활성화
-                gm.isActionCam = true;
+                if (!actionCamToggle.checked) actionCamToggle.checked = true;
+                gm.isActionCam = true; // 팔로우캠은 액션캠의 하위 기능이므로 액션캠을 활성화
             } else {
                 gm.followedUnit = null;
                 this.updateFollowedUnitInfo(null);
