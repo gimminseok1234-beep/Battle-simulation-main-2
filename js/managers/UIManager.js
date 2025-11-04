@@ -571,14 +571,14 @@ export class UIManager {
         const allCategoryHeaders = toolbox.querySelectorAll('.category-header');
         allCategoryHeaders.forEach(header => {
             header.style.display = 'block';
-
-            // [신규] 카테고리 '콘텐츠'의 display 스타일을 초기화(제거)합니다.
+            
+            // [수정] 카테고리 콘텐츠의 display 스타일을 초기화(제거)합니다.
             const content = header.nextElementSibling;
             if (content) {
-                content.style.display = ''; // 'display: none' 속성 제거
+                content.style.display = ''; // 인라인 스타일 제거
             }
-
-            const eraseButton = content?.querySelector('[data-tool="erase"]');
+            
+            const eraseButton = header.nextElementSibling?.querySelector('[data-tool="erase"]');
             if (eraseButton) eraseButton.style.display = 'block';
         });
 

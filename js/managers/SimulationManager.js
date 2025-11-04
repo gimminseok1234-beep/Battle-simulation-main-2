@@ -297,6 +297,16 @@ export class SimulationManager {
                         hit = true; // [수정] hit 플래그를 true로 설정하여 아래 로직을 건너뛰도록 함
                     }
 
+                    // 부메랑 특수 공격은 데미지가 0이지만, 적을 끌어당겨야 하므로 별도 처리
+                    if (p.type === 'boomerang_projectile') {
+                        unit.isBeingPulled = true;
+                        unit.puller = p.owner;
+                        const pullToX = p.owner.logicX + Math.cos(p.owner.facingAngle) * GRID_SIZE;
+                        const pullToY = p.owner.logicY + Math.sin(p.owner.facingAngle) * GRID_SIZE;
+                        unit.pullTargetPos = { x: pullToX, y: pullToY };
+                        p.destroyed = true; // 부메랑은 한 명만 끌고 복귀
+                        hit = true;
+                    }
                     p.hitTargets.add(unit);
                     hit = true;
         
