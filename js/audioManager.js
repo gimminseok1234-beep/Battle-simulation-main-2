@@ -53,9 +53,9 @@ export class AudioManager {
 
             const savedVolume = localStorage.getItem('gameVolume');
             if (savedVolume !== null) {
-                this.setVolume(parseFloat(savedVolume));
+                this.setVolume(parseFloat(savedVolume)); // 50%
             } else {
-                this.setVolume(0); // 기본 볼륨
+                this.setVolume(-6); // 기본 볼륨 (약 50%)
             }
             
             this.isInitialized = true;
@@ -107,4 +107,3 @@ export class AudioManager {
         localStorage.setItem('arenaKillSoundEnabled', isEnabled);
     }
 }
-

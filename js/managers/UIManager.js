@@ -369,6 +369,7 @@ export class UIManager {
         const speedControl = document.getElementById('actionCamSpeedControl');
         const speedValue = document.getElementById('actionCamSpeedValue');
         const vignetteToggle = document.getElementById('vignetteToggle');
+        const screenShakeToggle = document.getElementById('screenShakeToggle');
 
         actionCamToggle.addEventListener('change', (e) => {
             gm.isActionCam = e.target.checked;
@@ -383,12 +384,16 @@ export class UIManager {
 
         speedControl.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
-            gm.actionCam.zoomSpeed = val;
-            speedValue.textContent = val.toFixed(2);
+            gm.actionCam.zoomSpeed = val; // 실제 ease 값은 gameLoop에서 / 10 처리
+            speedValue.textContent = val.toFixed(1);
         });
 
         vignetteToggle.addEventListener('change', (e) => {
             gm.actionCam.vignetteEnabled = e.target.checked;
+        });
+
+        screenShakeToggle.addEventListener('change', (e) => {
+            gm.actionCam.screenShakeEnabled = e.target.checked;
         });
     }
 

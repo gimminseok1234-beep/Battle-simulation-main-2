@@ -68,8 +68,9 @@ export class GameManager {
             target: { x: 0, y: 0, scale: 1 },
             isAnimating: false,
             maxZoom: parseFloat(localStorage.getItem('actionCamMaxZoom') || '1.4'),
-            zoomSpeed: 0.15,
-            vignetteEnabled: false
+            zoomSpeed: 1.0,
+            vignetteEnabled: false,
+            screenShakeEnabled: false
         };
         this.growingFieldSettings = {
             direction: 'DOWN', speed: 4, delay: 0
@@ -626,7 +627,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = cam.zoomSpeed; 
+            const ease = cam.zoomSpeed / 10; 
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;
