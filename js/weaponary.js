@@ -1738,6 +1738,7 @@ export class AreaEffect {
         this.currentRadius = this.maxRadius * (1 - (this.duration / 30));
         
         if (this.type === 'fire_pillar') {
+            // [버그 수정] 파티클의 움직임은 시각 효과이므로, 시뮬레이션용 난수 생성기(random) 대신 UI용 난수 생성기(uiPrng)를 사용합니다.
             this.particles.forEach(p => {
                 p.y -= p.speed * gameManager.gameSpeed;
                 p.lifespan -= gameManager.gameSpeed;

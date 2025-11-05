@@ -715,6 +715,7 @@ export class Unit {
             }
 
             // 이펙트 생성
+            // [버그 수정] 파티클 생성은 시각 효과이므로, 시뮬레이션용 난수 생성기(random) 대신 UI용 난수 생성기(uiPrng)를 사용합니다.
             for (let i = 0; i < 25; i++) {
                 const angle = gameManager.uiPrng.next() * Math.PI * 2;
                 const speed = 2 + gameManager.uiPrng.next() * 4;
@@ -900,6 +901,7 @@ export class Unit {
                 gameManager.createEffect('axe_spin_effect', endPos.x, endPos.y, this, {
                     color: 'rgba(168, 85, 247, 0.8)', maxRadius: GRID_SIZE * 2.5, duration: 20, lineWidth: 2
                 });
+                // [버그 수정] 파티클 생성은 시각 효과이므로, 시뮬레이션용 난수 생성기(random) 대신 UI용 난수 생성기(uiPrng)를 사용합니다.
                 for (let i = 0; i < 25; i++) {
                     const angle = gameManager.uiPrng.next() * Math.PI * 2;
                     const speed = 1 + gameManager.uiPrng.next() * 3;
@@ -953,6 +955,7 @@ export class Unit {
                 gameManager.audioManager.play('swordHit');
 
                 // [MODIFIED] 도끼 특수 공격 이펙트 강화 (조건문 안으로 이동)
+                // [버그 수정] 파티클 생성은 시각 효과이므로, 시뮬레이션용 난수 생성기(random) 대신 UI용 난수 생성기(uiPrng)를 사용합니다.
                 for (let i = 0; i < 30; i++) {
                     const angle = gameManager.uiPrng.next() * Math.PI * 2;
                     const speed = 2 + gameManager.uiPrng.next() * 4;
@@ -1227,6 +1230,7 @@ export class Unit {
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
+                    // [버그 수정] 유닛의 이동은 시뮬레이션 결과에 영향을 주므로, UI용 난수 생성기(uiPrng) 대신 시뮬레이션용 난수 생성기(random)를 사용해야 합니다.
                     const angle = gameManager.random() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
