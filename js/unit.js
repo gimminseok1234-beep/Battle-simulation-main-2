@@ -90,7 +90,8 @@ export class Unit {
         this.pathUpdateCooldown = 0;
 
         // [NEW] 눈 깜빡임 관련 속성
-        this.blinkTimer = this.gameManager.uiPrng.next() * 300 + 120; // 2~7초 사이 랜덤
+        // [버그 수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
+        this.blinkTimer = this.gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
         this.isBlinking = false;
     }
 
@@ -601,7 +602,8 @@ export class Unit {
             if (this.blinkTimer <= 0) {
                 this.isBlinking = false;
                 // 다음 깜빡임까지의 시간
-                this.blinkTimer = this.gameManager.uiPrng.next() * 300 + 120;
+                // [버그 수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
+                this.blinkTimer = this.gameManager.random() * 300 + 120;
             }
         }
 
