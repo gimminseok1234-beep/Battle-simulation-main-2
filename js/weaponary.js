@@ -1643,7 +1643,7 @@ export class Effect {
             const opacity = Math.min(1, this.duration / (initialDuration / 2));
             ctx.save();
             ctx.translate(this.target.pixelX, this.target.pixelY + yOffset);
-            // [MODIFIED] 레벨업 글자 크기를 기존보다 30% 작게 조정했습니다.
+            // [MODIFIED] 레벨업 글자 크기를 기존보다 30% 작게 조정했습니다.ㄹㄹ
             ctx.scale(1.05, 1.05);
             ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
             ctx.font = 'bold 12px Arial';

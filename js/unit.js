@@ -716,9 +716,9 @@ export class Unit {
 
             // 이펙트 생성
             for (let i = 0; i < 25; i++) {
-                const angle = gameManager.random() * Math.PI * 2;
-                const speed = 2 + gameManager.random() * 4;
-                gameManager.addParticle({ x: this.pixelX, y: this.pixelY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.random() * 3)], size: gameManager.random() * 2.5 + 1, gravity: 0 });
+                const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                const speed = 2 + gameManager.uiPrng.next() * 4;
+                gameManager.addParticle({ x: this.pixelX, y: this.pixelY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: ['#a855f7', '#d8b4fe', '#ffffff'][Math.floor(gameManager.uiPrng.next() * 3)], size: gameManager.uiPrng.next() * 2.5 + 1, gravity: 0 });
             }
             gameManager.audioManager.play('teleport');
 
@@ -901,13 +901,13 @@ export class Unit {
                     color: 'rgba(168, 85, 247, 0.8)', maxRadius: GRID_SIZE * 2.5, duration: 20, lineWidth: 2
                 });
                 for (let i = 0; i < 25; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 1 + gameManager.random() * 3;
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 1 + gameManager.uiPrng.next() * 3;
                     gameManager.addParticle({
                         x: endPos.x, y: endPos.y,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                        life: 0.8, color: ['#5b21b6', '#a855f7', '#1e293b'][Math.floor(gameManager.random() * 3)],
-                        size: gameManager.random() * 2.5 + 1, gravity: 0.03
+                        life: 0.8, color: ['#5b21b6', '#a855f7', '#1e293b'][Math.floor(gameManager.uiPrng.next() * 3)],
+                        size: gameManager.uiPrng.next() * 2.5 + 1, gravity: 0.03
                     });
                 }
                 return;
@@ -954,14 +954,14 @@ export class Unit {
 
                 // [MODIFIED] 도끼 특수 공격 이펙트 강화 (조건문 안으로 이동)
                 for (let i = 0; i < 30; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 2 + gameManager.random() * 4;
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 2 + gameManager.uiPrng.next() * 4;
                     gameManager.addParticle({
                         x: this.pixelX, y: this.pixelY,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                         life: 0.9,
-                        color: ['#9ca3af', '#e5e7eb', '#6b7280'][Math.floor(gameManager.random() * 3)],
-                        size: gameManager.random() * 2 + 1, gravity: 0.1
+                        color: ['#9ca3af', '#e5e7eb', '#6b7280'][Math.floor(gameManager.uiPrng.next() * 3)],
+                        size: gameManager.uiPrng.next() * 2 + 1, gravity: 0.1
                     });
                 }
             }
@@ -1227,7 +1227,7 @@ export class Unit {
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
-                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const angle = gameManager.random() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
