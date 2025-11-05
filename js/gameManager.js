@@ -664,7 +664,7 @@ export class GameManager {
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
             // [버그 수정] 카메라 ease 값은 결정론적이어야 합니다.
-            // uiPrng를 사용하면 non-deterministic 상태를 유발하여 리플레이 결과를 오염시킵니다.
+            // 시뮬레이션 RNG를 사용하지 않고, 항상 동일한 속도 값을 사용하도록 변경합니다.
             const ease = cam.zoomSpeed / 20.0;
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
