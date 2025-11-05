@@ -1149,15 +1149,15 @@ export class GameManager {
                 ctx.fillStyle = `rgba(132, 204, 22, ${opacity})`;
                 ctx.fillRect(this.gridX * GRID_SIZE, this.gridY * GRID_SIZE, GRID_SIZE, GRID_SIZE);
         
-                if (this.gameManager.random() > 0.9) { // [수정] this.gameManager를 통해 random 함수에 접근
+                if (this.gameManager.uiPrng.next() > 0.9) { // [수정] this.gameManager를 통해 random 함수에 접근
                     this.gameManager.addParticle({
-                        x: (this.gridX + this.gameManager.random()) * GRID_SIZE, // [수정]
-                        y: (this.gridY + this.gameManager.random()) * GRID_SIZE, // [수정]
-                        vx: (this.gameManager.random() - 0.5) * 0.2, // [수정]
-                        vy: -this.gameManager.random() * 0.5, // [수정]
+                        x: (this.gridX + this.gameManager.uiPrng.next()) * GRID_SIZE, // [수정]
+                        y: (this.gridY + this.gameManager.uiPrng.next()) * GRID_SIZE, // [수정]
+                        vx: (this.gameManager.uiPrng.next() - 0.5) * 0.2, // [수정]
+                        vy: -this.gameManager.uiPrng.next() * 0.5, // [수정]
                         life: 0.5,
                         color: '#a3e635',
-                        size: this.gameManager.random() * 2 + 1, // [수정]
+                        size: this.gameManager.uiPrng.next() * 2 + 1, // [수정]
                         gravity: -0.05
                     });
                 }

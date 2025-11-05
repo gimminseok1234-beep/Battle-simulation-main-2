@@ -90,7 +90,7 @@ export class Unit {
         this.pathUpdateCooldown = 0;
 
         // [NEW] 눈 깜빡임 관련 속성
-        this.blinkTimer = this.gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
+        this.blinkTimer = this.gameManager.uiPrng.next() * 300 + 120; // 2~7초 사이 랜덤
         this.isBlinking = false;
     }
 
@@ -568,11 +568,11 @@ export class Unit {
 
                 const particleCount = (this.level - 1) * 2;
                 for (let i = 0; i < particleCount; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
+                const angle = gameManager.uiPrng.next() * Math.PI * 2;
                     const radius = GRID_SIZE / 1.67; // 유닛 반지름
                     const spawnX = this.pixelX + Math.cos(angle) * radius;
                     const spawnY = this.pixelY + Math.sin(angle) * radius;
-                    const speed = 0.5 + gameManager.random() * 0.5;
+                const speed = 0.5 + gameManager.uiPrng.next() * 0.5;
 
                     gameManager.addParticle({
                         x: spawnX,
@@ -581,7 +581,7 @@ export class Unit {
                         vy: Math.sin(angle) * speed,
                         life: 0.6,
                         color: teamColor,
-                        size: this.level * 0.5 + gameManager.random() * this.level,
+                    size: this.level * 0.5 + gameManager.uiPrng.next() * this.level,
                         gravity: -0.02
                     });
                 }
@@ -594,14 +594,14 @@ export class Unit {
             if (this.blinkTimer <= 0) {
                 this.isBlinking = true;
                 // 깜빡임 지속 시간 (짧게)
-                this.blinkTimer = 10;
+                this.blinkTimer = 10; 
             }
         } else if (this.isBlinking) {
             this.blinkTimer -= gameManager.gameSpeed;
             if (this.blinkTimer <= 0) {
                 this.isBlinking = false;
                 // 다음 깜빡임까지의 시간
-                this.blinkTimer = this.gameManager.random() * 300 + 120;
+                this.blinkTimer = this.gameManager.uiPrng.next() * 300 + 120;
             }
         }
 
@@ -762,9 +762,9 @@ export class Unit {
                 this.baseAttackPower += 3;
                 gameManager.audioManager.play('Arousal');
                 for (let i = 0; i < 30; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 1 + gameManager.random() * 3;
-                    const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 1 + gameManager.uiPrng.next() * 3;
+                    const color = gameManager.uiPrng.next() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
                         x: this.pixelX,
                         y: this.pixelY,
@@ -772,7 +772,7 @@ export class Unit {
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
                         color: color,
-                        size: gameManager.random() * 2 + 1.5,
+                        size: gameManager.uiPrng.next() * 2 + 1.5,
                         gravity: 0.05
                     });
                 }
@@ -1227,7 +1227,7 @@ export class Unit {
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
-                    const angle = gameManager.random() * Math.PI * 2;
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
@@ -1248,7 +1248,7 @@ export class Unit {
             if (this.stuckTimer > 30) {
                 // [수정] 막혔을 때만 A* 경로 탐색
                 if (this.path.length === 0) {
-                    this.updatePathTo(this.moveTarget);
+                    this.updatePathTo(this.moveTarget); 
                 } else {
                     // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도
                     this.path = [];
@@ -1330,9 +1330,9 @@ export class Unit {
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
                 gameManager.audioManager.play('Arousal');
                 for (let i = 0; i < 30; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 1 + gameManager.random() * 3;
-                    const color = gameManager.random() > 0.5 ? '#FFFFFF' : '#3b82f6';
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 1 + gameManager.uiPrng.next() * 3;
+                    const color = gameManager.uiPrng.next() > 0.5 ? '#FFFFFF' : '#3b82f6';
                     gameManager.addParticle({
                         x: this.pixelX,
                         y: this.pixelY,
@@ -1340,7 +1340,7 @@ export class Unit {
                         vy: Math.sin(angle) * speed,
                         life: 0.8,
                         color: color,
-                        size: gameManager.random() * 2 + 1.5,
+                        size: gameManager.uiPrng.next() * 2 + 1.5,
                         gravity: 0.05
                     });
                 }
@@ -1833,7 +1833,7 @@ Unit.prototype.drawEyes = function(ctx) {
                 targetX = this.moveTarget.x - this.pixelX;
                 targetY = this.moveTarget.y - this.pixelY;
             } else {
-                const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001;
+                const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001; 
                 targetX = Math.cos(t);
                 targetY = Math.sin(t * 1.4);
             }

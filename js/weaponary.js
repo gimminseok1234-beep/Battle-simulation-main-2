@@ -62,14 +62,14 @@ export class Weapon {
                 }
 
                 for (let i = 0; i < 15; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 1 + gameManager.random() * 2;
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 1 + gameManager.uiPrng.next() * 2;
                     gameManager.addParticle({
                         x: unit.pixelX, y: unit.pixelY,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                         life: 0.7,
                         color: teamColor,
-                        size: gameManager.random() * 2 + 1,
+                        size: gameManager.uiPrng.next() * 2 + 1,
                         gravity: 0.05
                     });
                 }
@@ -98,14 +98,14 @@ export class Weapon {
                 }
 
                 for (let i = 0; i < 15; i++) {
-                    const angle = gameManager.random() * Math.PI * 2;
-                    const speed = 1 + gameManager.random() * 2;
+                    const angle = gameManager.uiPrng.next() * Math.PI * 2;
+                    const speed = 1 + gameManager.uiPrng.next() * 2;
                     gameManager.addParticle({
                         x: unit.pixelX, y: unit.pixelY,
                         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                         life: 0.7,
                         color: teamColor,
-                        size: gameManager.random() * 2 + 1,
+                        size: gameManager.uiPrng.next() * 2 + 1,
                         gravity: 0.05
                     });
                 }
@@ -701,8 +701,8 @@ export class Particle {
 export function createPhysicalHitEffect(gameManager, target) {
     const particleCount = 6;
     for (let i = 0; i < particleCount; i++) {
-        const angle = gameManager.random() * Math.PI * 2;
-        const speed = 2 + gameManager.random() * 3;
+        const angle = gameManager.uiPrng.next() * Math.PI * 2;
+        const speed = 2 + gameManager.uiPrng.next() * 3;
         gameManager.addParticle({
             x: target.pixelX,
             y: target.pixelY,
@@ -710,7 +710,7 @@ export function createPhysicalHitEffect(gameManager, target) {
             vy: Math.sin(angle) * speed,
             life: 0.7,
             color: '#ef4444',
-            size: gameManager.random() * 2.5 + 1.5,
+            size: gameManager.uiPrng.next() * 2.5 + 1.5,
             gravity: 0.1
         });
     }
@@ -725,16 +725,16 @@ export function createPhysicalHitEffect(gameManager, target) {
 export function createFireballHitEffect(gameManager, x, y) {
     const particleCount = 20; // 파티클 수를 20개로 줄임
     for (let i = 0; i < particleCount; i++) {
-        const angle = gameManager.random() * Math.PI * 2;
-        const speed = 1 + gameManager.random() * 4;
+        const angle = gameManager.uiPrng.next() * Math.PI * 2;
+        const speed = 1 + gameManager.uiPrng.next() * 4;
         gameManager.addParticle({
             x: x,
             y: y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             life: 0.6, // 지속 시간 감소
-            color: ['#ffcc00', '#ff9900', '#ff6600', '#ef4444'][Math.floor(gameManager.random() * 4)],
-            size: gameManager.random() * 3 + 2,
+            color: ['#ffcc00', '#ff9900', '#ff6600', '#ef4444'][Math.floor(gameManager.uiPrng.next() * 4)],
+            size: gameManager.uiPrng.next() * 3 + 2,
             gravity: -0.05 // 불꽃처럼 위로 솟구치는 느낌
         });
     }
@@ -872,15 +872,15 @@ export class Projectile {
 
     // [NEW] 활 특수 공격 파티클 효과
     handleSpecialArrowTrail() {
-        if (this.gameManager.random() > 0.3) { // 파티클 생성 빈도 조절
+        if (this.gameManager.uiPrng.next() > 0.3) { // 파티클 생성 빈도 조절
             this.gameManager.addParticle({
                 x: this.pixelX,
                 y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 1.5,
-                vy: (this.gameManager.random() - 0.5) * 1.5,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
                 life: 0.4,
-                color: this.gameManager.random() > 0.5 ? '#facc15' : '#fb923c', // 노랑/주황
-                size: this.gameManager.random() * 2 + 1,
+                color: this.gameManager.uiPrng.next() > 0.5 ? '#facc15' : '#fb923c', // 노랑/주황
+                size: this.gameManager.uiPrng.next() * 2 + 1,
                 gravity: 0
             });
         }
@@ -888,14 +888,14 @@ export class Projectile {
 
     // [NEW] 검기 파티클 효과
     handleSwordWaveTrail() {
-        if (this.gameManager.random() > 0.4) {
+        if (this.gameManager.uiPrng.next() > 0.4) {
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 1.5,
-                vy: (this.gameManager.random() - 0.5) * 1.5,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
                 life: 0.5,
-                color: this.gameManager.random() > 0.5 ? '#ef4444' : '#fca5a5',
-                size: this.gameManager.random() * 2 + 1,
+                color: this.gameManager.uiPrng.next() > 0.5 ? '#ef4444' : '#fca5a5',
+                size: this.gameManager.uiPrng.next() * 2 + 1,
                 gravity: 0.02
             });
         }
@@ -903,14 +903,14 @@ export class Projectile {
 
     // [NEW] 쌍검 칼날비 파티클 효과
     handleBouncingSwordTrail() {
-        if (this.gameManager.random() > 0.3) {
+        if (this.gameManager.uiPrng.next() > 0.3) {
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 1.0,
-                vy: (this.gameManager.random() - 0.5) * 1.0,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 1.0,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 1.0,
                 life: 0.4,
                 color: '#9ca3af',
-                size: this.gameManager.random() * 1.5 + 1,
+                size: this.gameManager.uiPrng.next() * 1.5 + 1,
                 gravity: 0
             });
         }
@@ -918,16 +918,16 @@ export class Projectile {
 
     // [NEW] 부메랑 파티클 효과
     handleBoomerangTrail() {
-        if (this.gameManager.random() > 0.4) {
+        if (this.gameManager.uiPrng.next() > 0.4) {
             const teamColor = COLORS[`TEAM_${this.owner.team}`] || '#9ca3af';
             this.gameManager.addParticle({
                 x: this.pixelX,
                 y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 1.2,
-                vy: (this.gameManager.random() - 0.5) * 1.2,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 1.2,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 1.2,
                 life: 0.5,
                 color: teamColor,
-                size: this.gameManager.random() * 2 + 1,
+                size: this.gameManager.uiPrng.next() * 2 + 1,
                 gravity: 0
             });
         }
@@ -935,7 +935,7 @@ export class Projectile {
 
     // [NEW] 장풍 파티클 효과
     handleHadokenTrail() {
-        if (this.gameManager.random() > 0.3 && this.owner) {
+        if (this.gameManager.uiPrng.next() > 0.3 && this.owner) {
             let particleColor1, particleColor2;
             switch(this.owner.team) {
                 case TEAM.A: particleColor1 = '#fca5a5'; particleColor2 = '#ef4444'; break; // Red
@@ -947,11 +947,11 @@ export class Projectile {
 
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 2,
-                vy: (this.gameManager.random() - 0.5) * 2,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 2,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 2,
                 life: 0.5,
-                color: this.gameManager.random() > 0.5 ? particleColor1 : particleColor2,
-                size: this.gameManager.random() * 2.5 + 1,
+                color: this.gameManager.uiPrng.next() > 0.5 ? particleColor1 : particleColor2,
+                size: this.gameManager.uiPrng.next() * 2.5 + 1,
                 gravity: 0
             });
         }
@@ -959,14 +959,14 @@ export class Projectile {
 
     // [NEW] 번개 파티클 효과
     handleLightningTrail() {
-        if (this.gameManager.random() > 0.2) {
+        if (this.gameManager.uiPrng.next() > 0.2) {
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (this.gameManager.random() - 0.5) * 1.5,
-                vy: (this.gameManager.random() - 0.5) * 1.5,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
                 life: 0.3,
                 color: '#fef08a',
-                size: this.gameManager.random() * 2 + 1,
+                size: this.gameManager.uiPrng.next() * 2 + 1,
                 gravity: 0
             });
         }
@@ -1097,11 +1097,11 @@ export class Projectile {
             this.rotationAngle += 0.4 * gameManager.gameSpeed;
         }
 
-        if (this.type === 'ice_diamond_projectile' && gameManager.random() > 0.4) {
+        if (this.type === 'ice_diamond_projectile' && gameManager.uiPrng.next() > 0.4) {
             gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
-                vx: (gameManager.random() - 0.5) * 1, vy: (gameManager.random() - 0.5) * 1,
-                life: 0.6, color: '#3b82f6', size: gameManager.random() * 2 + 1,
+                vx: (gameManager.uiPrng.next() - 0.5) * 1, vy: (gameManager.uiPrng.next() - 0.5) * 1,
+                life: 0.6, color: '#3b82f6', size: gameManager.uiPrng.next() * 2 + 1,
             });
         }
 
@@ -1319,7 +1319,7 @@ export class Projectile {
             ctx.beginPath();
             ctx.moveTo(-GRID_SIZE * 0.6, 0);
             for(let i = -GRID_SIZE * 0.6; i < GRID_SIZE * 0.6; i += 5) {
-                ctx.lineTo(i, (this.gameManager.random() - 0.5) * 6);
+                ctx.lineTo(i, (this.gameManager.uiPrng.next() - 0.5) * 6);
             }
             ctx.lineTo(GRID_SIZE * 0.6, 0);
             ctx.stroke();
@@ -1505,15 +1505,15 @@ export class Projectile {
             ctx.restore();
 
             // 파티클 효과
-            if (this.gameManager.random() > 0.3) {
+            if (this.gameManager.uiPrng.next() > 0.3) {
                 this.gameManager.addParticle({
                     x: this.pixelX,
                     y: this.pixelY,
-                    vx: (this.gameManager.random() - 0.5) * 1.5,
-                    vy: (this.gameManager.random() - 0.5) * 1.5,
+                    vx: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
+                    vy: (this.gameManager.uiPrng.next() - 0.5) * 1.5,
                     life: 0.6,
-                    color: ['#86efac', '#4ade80', '#22c55e'][Math.floor(this.gameManager.random() * 3)],
-                    size: this.gameManager.random() * 2 + 1.5,
+                    color: ['#86efac', '#4ade80', '#22c55e'][Math.floor(this.gameManager.uiPrng.next() * 3)],
+                    size: this.gameManager.uiPrng.next() * 2 + 1.5,
                     gravity: -0.02
                 });
             }
@@ -1562,7 +1562,7 @@ export class Effect {
         this.gameManager = gameManager;
         this.x = x; this.y = y; this.type = type; this.target = target;
         this.duration = options.duration || 20;
-        this.angle = this.gameManager.random() * Math.PI * 2;
+        this.angle = this.gameManager.uiPrng.next() * Math.PI * 2;
         this.initialDuration = this.duration; // [NEW] 초기 지속 시간 저장
         this.options = options;
         
@@ -1572,9 +1572,9 @@ export class Effect {
             for (let i = 0; i < 20; i++) {
                 this.particles.push({
                     x: this.x, y: this.y,
-                    angle: this.gameManager.random() * Math.PI * 2,
-                    speed: this.gameManager.random() * 2 + 1,
-                    radius: this.gameManager.random() * 3 + 1,
+                    angle: this.gameManager.uiPrng.next() * Math.PI * 2,
+                    speed: this.gameManager.uiPrng.next() * 2 + 1,
+                    radius: this.gameManager.uiPrng.next() * 3 + 1,
                     lifespan: 40,
                 });
             }
@@ -1678,11 +1678,11 @@ export class MagicDaggerDashEffect {
             this.gameManager.addParticle({
                 x: particleX,
                 y: particleY,
-                vx: (this.gameManager.random() - 0.5) * 2,
-                vy: (this.gameManager.random() - 0.5) * 2,
+                vx: (this.gameManager.uiPrng.next() - 0.5) * 2,
+                vy: (this.gameManager.uiPrng.next() - 0.5) * 2,
                 life: 0.5,
                 color: '#ffffff',
-                size: this.gameManager.random() * 2 + 1,
+                size: this.gameManager.uiPrng.next() * 2 + 1,
             });
         }
     }
@@ -1721,12 +1721,12 @@ export class AreaEffect {
         if (this.type === 'fire_pillar') {
             for (let i = 0; i < 50; i++) {
                 this.particles.push({
-                    x: (this.gameManager.random() - 0.5) * this.maxRadius * 1.5,
-                    y: (this.gameManager.random() - 0.5) * this.maxRadius * 0.5,
-                    size: this.gameManager.random() * 4 + 2,
-                    speed: this.gameManager.random() * 1.5 + 1,
-                    lifespan: this.gameManager.random() * 20 + 10,
-                    color: ['#ffcc00', '#ff9900', '#ff6600', '#ef4444'][Math.floor(this.gameManager.random() * 4)]
+                    x: (this.gameManager.uiPrng.next() - 0.5) * this.maxRadius * 1.5,
+                    y: (this.gameManager.uiPrng.next() - 0.5) * this.maxRadius * 0.5,
+                    size: this.gameManager.uiPrng.next() * 4 + 2,
+                    speed: this.gameManager.uiPrng.next() * 1.5 + 1,
+                    lifespan: this.gameManager.uiPrng.next() * 20 + 10,
+                    color: ['#ffcc00', '#ff9900', '#ff6600', '#ef4444'][Math.floor(this.gameManager.uiPrng.next() * 4)]
                 });
             }
         }
@@ -1741,7 +1741,7 @@ export class AreaEffect {
             this.particles.forEach(p => {
                 p.y -= p.speed * gameManager.gameSpeed;
                 p.lifespan -= gameManager.gameSpeed;
-                p.x += (this.gameManager.random() - 0.5) * 0.5;
+                p.x += (this.gameManager.uiPrng.next() - 0.5) * 0.5;
             });
             this.particles = this.particles.filter(p => p.lifespan > 0);
 

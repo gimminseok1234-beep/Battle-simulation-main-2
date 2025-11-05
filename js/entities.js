@@ -32,11 +32,11 @@ export class Nexus {
         for (let i = 0; i < 60; i++) {
             this.explosionParticles.push({
                 x: this.pixelX, y: this.pixelY,
-                angle: this.gameManager.random() * Math.PI * 2,
-                speed: this.gameManager.random() * 6 + 2,
-                radius: this.gameManager.random() * 5 + 2,
+                angle: this.gameManager.uiPrng.next() * Math.PI * 2,
+                speed: this.gameManager.uiPrng.next() * 6 + 2,
+                radius: this.gameManager.uiPrng.next() * 5 + 2,
                 lifespan: 80,
-                color: ['#ffcc00', '#ff9900', '#ff6600', '#666666', '#ef4444'][Math.floor(this.gameManager.random() * 5)]
+                color: ['#ffcc00', '#ff9900', '#ff6600', '#666666', '#ef4444'][Math.floor(this.gameManager.uiPrng.next() * 5)]
             });
         }
     }
