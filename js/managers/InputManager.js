@@ -36,7 +36,7 @@ export class InputManager {
 
     handleMouseDown(e) {
         const gm = this.gameManager;
-        if (gm.isActionCam) {
+        if (gm.isActionCam || gm.isFollowCamEnabled) { // [FIX] 팔로우캠 활성화 시에도 클릭을 처리하도록 조건 변경
             gm.handleActionCamClick(this.getMousePos(e));
             return;
         }
