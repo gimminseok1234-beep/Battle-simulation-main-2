@@ -28,7 +28,7 @@ export class SimulationManager {
                 unit.nameColor = gm.nametagColor;
             });
 
-            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.uiPrng.next());
+            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); // [FIX] 시뮬레이션 결과에 영향을 주므로 prng를 사용합니다.
             const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
 
             for (let i = 0; i < assignmentCount; i++) {
