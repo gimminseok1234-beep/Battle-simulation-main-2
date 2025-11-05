@@ -663,7 +663,10 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            const ease = cam.zoomSpeed / 20.0; 
+            // [수정] 줌 속도 조절이 리플레이 결과에 영향을 주지 않도록 UI용 랜덤 생성기를 사용합니다.
+            // zoomSpeed 값에 미세한 랜덤 값을 더해 매번 동일한 ease 값을 보장하지 않도록 하여,
+            // 결정론적 랜덤 환경(legacy)에서 발생할 수 있는 미세한 타이밍 차이로 인한 결과값 변경을 방지합니다.
+            const ease = (cam.zoomSpeed + this.uiPrng.next() * 0.001) / 20.0;
             cam.current.x += (cam.target.x - cam.current.x) * ease;
             cam.current.y += (cam.target.y - cam.current.y) * ease;
             cam.current.scale += (cam.target.scale - cam.current.scale) * ease;
