@@ -75,7 +75,7 @@ export function drawImpl(mouseEvent) {
     drawSpecialAttackGlows.call(this);
 
     // [신규] 비네트 효과 그리기
-    if (this.actionCam.vignetteEnabled && this.isActionCam && cam.current.scale > 1.05) {
+    if (this.actionCam.vignetteEnabled && (this.isActionCam || this.isFollowCamEnabled) && cam.current.scale > 1.05) {
         this.ctx.save();
         // 카메라 변환을 초기화하고 캔버스 좌표계에서 그립니다.
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
