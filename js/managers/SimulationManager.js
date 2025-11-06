@@ -53,8 +53,8 @@ export class SimulationManager {
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
-        
-        gm.initialUnitsState = cleanUnits;
+        // [수정] initialUnitsState를 객체 배열로 직접 저장하여 이름표 교체 시 초기 상태도 업데이트 가능하게 함
+        gm.initialUnitsState = cleanUnits; 
         gm.initialWeaponsState = JSON.stringify(cleanWeapons);
         gm.initialNexusesState = JSON.stringify(cleanNexuses);
         gm.initialMapState = JSON.stringify(gm.map);
@@ -120,7 +120,7 @@ export class SimulationManager {
             if (activeNexusTeams.size < 2 || activeUnitTeams.size <= 1) {
                 gameOver = true;
                 // [수정] 넥서스가 1개 남았을 때, 해당 넥서스 팀이 승리하도록 수정
-                if (activeNexusTeams.size === 1) {
+                if (activeNexusTeams.size < 2) {
                     winner = activeNexusTeams.values().next().value || null;
                 }
                 else {
@@ -128,11 +128,13 @@ export class SimulationManager {
                 }
             }
         } else {
+            // [수정] 모든 팀이 하나 이하로 남았을 때 게임 종료 조건
             const allRemainingTeams = new Set([...activeNexusTeams, ...activeUnitTeams]);
-            if (allRemainingTeams.size <= 1) { 
+            if (allRemainingTeams.size <= 1) {
+                // [수정] 초기 넥서스 및 유닛 상태를 JSON.parse() 없이 직접 사용하도록 변경
                 const initialNexuses = typeof gm.initialNexusesState === 'string' ? JSON.parse(gm.initialNexusesState) : gm.initialNexusesState;
                 const initialUnits = typeof gm.initialUnitsState === 'string' ? JSON.parse(gm.initialUnitsState) : gm.initialUnitsState;
-                const initialTeams = new Set(initialNexuses.map(n => n.team).concat(initialUnits.map(u => u.team)));
+                const initialTeams = new Set(JSON.parse(gm.initialNexusesState).map(n => n.team).concat(JSON.parse(gm.initialUnitsState).map(u => u.team)));
                 if (initialTeams.size > 1) {
                     gameOver = true;
                     winner = allRemainingTeams.size === 1 ? allRemainingTeams.values().next().value : null;
@@ -155,7 +157,8 @@ export class SimulationManager {
             gm.state = 'DONE';
             this.lastSimulationResult = {
                 initialMapState: gm.initialMapState,
-                initialUnitsState: JSON.stringify(gm.initialUnitsState),
+                // [수정] 리플레이 저장 시 initialUnitsState를 JSON 문자열로 변환하여 저장
+                initialUnitsState: JSON.stringify(gm.initialUnitsState), 
                 initialWeaponsState: gm.initialWeaponsState,
                 initialNexusesState: gm.initialNexusesState,
                 initialGrowingFieldsState: gm.initialGrowingFieldsState,
