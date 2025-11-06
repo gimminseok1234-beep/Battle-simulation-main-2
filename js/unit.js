@@ -282,7 +282,7 @@ export class Unit {
             if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
         }
 
-        // [최적화] 공간 분할을 사용하여 충돌 검사 대상 유닛 수를 줄임
+        // [최적화] 공간 분할(Spatial Partitioning)을 사용하여 충돌 검사 대상 유닛 수를 줄임
         const nearbyUnits = gameManager.getNearbyUnits(this);
         for (const otherUnit of nearbyUnits) {
             // 자기 자신과의 충돌 검사는 건너뜀
@@ -1432,7 +1432,7 @@ export class Unit {
     draw(ctx, isOutlineEnabled, outlineWidth) {
         const gameManager = this.gameManager;
         if (!gameManager) return;
-        ctx.save(); // [수정] draw 메서드 시작 시 캔버스 상태 저장
+        ctx.save();
 
 
         const scale = 1 + this.awakeningEffect.stacks * 0.2;
@@ -1488,6 +1488,7 @@ export class Unit {
             });
         }
 
+        // [수정] 유닛 크기 조절 로직 복원
         ctx.translate(this.pixelX, this.pixelY);
         ctx.scale(totalScale, totalScale);
         ctx.translate(-this.pixelX, -this.pixelY);
@@ -1756,12 +1757,13 @@ export class Unit {
             ctx.textAlign = 'center';
             ctx.fillText(this.state === 'SEEKING_HEAL_PACK' ? '+' : '!', this.pixelX, this.pixelY + yOffset);
         }
+        
+        ctx.restore(); // [수정] draw 메서드 시작 시 호출된 save()에 대한 restore()
     }
     
     performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
-            // ... (내용 동일)
             const teleportPos = this.gameManager.findEmptySpotNear(target);
             this.pixelX = teleportPos.x;
             this.pixelY = teleportPos.y;
