@@ -1523,6 +1523,8 @@ export class GameManager {
         placementResetBtn.style.display = 'inline-block';
         document.getElementById('actionCamPanel').classList.remove('hidden');
         document.getElementById('actionCamPanel').classList.add('flex');
+
+        this.uiManager.updateUIToReplayMode();
     }
 
     updateUIToEditorMode() {
@@ -1537,6 +1539,8 @@ export class GameManager {
         placementResetBtn.style.display = 'inline-block';
         document.getElementById('actionCamPanel').classList.add('hidden');
         document.getElementById('actionCamPanel').classList.remove('flex');
+
+        this.uiManager.updateUIToEditorMode();
     }
 
     // [신규] 이름표 바꾸기 메서드
