@@ -310,11 +310,11 @@ export class Unit {
                     const otherGridX = Math.floor(otherNextX / GRID_SIZE);
                     const otherGridY = Math.floor(otherNextY / GRID_SIZE);
 
-                    const isMyNextPosWall = (myGridY < 0 || myGridY >= gameManager.ROWS || myGridX < 0 || myGridX >= gameManager.COLS) ||
-                        (gameManager.map[myGridY][myGridX].type === TILE.WALL || gameManager.map[myGridY][myGridX].type === TILE.CRACKED_WALL);
+                    const isMyNextPosWall = (myGridY < 0 || myGridY >= this.gameManager.ROWS || myGridX < 0 || myGridX >= this.gameManager.COLS) ||
+                        (this.gameManager.map[myGridY][myGridX].type === TILE.WALL || this.gameManager.map[myGridY][myGridX].type === TILE.CRACKED_WALL);
 
-                    const isOtherNextPosWall = (otherGridY < 0 || otherGridY >= gameManager.ROWS || otherGridX < 0 || otherGridX >= gameManager.COLS) ||
-                        (gameManager.map[otherGridY][otherGridX].type === TILE.WALL || gameManager.map[otherGridY][otherGridX].type === TILE.CRACKED_WALL);
+                    const isOtherNextPosWall = (otherGridY < 0 || otherGridY >= this.gameManager.ROWS || otherGridX < 0 || otherGridX >= this.gameManager.COLS) ||
+                        (this.gameManager.map[otherGridY][otherGridX].type === TILE.WALL || this.gameManager.map[otherGridY][otherGridX].type === TILE.CRACKED_WALL);
 
                     if (!isMyNextPosWall) {
                         this.pixelX = myNextX;
@@ -332,19 +332,19 @@ export class Unit {
         if (this.pixelX < radius) {
             this.pixelX = radius;
             this.knockbackX = Math.abs(this.knockbackX) * 0.5 || 1;
-            bounced = true;
-        } else if (this.pixelX > gameManager.canvas.width - radius) {
-            this.pixelX = gameManager.canvas.width - radius;
+            bounced = true; 
+        } else if (this.pixelX > this.gameManager.canvas.width - radius) {
+            this.pixelX = this.gameManager.canvas.width - radius;
             this.knockbackX = -Math.abs(this.knockbackX) * 0.5 || -1;
             bounced = true;
         }
 
         if (this.pixelY < radius) {
             this.pixelY = radius;
-            this.knockbackY = Math.abs(this.knockbackY) * 0.5 || 1;
+            this.knockbackY = Math.abs(this.knockbackY) * 0.5 || 1; 
             bounced = true;
-        } else if (this.pixelY > gameManager.canvas.height - radius) {
-            this.pixelY = gameManager.canvas.height - radius;
+        } else if (this.pixelY > this.gameManager.canvas.height - radius) {
+            this.pixelY = this.gameManager.canvas.height - radius;
             this.knockbackY = -Math.abs(this.knockbackY) * 0.5 || -1;
             bounced = true;
         }
@@ -438,14 +438,14 @@ export class Unit {
         const nextGridY = Math.floor(nextPixelY / GRID_SIZE);
 
         if (nextGridY >= 0 && nextGridY < gameManager.ROWS && nextGridX >= 0 && nextGridX < gameManager.COLS) {
-            const collidedTile = gameManager.map[nextGridY][nextGridX];
+            const collidedTile = this.gameManager.map[nextGridY][nextGridX];
             if (collidedTile.type === TILE.WALL || collidedTile.type === TILE.CRACKED_WALL || collidedTile.type === TILE.GLASS_WALL) {
                 if (collidedTile.type === TILE.CRACKED_WALL) {
                     gameManager.damageTile(nextGridX, nextGridY, 999);
                 }
                 // [수정] A*를 사용하지 않을 때만 튕겨나가도록 수정
                 if (this.path.length === 0) {
-                    const bounceAngle = this.facingAngle + Math.PI + (gameManager.random() - 0.5);
+                    const bounceAngle = this.facingAngle + Math.PI + (this.gameManager.random() - 0.5);
                     this.knockbackX += Math.cos(bounceAngle) * 1.5;
                     this.knockbackY += Math.sin(bounceAngle) * 1.5;
                     this.moveTarget = null;
@@ -1273,7 +1273,7 @@ export class Unit {
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
                     // [버그 수정] 유닛의 이동은 시뮬레이션 결과에 영향을 주므로, UI용 난수 생성기(uiPrng) 대신 시뮬레이션용 난수 생성기(random)를 사용해야 합니다.
-                    const angle = gameManager.random() * Math.PI * 2;
+                    const angle = this.gameManager.random() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
                 break;
@@ -1307,7 +1307,7 @@ export class Unit {
         this.lastPosition = { x: this.pixelX, y: this.pixelY };
 
 
-        const finalGridX = Math.floor(this.pixelX / GRID_SIZE); // [수정] 오타 수정
+        const finalGridX = Math.floor(this.pixelX / GRID_SIZE);
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
 
         if (this.isInMagneticField) {
@@ -1423,9 +1423,9 @@ export class Unit {
         this.spriteCtx.clearRect(0, 0, size, size);
 
         // 원본 draw 로직을 오프스크린 캔버스에 그림
-        this.drawBodyAndEyes(this.spriteCtx, size / 2, size / 2);
+        this.drawBodyAndEyes(this.spriteCtx, size / 2, size / 2, size / 3);
         if (this.weapon && !this.isKing) {
-            this.weapon.drawEquipped(this.spriteCtx, { ...this, pixelX: size / 2, pixelY: size / 2 });
+            this.weapon.drawEquipped(this.spriteCtx, { ...this, pixelX: size / 2, pixelY: size / 2, facingAngle: this.facingAngle });
         }
     }
 
@@ -1759,11 +1759,10 @@ export class Unit {
         }
         
         ctx.restore(); // [수정] draw 메서드 시작 시 호출된 save()에 대한 restore()
-    }
-    
-    performDualSwordTeleportAttack(enemies) {
+    }    performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
+
             const teleportPos = this.gameManager.findEmptySpotNear(target);
             this.pixelX = teleportPos.x;
             this.pixelY = teleportPos.y;
@@ -1782,8 +1781,7 @@ export class Unit {
     }
 }
 
-Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY) {
-    const headRadius = GRID_SIZE / 1.67; // [수정] 누락된 headRadius 변수 정의 추가
+Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY, headRadius) {
     const eyeScale = this.gameManager?.unitEyeScale ?? 1.0;
     const faceWidth = headRadius * 1.1 * eyeScale;
     const faceHeight = headRadius * 0.7 * eyeScale;
@@ -1900,7 +1898,7 @@ Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY) {
                 targetY = this.moveTarget.y - this.pixelY;
             } else {
                 const t = this.gameManager.animationFrameCounter * 0.09 + (this.pixelX + this.pixelY) * 0.001; 
-                targetX = Math.cos(t);
+                targetX = Math.cos(t); 
                 targetY = Math.sin(t * 1.4);
             }
 
@@ -1952,5 +1950,4 @@ Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY) {
             ctx.stroke();
         }
     }
-    ctx.restore();
 }
