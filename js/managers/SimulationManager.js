@@ -20,64 +20,49 @@ export class SimulationManager {
         gm.prng = new SeededRandom(gm.simulationSeed);
         gm.enableDeterministicRng();
         
-        // [수정 1]
-        // 유닛 데이터를 먼저 정리하고 초기 상태로 저장합니다.
-        // 리플레이 모드일 경우, 사용자가 교체한 이름표가 이 시점에 저장됩니다.
+        gm.usedNametagsInSim.clear(); // 이 줄은 if 문 밖에 둡니다.
+
+        // [수정] 이 if 블록을 추가하여 리플레이 모드일 때 이름표 할당을 건너뛰도록 합니다.
+        if (!gm.isReplayMode) {
+            
+            // (시작) --- 이곳은 기존에 있던(또는 삭제되었던) 이름표 할당 로직입니다 ---
+            if (gm.isNametagEnabled && gm.nametagList.length > 0) {
+                gm.units.forEach(unit => {
+                    unit.name = ''; // 이름표 초기화
+                    unit.nameColor = gm.nametagColor;
+                });
+
+                const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next());
+                const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
+
+                for (let i = 0; i < assignmentCount; i++) {
+                    gm.units[i].name = shuffledNames[i];
+                    gm.usedNametagsInSim.add(shuffledNames[i]);
+                }
+            } else {
+                // 랜덤 이름표 기능이 꺼져있을 때, 수동 할당 이름이 아닌 유닛의 이름을 지웁니다.
+                gm.units.forEach(unit => unit.name = unit.name || '');
+            }
+            // (끝) --- 이름표 할당 로직 끝 ---
+
+        } // [수정] if (!gm.isReplayMode) 블록을 여기서 닫습니다.
+        else {
+            // [수정] 리플레이 모드일 경우,
+            // 스폰 유닛의 이름표 동기화를 위해 'usedNametagsInSim' 세트만 채웁니다.
+            const unitsData = typeof gm.initialUnitsState === 'string' ? JSON.parse(gm.initialUnitsState) : gm.initialUnitsState;
+            unitsData.forEach(uData => {
+                 if (uData.name) {
+                    gm.usedNametagsInSim.add(uData.name);
+                 }
+            });
+        }
+
+
         const cleanDataForJSON = (obj) => {
             const data = { ...obj };
             delete data.gameManager;
             return data;
         };
-        
-        const cleanUnits = gm.units.map(u => {
-            const unitData = cleanDataForJSON(u);
-            unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
-            return unitData;
-        });
-
-        // [수정 2]
-        // gm.initialUnitsState를 이름표 할당 로직 *앞으로* 이동시킵니다.
-        gm.initialUnitsState = cleanUnits;
-
-
-        // --- [수정 3] 이름표 할당 로직 (결정성 보장) ---
-        gm.usedNametagsInSim.clear(); 
-
-        if (gm.isNametagEnabled && gm.nametagList.length > 0) {
-            
-            // --- 결정론적 난수 소모 (에디터/리플레이 공통 실행) ---
-            // 이 셔플 로직은 prng.next()를 호출하므로,
-            // 리플레이 결과의 일관성을 위해 *반드시* 두 모드에서 모두 실행되어야 합니다.
-            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); 
-            const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
-            // ---
-
-            if (!gm.isReplayMode) {
-                // [에디터 모드]
-                // 셔플된 이름표를 실제 gm.units 객체에 적용합니다.
-                gm.units.forEach(unit => {
-                    unit.name = ''; 
-                    unit.nameColor = gm.nametagColor;
-                });
-
-                for (let i = 0; i < assignmentCount; i++) {
-                    gm.units[i].name = shuffledNames[i];
-                    gm.usedNametagsInSim.add(shuffledNames[i]); 
-                }
-            } else {
-                // [리플레이 모드]
-                // 이름표를 적용하지 않습니다. (gm.units에 로드된 스왑된 이름표 유지)
-                // 하지만, 원본 시뮬레이션(에디터)과 동일하게 'usedNametagsInSim' 세트는 채워줍니다.
-                // 그래야 spawnUnit에서 동일한 이름표가 할당됩니다.
-                for (let i = 0; i < assignmentCount; i++) {
-                    gm.usedNametagsInSim.add(shuffledNames[i]);
-                }
-            }
-        } else if (!gm.isReplayMode) {
-            gm.units.forEach(unit => unit.name = '');
-        }
-        
-        // --- [수정 4] 나머지 초기 상태 저장 (여기서 gm.initialUnitsState 할당 제거) ---
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
