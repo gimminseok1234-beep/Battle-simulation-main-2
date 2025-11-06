@@ -119,7 +119,8 @@ export class SimulationManager {
         if (gm.initialNexusCount >= 2) {
             if (activeNexusTeams.size < 2 || activeUnitTeams.size <= 1) {
                 gameOver = true;
-                if (activeNexusTeams.size < 2) {
+                // [수정] 넥서스가 1개 남았을 때, 해당 넥서스 팀이 승리하도록 수정
+                if (activeNexusTeams.size === 1) {
                     winner = activeNexusTeams.values().next().value || null;
                 }
                 else {
@@ -128,8 +129,10 @@ export class SimulationManager {
             }
         } else {
             const allRemainingTeams = new Set([...activeNexusTeams, ...activeUnitTeams]);
-            if (allRemainingTeams.size <= 1) {
-                const initialTeams = new Set(JSON.parse(gm.initialNexusesState).map(n => n.team).concat(JSON.parse(gm.initialUnitsState).map(u => u.team)));
+            if (allRemainingTeams.size <= 1) { 
+                const initialNexuses = typeof gm.initialNexusesState === 'string' ? JSON.parse(gm.initialNexusesState) : gm.initialNexusesState;
+                const initialUnits = typeof gm.initialUnitsState === 'string' ? JSON.parse(gm.initialUnitsState) : gm.initialUnitsState;
+                const initialTeams = new Set(initialNexuses.map(n => n.team).concat(initialUnits.map(u => u.team)));
                 if (initialTeams.size > 1) {
                     gameOver = true;
                     winner = allRemainingTeams.size === 1 ? allRemainingTeams.values().next().value : null;

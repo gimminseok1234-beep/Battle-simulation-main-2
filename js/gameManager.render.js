@@ -58,7 +58,7 @@ export function drawImpl(mouseEvent) {
     this.areaEffects.forEach(e => e.draw(this.ctx));
     this.particles.forEach(p => p.draw(this.ctx));
 
-    if (this.state === 'EDIT' && this.currentTool.tool === 'growing_field' && this.inputManager.dragStartPos && this.inputManager.isPainting && mouseEvent) {
+    if (this.state === 'EDIT' && this.currentTool.tool === 'growing_field' && this.inputManager.dragStartPos && this.inputManager.isDragging && mouseEvent) {
         const currentPos = this.inputManager.getMousePos(mouseEvent);
         const x = Math.min(this.inputManager.dragStartPos.gridX, currentPos.gridX) * GRID_SIZE;
         const y = Math.min(this.inputManager.dragStartPos.gridY, currentPos.gridY) * GRID_SIZE;

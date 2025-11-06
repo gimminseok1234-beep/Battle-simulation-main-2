@@ -520,19 +520,26 @@ export class GameManager {
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
         this.state = 'EDIT';
+ 
+        const unitsData = typeof this.initialUnitsState === 'string' ? JSON.parse(this.initialUnitsState) : this.initialUnitsState;
+        const weaponsData = typeof this.initialWeaponsState === 'string' ? JSON.parse(this.initialWeaponsState) : this.initialWeaponsState;
+        const nexusesData = typeof this.initialNexusesState === 'string' ? JSON.parse(this.initialNexusesState) : this.initialNexusesState;
+        const mapData = typeof this.initialMapState === 'string' ? JSON.parse(this.initialMapState) : this.initialMapState;
+        const growingFieldsData = typeof this.initialGrowingFieldsState === 'string' ? JSON.parse(this.initialGrowingFieldsState) : this.initialGrowingFieldsState;
+        const autoFieldData = typeof this.initialAutoFieldState === 'string' ? JSON.parse(this.initialAutoFieldState) : this.initialAutoFieldState;
 
-        this.units = this.initialUnitsState.map(uData => {
+        this.units = unitsData.map(uData => {
             const unit = Object.assign(new Unit(this, uData.gridX, uData.gridY, uData.team), uData);
             if (uData.weapon && uData.weapon.type) {
                 unit.equipWeapon(uData.weapon.type, unit.isKing);
             }
             return unit;
         });
-        this.weapons = JSON.parse(this.initialWeaponsState).map(wData => Object.assign(new Weapon(this, wData.gridX, wData.gridY, wData.type), wData));
-        this.nexuses = JSON.parse(this.initialNexusesState).map(nData => Object.assign(new Nexus(this, nData.gridX, nData.gridY, nData.team), nData));
+        this.weapons = weaponsData.map(wData => Object.assign(new Weapon(this, wData.gridX, wData.gridY, wData.type), wData));
+        this.nexuses = nexusesData.map(nData => Object.assign(new Nexus(this, nData.gridX, nData.gridY, nData.team), nData));
         
-        this.map = JSON.parse(this.initialMapState);
-        this.growingFields = JSON.parse(this.initialGrowingFieldsState).map(fieldData => {
+        this.map = mapData;
+        this.growingFields = (growingFieldsData || []).map(fieldData => {
              const settings = {
                  direction: fieldData.direction,
                  speed: fieldData.totalFrames / 60,
@@ -540,7 +547,7 @@ export class GameManager {
              };
             return new GrowingMagneticField(this, fieldData.id, fieldData.gridX, fieldData.gridY, fieldData.width, fieldData.height, settings);
         });
-        this.autoMagneticField = JSON.parse(this.initialAutoFieldState);
+        this.autoMagneticField = autoFieldData;
         this.effects = []; this.projectiles = []; this.areaEffects = []; this.magicCircles = []; this.poisonClouds = []; this.particles = [];
         this.usedNametagsInSim.clear();
         document.getElementById('statusText').textContent = "에디터 모드";
