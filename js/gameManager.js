@@ -167,8 +167,7 @@ export class GameManager {
     async init() {
         if (!this.currentUser) return;
         // GameManager의 모든 상태가 준비된 후, 각 매니저를 명시적으로 초기화합니다.
-        this.uiManager.init();
-        this.inputManager.setupEventListeners();
+        this.uiManager.init(); // UIManager는 init() 메서드를 가지고 있으므로 유지
         this.showHomeScreen();
         await this.persistenceManager.loadNametagSettings();
     }
