@@ -10,6 +10,11 @@ export class Unit {
         // [수정] 결정성 보장을 위해 시드 기반 난수로 고유 ID 생성
         this.id = `${team}_${x}_${y}_${this.gameManager.random()}`;
         this.gridX = x; this.gridY = y;
+
+        // [최적화] 스프라이트 캐싱을 위한 오프스크린 캔버스
+        this.spriteCanvas = document.createElement('canvas');
+        this.spriteCtx = this.spriteCanvas.getContext('2d');
+
         this.pixelX = x * GRID_SIZE + GRID_SIZE / 2;
         this.pixelY = y * GRID_SIZE + GRID_SIZE / 2;
         this.team = team;
@@ -90,6 +95,10 @@ export class Unit {
         // [NEW] A* 길찾기 관련 속성
         this.path = [];
         this.pathUpdateCooldown = 0;
+
+        // [최적화] AI 업데이트 주기 제어
+        this.targetUpdateCooldown = 0;
+        this.stateUpdateCooldown = 0;
 
         // [NEW] 눈 깜빡임 관련 속성
         // [버그 수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
@@ -243,7 +252,11 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        if (this.knockbackX !== 0 || this.knockbackY !== 0) {
+        // [최적화] 넉백이 있을 때만 물리 계산 수행
+        const hasKnockback = this.knockbackX !== 0 || this.knockbackY !== 0;
+        const isBeingPulled = this.isBeingPulled;
+
+        if (hasKnockback) {
             const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
             const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
 
@@ -252,7 +265,7 @@ export class Unit {
 
             if (gridY >= 0 && gridY < gameManager.ROWS && gridX >= 0 && gridX < gameManager.COLS) {
                 const tile = gameManager.map[gridY][gridX];
-                if (tile.type === TILE.WALL || tile.type === TILE.CRACKED_WALL || (tile.type === TILE.GLASS_WALL && !this.isBeingPulled)) {
+                if (tile.type === TILE.WALL || tile.type === TILE.CRACKED_WALL || (tile.type === TILE.GLASS_WALL && !isBeingPulled)) {
                     this.knockbackX = 0;
                     this.knockbackY = 0;
                 } else {
@@ -261,14 +274,21 @@ export class Unit {
                 }
             }
         }
+        
+        if (hasKnockback) {
+            this.knockbackX *= 0.9;
+            this.knockbackY *= 0.9;
+            if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
+            if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
+        }
 
-        this.knockbackX *= 0.9;
-        this.knockbackY *= 0.9;
-        if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
-        if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
+        // [최적화] 공간 분할을 사용하여 충돌 검사 대상 유닛 수를 줄임
+        const nearbyUnits = gameManager.getNearbyUnits(this);
+        for (const otherUnit of nearbyUnits) {
+            // 자기 자신과의 충돌 검사는 건너뜀
+            if (this === otherUnit) continue;
 
-        gameManager.units.forEach(otherUnit => {
-            if (this !== otherUnit) {
+            // 기존 충돌 로직
                 const dx = otherUnit.pixelX - this.pixelX;
                 const dy = otherUnit.pixelY - this.pixelY;
                 const distance = Math.hypot(dx, dy);
@@ -305,8 +325,7 @@ export class Unit {
                         otherUnit.pixelY = otherNextY;
                     }
                 }
-            }
-        });
+        }
 
         const radius = GRID_SIZE / 1.67;
         let bounced = false;
@@ -809,6 +828,10 @@ export class Unit {
         if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
+                // [최적화] 불필요한 계산 방지
+                if (p.owner.team === this.team) continue;
+                const distSq = (this.pixelX - p.pixelX)**2 + (this.pixelY - p.pixelY)**2;
+                if (distSq > (GRID_SIZE * 3)**2) continue;
                 if (p.owner.team === this.team) continue;
                 const dist = Math.hypot(this.pixelX - p.pixelX, this.pixelY - p.pixelY);
                 if (dist < GRID_SIZE * 3) {
@@ -986,6 +1009,13 @@ export class Unit {
             }
         }
 
+        // [최적화] AI 상태 업데이트 주기 조절
+        this.stateUpdateCooldown -= gameManager.gameSpeed;
+        if (this.stateUpdateCooldown > 0) {
+            this.move(); this.applyPhysics();
+            return; // 상태 업데이트 주기가 아니면 이동/물리만 처리하고 종료
+        }
+        this.stateUpdateCooldown = 5; // 5프레임마다 상태 업데이트
 
 
         let newState = 'IDLE';
@@ -1087,6 +1117,12 @@ export class Unit {
                 }
             }
 
+        // [최적화] 타겟 업데이트 주기 조절
+        this.targetUpdateCooldown -= gameManager.gameSpeed;
+        if (this.targetUpdateCooldown <= 0) {
+            this.targetUpdateCooldown = 10; // 10프레임마다 타겟 업데이트
+
+
             if (newState === 'IDLE') {
                 if (closestQuestionMark && questionMarkDist <= this.detectionRange) {
                     newState = 'SEEKING_QUESTION_MARK';
@@ -1102,6 +1138,14 @@ export class Unit {
                     newTarget = enemyNexus;
                 }
             }
+
+            if (this.state !== newState && newState !== 'IDLE' && newState !== 'FLEEING_FIELD' && newState !== 'FLEEING_LAVA') {
+                if (this.alertedCounter <= 0) {
+                    this.alertedCounter = 60;
+                }
+            }
+            this.state = newState;
+            this.target = newTarget;
         } else {
             if (this.moveTarget) {
                 newState = this.state;
@@ -1110,15 +1154,6 @@ export class Unit {
             }
         }
 
-
-        if (this.state !== newState && newState !== 'IDLE' && newState !== 'FLEEING_FIELD' && newState !== 'FLEEING_LAVA') {
-            // [수정] 마법진 관련 로직 제거
-            if (this.alertedCounter <= 0) {
-                this.alertedCounter = 60;
-            }
-        }
-        this.state = newState;
-        this.target = newTarget;
 
         switch (this.state) {
             case 'FLEEING_FIELD':
@@ -1379,11 +1414,24 @@ export class Unit {
         this.pathUpdateCooldown = 15; // 0.25초마다 경로 재계산
     }
 
+    // [최적화] 유닛의 외형을 미리 그려 캐시하는 함수
+    _preRenderSprite() {
+        const size = GRID_SIZE * 3; // 충분한 여백 확보
+        this.spriteCanvas.width = size;
+        this.spriteCanvas.height = size;
+        this.spriteCtx.clearRect(0, 0, size, size);
+
+        // 원본 draw 로직을 오프스크린 캔버스에 그림
+        this.drawBodyAndEyes(this.spriteCtx, size / 2, size / 2);
+        if (this.weapon && !this.isKing) {
+            this.weapon.drawEquipped(this.spriteCtx, { ...this, pixelX: size / 2, pixelY: size / 2 });
+        }
+    }
+
     draw(ctx, isOutlineEnabled, outlineWidth) {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        ctx.save();
 
         const scale = 1 + this.awakeningEffect.stacks * 0.2;
         const levelScale = 1 + (this.level - 1) * 0.08;
@@ -1466,46 +1514,18 @@ export class Unit {
             ctx.restore();
         }
 
-        // [MODIFIED] 유닛 몸체에 그라데이션을 적용하여 입체감 부여
-        let teamColor;
-        switch(this.team) {
-            case TEAM.A: teamColor = COLORS.TEAM_A; break;
-            case TEAM.B: teamColor = COLORS.TEAM_B; break;
-            case TEAM.C: teamColor = COLORS.TEAM_C; break;
-            case TEAM.D: teamColor = COLORS.TEAM_D; break;
-            default: teamColor = '#FFFFFF'; break;
+        // [최적화] 캐시된 스프라이트가 없으면 생성
+        if (!this.spriteCanvas.width || this.lastRenderedState !== this.state) {
+            this._preRenderSprite();
+            this.lastRenderedState = this.state;
         }
 
-        const radius = GRID_SIZE / 1.67;
-        const gradient = ctx.createRadialGradient(
-            this.pixelX - radius * 0.2, this.pixelY - radius * 0.2, radius * 0.1, 
-            this.pixelX, this.pixelY, radius * 1.2
-        );
-        gradient.addColorStop(0, `hsl(0, 0%, 100%)`); // 밝은 하이라이트
-        gradient.addColorStop(0.4, teamColor);
-        gradient.addColorStop(1, DEEP_COLORS[`TEAM_${this.team}`] || teamColor); // 어두운 부분
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath(); ctx.arc(this.pixelX, this.pixelY, GRID_SIZE / 1.67, 0, Math.PI * 2); ctx.fill();
-
-        if (isOutlineEnabled) {
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = outlineWidth / totalScale;
-            ctx.stroke();
-        }
-
-        // [NEW] 피격 섬광 효과
-        if (this.damageFlash > 0) {
-            ctx.save();
-            ctx.fillStyle = `rgba(255, 255, 255, ${this.damageFlash * 0.4})`;
-            ctx.beginPath();
-            ctx.arc(this.pixelX, this.pixelY, radius + 1, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        }
-
-        // [NEW] 눈 그리기 로직을 별도 메소드로 분리
-        this.drawEyes(ctx);
+        // [최적화] 미리 그려진 스프라이트를 캔버스에 그림
+        ctx.save();
+        ctx.translate(this.pixelX, this.pixelY);
+        ctx.scale(totalScale, totalScale);
+        ctx.drawImage(this.spriteCanvas, -this.spriteCanvas.width / 2, -this.spriteCanvas.height / 2);
+        ctx.restore();
 
         ctx.restore();
 
@@ -1760,8 +1780,8 @@ export class Unit {
 }
 
 // [NEW] 눈 그리기 메소드
-Unit.prototype.drawEyes = function(ctx) {
-    const headRadius = GRID_SIZE / 1.67;
+Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY) {
+    const headRadius = GRID_SIZE / 1.67; // 몸체 반지름
     const eyeScale = this.gameManager?.unitEyeScale ?? 1.0;
     const faceWidth = headRadius * 1.1 * eyeScale;
     const faceHeight = headRadius * 0.7 * eyeScale;
@@ -1774,7 +1794,41 @@ Unit.prototype.drawEyes = function(ctx) {
     const isMoving = !!this.moveTarget && !isFighting && !this.isDashing;
 
     ctx.save();
-    ctx.translate(this.pixelX, this.pixelY);
+    ctx.translate(centerX, centerY);
+
+    // [최적화] 몸체 그리기 로직을 여기로 이동
+    let teamColor;
+    switch(this.team) {
+        case TEAM.A: teamColor = COLORS.TEAM_A; break;
+        case TEAM.B: teamColor = COLORS.TEAM_B; break;
+        case TEAM.C: teamColor = COLORS.TEAM_C; break;
+        case TEAM.D: teamColor = COLORS.TEAM_D; break;
+        default: teamColor = '#FFFFFF'; break;
+    }
+
+    const gradient = ctx.createRadialGradient(
+        -headRadius * 0.2, -headRadius * 0.2, headRadius * 0.1, 
+        0, 0, headRadius * 1.2
+    );
+    gradient.addColorStop(0, `hsl(0, 0%, 100%)`);
+    gradient.addColorStop(0.4, teamColor);
+    gradient.addColorStop(1, DEEP_COLORS[`TEAM_${this.team}`] || teamColor);
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (this.gameManager.isUnitOutlineEnabled) {
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = this.gameManager.unitOutlineWidth;
+        ctx.stroke();
+    }
+
+    if (this.damageFlash > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.damageFlash * 0.4})`;
+        ctx.fill();
+    }
 
     if (isDead) {
         ctx.strokeStyle = '#0f172a';

@@ -131,6 +131,11 @@ export class GameManager {
         // [신규] 이름표 바꾸기 기능 관련 상태
         this.isNametagSwapMode = false;
         this.draggedUnitForSwap = null;
+
+        // [최적화] 공간 분할을 위한 그리드
+        this.spatialGrid = [];
+        this.gridCellSize = GRID_SIZE * 4; // 그리드 셀 크기
+        this.gridCols = 0; this.gridRows = 0;
     }
 
     random() {
@@ -469,6 +474,11 @@ export class GameManager {
         this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
         this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
         
+        // [최적화] 공간 분할 그리드 초기화
+        this.gridCols = Math.ceil(this.canvas.width / this.gridCellSize);
+        this.gridRows = Math.ceil(this.canvas.height / this.gridCellSize);
+        this.spatialGrid = Array(this.gridCols * this.gridRows).fill(null).map(() => []);
+
         this.resetMap();
     }
 
@@ -485,6 +495,11 @@ export class GameManager {
         this.initialGrowingFieldsState = [];
         this.initialAutoFieldState = {};
         this.usedNametagsInSim.clear();
+
+        // [최적화] 공간 분할 그리드 초기화
+        this.gridCols = Math.ceil(this.canvas.width / this.gridCellSize);
+        this.gridRows = Math.ceil(this.canvas.height / this.gridCellSize);
+        this.spatialGrid = Array(this.gridCols * this.gridRows).fill(null).map(() => []);
         document.getElementById('statusText').textContent = "에디터 모드";
         document.getElementById('simStartBtn').classList.remove('hidden');
         document.getElementById('simPauseBtn').classList.add('hidden');
@@ -1286,6 +1301,28 @@ export class GameManager {
         this.uiManager.renderRecentColors('floor');
         this.uiManager.renderRecentColors('wall');
         this.draw();
+    }
+    
+    // [최적화] 특정 유닛 주변의 다른 유닛들을 효율적으로 가져오는 함수
+    getNearbyUnits(unit) {
+        const nearbyUnits = [];
+        const gridX = Math.floor(unit.pixelX / this.gridCellSize);
+        const gridY = Math.floor(unit.pixelY / this.gridCellSize);
+
+        // 3x3 주변 그리드 탐색
+        for (let y = -1; y <= 1; y++) {
+            for (let x = -1; x <= 1; x++) {
+                const checkGridX = gridX + x;
+                const checkGridY = gridY + y;
+
+                if (checkGridX >= 0 && checkGridX < this.gridCols && checkGridY >= 0 && checkGridY < this.gridRows) {
+                    const cellIndex = checkGridY * this.gridCols + checkGridX;
+                    nearbyUnits.push(...this.spatialGrid[cellIndex]);
+                }
+            }
+        }
+
+        return nearbyUnits;
     }
 
     async loadLocalMapForEditing(mapData) {

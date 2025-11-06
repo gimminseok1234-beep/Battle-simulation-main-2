@@ -1,4 +1,4 @@
-import { TILE, COLORS, GRID_SIZE } from './constants.js';
+import { TILE, COLORS, GRID_SIZE, DEEP_COLORS } from './constants.js';
 
 const GLOWING_WEAPON_TYPES = new Set([
     'sword', 'bow', 'shuriken', 'axe', 'fire_staff', 'boomerang', 'magic_dagger', 'dual_swords', 'magic_spear'
