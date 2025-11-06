@@ -20,6 +20,22 @@ export class SimulationManager {
         gm.prng = new SeededRandom(gm.simulationSeed);
         gm.enableDeterministicRng();
         
+        // [수정 1] 유닛 데이터를 먼저 정리하고 초기 상태로 저장합니다. (이 함수는 한 번만 정의됩니다.)
+        // 이 시점의 gm.units에는 에디터에서 설정했거나 리플레이 로드 시 복원된 이름표가 포함되어 있습니다.
+        const cleanDataForJSON = (obj) => {
+            const data = { ...obj };
+            delete data.gameManager;
+            return data;
+        };
+
+        const cleanUnits = gm.units.map(u => {
+            const unitData = cleanDataForJSON(u);
+            unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
+            return unitData;
+        });
+        gm.initialUnitsState = cleanUnits; // <-- 이 줄을 복원하고 여기에 둡니다.
+
+
         gm.usedNametagsInSim.clear(); // 이 줄은 if 문 밖에 둡니다.
 
         // [수정] 이 if 블록을 추가하여 리플레이 모드일 때 이름표 할당을 건너뛰도록 합니다.
@@ -58,11 +74,6 @@ export class SimulationManager {
         }
 
 
-        const cleanDataForJSON = (obj) => {
-            const data = { ...obj };
-            delete data.gameManager;
-            return data;
-        };
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
