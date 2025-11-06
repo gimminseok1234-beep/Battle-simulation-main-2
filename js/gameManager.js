@@ -180,7 +180,7 @@ export class GameManager {
         document.getElementById('editorScreen').style.display = 'none';
         document.getElementById('defaultMapsScreen').style.display = 'none';
         document.getElementById('replayScreen').style.display = 'none';
-        this.updateUIToEditorMode(); 
+        this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
         this.resetActionCam(true);
         this.persistenceManager.renderMapCards();
         if (this.timerElement) this.timerElement.style.display = 'none';
@@ -240,7 +240,7 @@ export class GameManager {
         if (this.timerElement) this.timerElement.style.display = 'none';
 
         if (mapId !== 'replay') {
-             this.updateUIToEditorMode(); 
+             this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
              await this.loadMapForEditing(mapId);
         }
     }
@@ -554,9 +554,9 @@ export class GameManager {
         
         if (!this.isReplayMode) {
             document.getElementById('toolbox').style.pointerEvents = 'auto';
-            this.updateUIToEditorMode();
+            this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
         } else {
-            this.updateUIToReplayMode();
+            this.uiManager.updateUIToReplayMode(); // UIManager의 메서드 호출
         }
 
         this.resetActionCam(true);
@@ -1498,49 +1498,10 @@ export class GameManager {
         this.initialGrowingFieldsState = replayData.initialGrowingFieldsState;
         this.initialAutoFieldState = replayData.initialAutoFieldState;
 
-        this.updateUIToReplayMode();
+        this.uiManager.updateUIToReplayMode(); // UIManager의 메서드 호출
         this.resetPlacement();
         
         this.draw();
-    }
-
-    updateUIToReplayMode() {
-        const toolbox = document.getElementById('toolbox');
-        toolbox.style.display = 'flex';
-        toolbox.classList.add('replay-mode');
-
-        const utilsHeader = toolbox.querySelector('[data-target="category-utils"]');
-        const utilsContent = document.getElementById('category-utils');
-        if (utilsHeader && utilsContent) {
-            utilsHeader.classList.remove('collapsed');
-            utilsContent.classList.remove('collapsed');
-        }
-
-        document.getElementById('editor-controls').style.display = 'none';
-        document.getElementById('simResetBtn').style.display = 'none';
-        const placementResetBtn = document.getElementById('simPlacementResetBtn');
-        placementResetBtn.textContent = '리플레이 초기화';
-        placementResetBtn.style.display = 'inline-block';
-        document.getElementById('actionCamPanel').classList.remove('hidden');
-        document.getElementById('actionCamPanel').classList.add('flex');
-
-        this.uiManager.updateUIToReplayMode();
-    }
-
-    updateUIToEditorMode() {
-        const toolbox = document.getElementById('toolbox');
-        toolbox.style.display = 'flex';
-        toolbox.classList.remove('replay-mode');
-
-        document.getElementById('editor-controls').style.display = 'flex';
-        document.getElementById('simResetBtn').style.display = 'inline-block';
-        const placementResetBtn = document.getElementById('simPlacementResetBtn');
-        placementResetBtn.textContent = '배치 초기화';
-        placementResetBtn.style.display = 'inline-block';
-        document.getElementById('actionCamPanel').classList.add('hidden');
-        document.getElementById('actionCamPanel').classList.remove('flex');
-
-        this.uiManager.updateUIToEditorMode();
     }
 
     // [신규] 이름표 바꾸기 메서드

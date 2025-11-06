@@ -593,4 +593,37 @@ export class UIManager {
         this.gameManager.nametagList = this.gameManager.nametagList.filter(name => name !== nameToDelete);
         this.renderNametagList();
     }
+
+    // [신규] 리플레이 모드 UI 업데이트
+    updateUIToReplayMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.add('replay-mode');
+
+        const utilsHeader = toolbox.querySelector('[data-target="category-utils"]');
+        const utilsContent = document.getElementById('category-utils');
+        if (utilsHeader && utilsContent) {
+            utilsHeader.classList.remove('collapsed');
+            utilsContent.classList.remove('collapsed');
+        }
+
+        document.getElementById('editor-controls').style.display = 'none';
+        document.getElementById('simResetBtn').style.display = 'none';
+        document.getElementById('nametagSwapPanel').style.display = 'flex'; // 이름표 바꾸기 패널 표시
+    }
+
+    // [신규] 에디터 모드 UI 업데이트
+    updateUIToEditorMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.remove('replay-mode');
+
+        document.getElementById('editor-controls').style.display = 'flex';
+        document.getElementById('simResetBtn').style.display = 'inline-block';
+        // GameManager에서 직접 처리하는 UI 요소는 UIManager에서 건드리지 않습니다.
+        // UIManager는 nametagSwapPanel과 같은 자체적인 UI 요소만 관리합니다.
+        document.getElementById('nametagSwapPanel').style.display = 'none'; // 이름표 바꾸기 패널 숨기기
+        document.getElementById('nametagSwapToggle').checked = false; // 토글 비활성화
+        this.gameManager.isNametagSwapMode = false; // GameManager 상태 업데이트
+    }
 }
