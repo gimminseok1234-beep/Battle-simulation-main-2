@@ -4,28 +4,28 @@ export class InputManager {
     constructor(gameManager) {
         this.gameManager = gameManager;
         this.canvas = gameManager.canvas;
-        this.isPainting = false;
+        this.isDragging = false;
         this.dragStartPos = null;
+
+        const canvas = this.gameManager.canvas;
+        canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        canvas.addEventListener('contextmenu', this.handleRightClick.bind(this));
     }
 
-    setupEventListeners() {
-        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
-    }
+    getMousePos(evt) {
+        const rect = this.gameManager.canvas.getBoundingClientRect();
+        const scaleX = this.gameManager.canvas.width / rect.width;
+        const scaleY = this.gameManager.canvas.height / rect.height;
 
-    getMousePos(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        const transform = this.gameManager.ctx.getTransform();
-        const invTransform = transform.inverse();
+        // 카메라 변환을 고려한 월드 좌표 계산
+        const cam = this.gameManager.actionCam.current;
+        const canvasX = (evt.clientX - rect.left) * scaleX;
+        const canvasY = (evt.clientY - rect.top) * scaleY;
+        const worldX = (canvasX - this.gameManager.canvas.width / 2) / cam.scale + cam.x;
+        const worldY = (canvasY - this.gameManager.canvas.height / 2) / cam.scale + cam.y;
 
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
-
-        const worldX = canvasX * invTransform.a + canvasY * invTransform.c + invTransform.e;
-        const worldY = canvasX * invTransform.b + canvasY * invTransform.d + invTransform.f;
-       
         return {
             pixelX: worldX,
             pixelY: worldY,
@@ -34,49 +34,116 @@ export class InputManager {
         };
     }
 
-    handleMouseDown(e) {
-        const gm = this.gameManager;
-        if (gm.isActionCam || gm.isFollowCamEnabled) { // [FIX] 팔로우캠 활성화 시에도 클릭을 처리하도록 조건 변경
-            gm.handleActionCamClick(this.getMousePos(e));
-            return;
-        }
-        if (gm.state === 'EDIT') {
-            const pos = this.getMousePos(e);
-            
-            if (gm.currentTool.tool === 'nametag') {
-                const clickedUnit = gm.units.find(u => Math.hypot(u.pixelX - pos.pixelX, u.pixelY - pos.pixelY) < GRID_SIZE / 2);
-                if (clickedUnit) {
-                    gm.editingUnit = clickedUnit;
-                    document.getElementById('unitNameInput').value = clickedUnit.name || '';
-                    gm.uiManager.openModal('unitNameModal');
-                    return;
-                }
-            }
+    getUnitUnderCursor(pos) {
+        // 이름표 영역을 포함하여 유닛을 더 쉽게 선택할 수 있도록 y축 범위를 넓힙니다.
+        const nametagHeight = 20;
+        return this.gameManager.units.find(unit =>
+            pos.pixelX >= unit.pixelX - GRID_SIZE / 2 &&
+            pos.pixelX <= unit.pixelX + GRID_SIZE / 2 &&
+            pos.pixelY >= unit.pixelY - GRID_SIZE / 2 - nametagHeight &&
+            pos.pixelY <= unit.pixelY + GRID_SIZE / 2
+        );
+    }
 
-            this.isPainting = true;
-            if (gm.currentTool.tool === 'growing_field') this.dragStartPos = pos;
-            else gm.applyTool(pos);
+    handleMouseDown(e) {
+        e.preventDefault();
+        const gm = this.gameManager;
+        const pos = this.getMousePos(e);
+
+        if (gm.isNametagSwapMode && e.button === 0) { // 좌클릭
+            const clickedUnit = this.getUnitUnderCursor(pos);
+            if (clickedUnit && clickedUnit.name) {
+                gm.draggedUnitForSwap = clickedUnit;
+                this.isDragging = true;
+                gm.canvas.style.cursor = 'grabbing';
+                return;
+            }
+        }
+
+        if (gm.state === 'EDIT' && !gm.isReplayMode) {
+            if (e.button === 0) { // 좌클릭
+                if (gm.currentTool.tool === 'nametag') {
+                    const clickedUnit = this.getUnitUnderCursor(pos);
+                    if (clickedUnit) {
+                        gm.editingUnit = clickedUnit;
+                        document.getElementById('unitNameInput').value = clickedUnit.name || '';
+                        gm.uiManager.openModal('unitNameModal');
+                        return;
+                    }
+                }
+                this.isDragging = true;
+                this.dragStartPos = pos;
+                gm.applyTool(pos);
+            }
+        } else if (gm.state === 'SIMULATE' || gm.state === 'PAUSED' || gm.isReplayMode) {
+            if (e.button === 0) { // 좌클릭
+                gm.handleActionCamClick(pos);
+            }
+        }
+    }
+
+    handleMouseMove(e) {
+        const gm = this.gameManager;
+        const pos = this.getMousePos(e);
+        
+        if (gm.isNametagSwapMode) {
+            const unit = this.getUnitUnderCursor(pos);
+            if (unit && unit.name) {
+                gm.canvas.style.cursor = this.isDragging ? 'grabbing' : 'grab';
+            } else {
+                gm.canvas.style.cursor = 'default';
+            }
+        } else {
+             gm.canvas.style.cursor = 'default';
+        }
+
+        if (this.isDragging && gm.state === 'EDIT' && !gm.isReplayMode) {
+            if (gm.currentTool.tool !== 'growing_field') {
+                gm.applyTool(pos);
+            } else {
+                gm.draw(e); // 드래그 중인 사각형을 그리기 위해 draw 호출
+            }
         }
     }
 
     handleMouseUp(e) {
-        if (this.gameManager.state === 'EDIT' && this.gameManager.currentTool.tool === 'growing_field' && this.dragStartPos) {
-            this.gameManager.applyTool(this.getMousePos(e));
+        const gm = this.gameManager;
+        if (gm.isNametagSwapMode && gm.draggedUnitForSwap) {
+            const pos = this.getMousePos(e);
+            const dropTargetUnit = this.getUnitUnderCursor(pos);
+
+            if (dropTargetUnit) {
+                gm.swapUnitNametags(gm.draggedUnitForSwap, dropTargetUnit);
+                gm.draw(); // 변경사항 즉시 렌더링
+            }
         }
-        this.isPainting = false;
+
+        if (this.isDragging && gm.state === 'EDIT' && !gm.isReplayMode) {
+            if (gm.currentTool.tool === 'growing_field' && this.dragStartPos) {
+                const pos = this.getMousePos(e);
+                gm.applyTool(pos);
+            }
+        }
+
+        this.isDragging = false;
         this.dragStartPos = null;
+        gm.draggedUnitForSwap = null;
+        gm.canvas.style.cursor = 'default';
     }
 
-    handleMouseMove(e) {
-        if (this.isPainting && this.gameManager.state === 'EDIT' && this.gameManager.currentTool.tool !== 'growing_field') {
-            this.gameManager.applyTool(this.getMousePos(e));
-        }
-        if (this.gameManager.state === 'EDIT' && this.dragStartPos) this.gameManager.draw(e);
-    }
+    handleRightClick(e) {
+        e.preventDefault();
+        const gm = this.gameManager;
+        if (gm.state !== 'EDIT' || gm.isReplayMode) return;
 
-    handleMouseLeave() {
-        this.isPainting = false;
-        this.dragStartPos = null;
-        this.gameManager.draw();
+        const pos = this.getMousePos(e);
+        const unit = this.getUnitUnderCursor(pos);
+
+        if (unit) {
+            gm.editingUnit = unit;
+            const unitNameInput = document.getElementById('unitNameInput');
+            unitNameInput.value = unit.name || '';
+            gm.uiManager.openModal('unitNameModal');
+        }
     }
 }

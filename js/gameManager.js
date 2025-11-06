@@ -127,6 +127,10 @@ export class GameManager {
         // So we keep them here for now.
         this.recentWallColors = [];
         this.recentFloorColors = [];
+
+        // [신규] 이름표 바꾸기 기능 관련 상태
+        this.isNametagSwapMode = false;
+        this.draggedUnitForSwap = null;
     }
 
     random() {
@@ -1534,5 +1538,18 @@ export class GameManager {
         placementResetBtn.style.display = 'inline-block';
         document.getElementById('actionCamPanel').classList.add('hidden');
         document.getElementById('actionCamPanel').classList.remove('flex');
+    }
+
+    // [신규] 이름표 바꾸기 메서드
+    swapUnitNametags(unit1, unit2) {
+        if (!unit1 || !unit2 || unit1 === unit2) return;
+
+        const tempName = unit1.name;
+        const tempColor = unit1.nameColor;
+
+        unit1.name = unit2.name;
+        unit1.nameColor = unit2.nameColor;
+        unit2.name = tempName;
+        unit2.nameColor = tempColor;
     }
 }

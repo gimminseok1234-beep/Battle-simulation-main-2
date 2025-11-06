@@ -207,6 +207,11 @@ export class UIManager {
         
         // Action Cam Panel (Replay Mode)
         this.setupActionCamPanelListeners();
+
+        // [신규] 이름표 바꾸기 토글
+        document.getElementById('nametagSwapToggle').addEventListener('change', (e) => {
+            this.gameManager.isNametagSwapMode = e.target.checked;
+        });
     }
 
     setupToolboxListeners() {
