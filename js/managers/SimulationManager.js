@@ -20,24 +20,9 @@ export class SimulationManager {
         gm.prng = new SeededRandom(gm.simulationSeed);
         gm.enableDeterministicRng();
         
-        gm.usedNametagsInSim.clear();
-
-        if (gm.isNametagEnabled && gm.nametagList.length > 0) {
-            gm.units.forEach(unit => {
-                unit.name = '';
-                unit.nameColor = gm.nametagColor;
-            });
-
-            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); // [FIX] 시뮬레이션 결과에 영향을 주므로 prng를 사용합니다.
-            const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
-
-            for (let i = 0; i < assignmentCount; i++) {
-                gm.units[i].name = shuffledNames[i];
-                gm.usedNametagsInSim.add(shuffledNames[i]);
-            }
-        } else {
-            gm.units.forEach(unit => unit.name = '');
-        }
+        // [수정] 랜덤 이름표 할당 로직을 완전히 제거했습니다.
+        // 이제 '배치 초기화' 또는 '이름표 바꾸기'로 설정된
+        // gm.units의 이름표가 시뮬레이션 시작 시에도 그대로 유지됩니다.
 
         const cleanDataForJSON = (obj) => {
             const data = { ...obj };
