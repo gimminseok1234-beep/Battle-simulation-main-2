@@ -49,7 +49,7 @@ export class GameManager {
         this.poisonClouds = [];
         this.poisonPuddles = []; // [신규] 독 장판 배열 초기화
         this.particles = [];
-        this.currentTool = { tool: 'tile', type: 'FLOOR' };
+        this.currentTool = { tool: 'tile', type: 'FLOOR' }; // initialUnitsState를 객체 배열로 관리
         this.initialUnitsState = [];
         this.initialWeaponsState = [];
         this.initialNexusesState = [];
@@ -180,7 +180,7 @@ export class GameManager {
         document.getElementById('editorScreen').style.display = 'none';
         document.getElementById('defaultMapsScreen').style.display = 'none';
         document.getElementById('replayScreen').style.display = 'none';
-        this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
+        this.updateUIToEditorMode(); 
         this.resetActionCam(true);
         this.persistenceManager.renderMapCards();
         if (this.timerElement) this.timerElement.style.display = 'none';
@@ -240,7 +240,7 @@ export class GameManager {
         if (this.timerElement) this.timerElement.style.display = 'none';
 
         if (mapId !== 'replay') {
-             this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
+             this.updateUIToEditorMode(); 
              await this.loadMapForEditing(mapId);
         }
     }
@@ -521,7 +521,7 @@ export class GameManager {
         this.animationFrameId = null;
         this.state = 'EDIT';
 
-        this.units = JSON.parse(this.initialUnitsState).map(uData => {
+        this.units = this.initialUnitsState.map(uData => {
             const unit = Object.assign(new Unit(this, uData.gridX, uData.gridY, uData.team), uData);
             if (uData.weapon && uData.weapon.type) {
                 unit.equipWeapon(uData.weapon.type, unit.isKing);
@@ -554,9 +554,9 @@ export class GameManager {
         
         if (!this.isReplayMode) {
             document.getElementById('toolbox').style.pointerEvents = 'auto';
-            this.uiManager.updateUIToEditorMode(); // UIManager의 메서드 호출
+            this.updateUIToEditorMode();
         } else {
-            this.uiManager.updateUIToReplayMode(); // UIManager의 메서드 호출
+            this.updateUIToReplayMode();
         }
 
         this.resetActionCam(true);
@@ -1498,22 +1498,76 @@ export class GameManager {
         this.initialGrowingFieldsState = replayData.initialGrowingFieldsState;
         this.initialAutoFieldState = replayData.initialAutoFieldState;
 
-        this.uiManager.updateUIToReplayMode(); // UIManager의 메서드 호출
+        this.updateUIToReplayMode();
         this.resetPlacement();
         
         this.draw();
+    }
+
+    updateUIToReplayMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.add('replay-mode');
+
+        const utilsHeader = toolbox.querySelector('[data-target="category-utils"]');
+        const utilsContent = document.getElementById('category-utils');
+        if (utilsHeader && utilsContent) {
+            utilsHeader.classList.remove('collapsed');
+            utilsContent.classList.remove('collapsed');
+        }
+
+        document.getElementById('editor-controls').style.display = 'none';
+        document.getElementById('simResetBtn').style.display = 'none';
+        const placementResetBtn = document.getElementById('simPlacementResetBtn');
+        placementResetBtn.textContent = '리플레이 초기화';
+        placementResetBtn.style.display = 'inline-block';
+        document.getElementById('actionCamPanel').classList.remove('hidden');
+        document.getElementById('actionCamPanel').classList.add('flex');
+
+        this.uiManager.updateUIToReplayMode();
+    }
+
+    updateUIToEditorMode() {
+        const toolbox = document.getElementById('toolbox');
+        toolbox.style.display = 'flex';
+        toolbox.classList.remove('replay-mode');
+
+        document.getElementById('editor-controls').style.display = 'flex';
+        document.getElementById('simResetBtn').style.display = 'inline-block';
+        const placementResetBtn = document.getElementById('simPlacementResetBtn');
+        placementResetBtn.textContent = '배치 초기화';
+        placementResetBtn.style.display = 'inline-block';
+        document.getElementById('actionCamPanel').classList.add('hidden');
+        document.getElementById('actionCamPanel').classList.remove('flex');
+
+        this.uiManager.updateUIToEditorMode();
     }
 
     // [신규] 이름표 바꾸기 메서드
     swapUnitNametags(unit1, unit2) {
         if (!unit1 || !unit2 || unit1 === unit2) return;
 
+        // 1. 현재 유닛 객체의 이름표 교체
         const tempName = unit1.name;
         const tempColor = unit1.nameColor;
-
         unit1.name = unit2.name;
         unit1.nameColor = unit2.nameColor;
         unit2.name = tempName;
         unit2.nameColor = tempColor;
+
+        // 2. initialUnitsState에서도 이름표 교체
+        const findUnitData = (unit) => this.initialUnitsState.find(
+            u => u.gridX === unit.gridX && u.gridY === unit.gridY && u.team === unit.team
+        );
+
+        const unit1Data = findUnitData(unit1);
+        const unit2Data = findUnitData(unit2);
+
+        if (unit1Data && unit2Data) {
+            unit1Data.name = unit2.name;
+            unit1Data.nameColor = unit2.nameColor;
+            unit2Data.name = tempName;
+            unit2Data.nameColor = tempColor;
+        }
     }
 }

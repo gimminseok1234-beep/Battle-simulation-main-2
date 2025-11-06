@@ -211,6 +211,8 @@ export class Unit {
         let maxScore = -Infinity;
 
         for (const enemy of enemies) {
+            if (!enemy) continue; // 방어 코드 추가
+
             const distance = Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY);
 
             // 탐지 범위 밖이거나 시야에 없으면 무시

@@ -93,6 +93,10 @@ export class InputManager {
             } else {
                 gm.canvas.style.cursor = 'default';
             }
+            // [신규] 드래그 중일 때, 마우스를 따라다니는 이름표를 그리기 위해 draw 호출
+            if (this.isDragging && gm.draggedUnitForSwap) {
+                gm.draw(e);
+            }
         } else {
              gm.canvas.style.cursor = 'default';
         }

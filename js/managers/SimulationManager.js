@@ -53,8 +53,8 @@ export class SimulationManager {
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
-
-        gm.initialUnitsState = JSON.stringify(cleanUnits);
+        
+        gm.initialUnitsState = cleanUnits;
         gm.initialWeaponsState = JSON.stringify(cleanWeapons);
         gm.initialNexusesState = JSON.stringify(cleanNexuses);
         gm.initialMapState = JSON.stringify(gm.map);
@@ -152,7 +152,7 @@ export class SimulationManager {
             gm.state = 'DONE';
             this.lastSimulationResult = {
                 initialMapState: gm.initialMapState,
-                initialUnitsState: gm.initialUnitsState,
+                initialUnitsState: JSON.stringify(gm.initialUnitsState),
                 initialWeaponsState: gm.initialWeaponsState,
                 initialNexusesState: gm.initialNexusesState,
                 initialGrowingFieldsState: gm.initialGrowingFieldsState,

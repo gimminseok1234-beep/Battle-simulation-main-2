@@ -74,6 +74,28 @@ export function drawImpl(mouseEvent) {
     // [추가] 모든 요소가 그려진 후, 특수 공격 빛 효과를 마지막에 덧그립니다.
     drawSpecialAttackGlows.call(this);
 
+    // [신규] 이름표 바꾸기 모드에서 드래그 중인 이름표를 마우스 커서에 그립니다.
+    if (this.isNametagSwapMode && this.draggedUnitForSwap && mouseEvent) {
+        const pos = this.inputManager.getMousePos(mouseEvent);
+        const unit = this.draggedUnitForSwap;
+
+        if (unit.name) {
+            this.ctx.save();
+            // 카메라 줌과 관계없이 항상 같은 크기로 보이도록 스케일 초기화
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            // 캔버스 좌표로 변환
+            const canvasX = (pos.pixelX - cam.current.x) * cam.current.scale + this.canvas.width / 2;
+            const canvasY = (pos.pixelY - cam.current.y) * cam.current.scale + this.canvas.height / 2;
+
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = unit.nameColor || '#000000';
+            this.ctx.fillText(unit.name, canvasX, canvasY - 20); // 커서 약간 위에 표시
+            this.ctx.restore();
+        }
+    }
+
     // [신규] 비네트 효과 그리기
     if (this.actionCam.vignetteEnabled && (this.isActionCam || this.isFollowCamEnabled) && cam.current.scale > 1.05) {
         this.ctx.save();
