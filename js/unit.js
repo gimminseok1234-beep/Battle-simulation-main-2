@@ -7,6 +7,7 @@ import { Nexus } from './entities.js';
 export class Unit {
     constructor(gameManager, x, y, team) {
         this.gameManager = gameManager;
+        this.id = `${team}_${x}_${y}_${Date.now()}_${Math.random()}`; // [신규] 고유 ID 추가
         this.gridX = x; this.gridY = y;
         this.pixelX = x * GRID_SIZE + GRID_SIZE / 2;
         this.pixelY = y * GRID_SIZE + GRID_SIZE / 2;

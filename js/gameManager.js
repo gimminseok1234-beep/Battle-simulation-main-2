@@ -1498,12 +1498,12 @@ export class GameManager {
         };
         this.handleMapColors(mapColorData);
 
-        this.initialUnitsState = replayData.initialUnitsState;
-        this.initialWeaponsState = replayData.initialWeaponsState;
-        this.initialNexusesState = replayData.initialNexusesState;
-        this.initialMapState = replayData.initialMapState;
-        this.initialGrowingFieldsState = replayData.initialGrowingFieldsState;
-        this.initialAutoFieldState = replayData.initialAutoFieldState;
+        this.initialUnitsState = JSON.parse(replayData.initialUnitsState || '[]');
+        this.initialWeaponsState = JSON.parse(replayData.initialWeaponsState || '[]');
+        this.initialNexusesState = JSON.parse(replayData.initialNexusesState || '[]');
+        this.initialMapState = JSON.parse(replayData.initialMapState || '[]');
+        this.initialGrowingFieldsState = JSON.parse(replayData.initialGrowingFieldsState || '[]');
+        this.initialAutoFieldState = JSON.parse(replayData.initialAutoFieldState || '{}');
 
         this.updateUIToReplayMode();
         this.resetPlacement();
@@ -1563,10 +1563,8 @@ export class GameManager {
         unit2.nameColor = tempColor;
 
         // 2. initialUnitsState에서도 이름표 교체
-        const findUnitData = (unit) => this.initialUnitsState.find(
-            u => u.gridX === unit.gridX && u.gridY === unit.gridY && u.team === unit.team
-        );
-
+        // [수정] gridX, gridY 대신 고유 id로 유닛을 찾습니다.
+        const findUnitData = (unit) => this.initialUnitsState.find(u => u.id === unit.id);
         const unit1Data = findUnitData(unit1);
         const unit2Data = findUnitData(unit2);
 
