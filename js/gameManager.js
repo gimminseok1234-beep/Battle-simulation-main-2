@@ -562,8 +562,10 @@ export class GameManager {
         if (!this.isReplayMode) {
             document.getElementById('toolbox').style.pointerEvents = 'auto';
             this.updateUIToEditorMode();
+            document.getElementById('statusText').textContent = "에디터 모드";
         } else {
             this.updateUIToReplayMode();
+            document.getElementById('statusText').textContent = "리플레이 모드";
         }
 
         this.resetActionCam(true);
@@ -1505,7 +1507,6 @@ export class GameManager {
         this.initialGrowingFieldsState = JSON.parse(replayData.initialGrowingFieldsState || '[]');
         this.initialAutoFieldState = JSON.parse(replayData.initialAutoFieldState || '{}');
 
-        this.updateUIToReplayMode();
         this.resetPlacement();
         
         this.draw();

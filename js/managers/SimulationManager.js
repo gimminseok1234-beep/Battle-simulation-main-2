@@ -26,8 +26,6 @@ export class SimulationManager {
             delete data.gameManager;
             return data;
         };
-        // [수정] gm.initialUnitsState를 이름표 할당 로직 *이후*에 저장하기 위해 cleanUnits 생성 로직을 이동합니다.
-        // cleanUnits는 이름표 할당 로직이 완료된 후 현재 gm.units 상태를 기반으로 생성됩니다.
 
         gm.usedNametagsInSim.clear(); // 이 줄은 if 문 밖에 둡니다.
 
@@ -58,25 +56,26 @@ export class SimulationManager {
         else {
             // [수정] 리플레이 모드일 경우,
             // 스폰 유닛의 이름표 동기화를 위해 'usedNametagsInSim' 세트만 채웁니다.
-            const unitsData = typeof gm.initialUnitsState === 'string' ? JSON.parse(gm.initialUnitsState) : gm.initialUnitsState;
-            unitsData.forEach(uData => {
-                 if (uData.name) {
-                    gm.usedNametagsInSim.add(uData.name);
-                 }
-            });
+            // 이때 gm.units는 이미 loadReplay -> resetPlacement를 통해 이름표가 복원된 상태입니다.
+            // 결정성 유지를 위해 이름표 셔플(난수 소모)은 두 모드에서 항상 실행합니다.
+            if (gm.isNametagEnabled && gm.nametagList.length > 0) {
+                const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); // 난수 소모
+                const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
+                for (let i = 0; i < assignmentCount; i++) {
+                    gm.usedNametagsInSim.add(shuffledNames[i]);
+                }
+            }
+            // 리플레이 모드에서는 gm.units의 이름표를 건드리지 않습니다.
+            // 사용자가 바꾼 이름표가 그대로 유지되어야 합니다.
         }
 
-
-        // [수정] === 누락된 코드 시작 ===
-        // 이름표 할당이 완료된 *이후*의 유닛 상태를 저장합니다.
+        // [수정] 이름표 할당 로직이 완료된 *이후*에 유닛 상태를 저장합니다.
         const cleanUnits = gm.units.map(u => {
             const unitData = cleanDataForJSON(u);
             unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
             return unitData;
         });
-        gm.initialUnitsState = cleanUnits;
-        // [수정] === 누락된 코드 끝 ===
-
+        gm.initialUnitsState = cleanUnits; // <-- 수정된 위치
 
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
