@@ -20,10 +20,9 @@ export class SimulationManager {
         gm.prng = new SeededRandom(gm.simulationSeed);
         gm.enableDeterministicRng();
         
-        // [수정] 랜덤 이름표 할당 로직을 완전히 제거했습니다.
-        // 이제 '배치 초기화' 또는 '이름표 바꾸기'로 설정된
-        // gm.units의 이름표가 시뮬레이션 시작 시에도 그대로 유지됩니다.
-
+        // [수정 1]
+        // 유닛 데이터를 먼저 정리하고 초기 상태로 저장합니다.
+        // 리플레이 모드일 경우, 사용자가 교체한 이름표가 이 시점에 저장됩니다.
         const cleanDataForJSON = (obj) => {
             const data = { ...obj };
             delete data.gameManager;
@@ -35,11 +34,54 @@ export class SimulationManager {
             unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
             return unitData;
         });
+
+        // [수정 2]
+        // gm.initialUnitsState를 이름표 할당 로직 *앞으로* 이동시킵니다.
+        gm.initialUnitsState = cleanUnits;
+
+
+        // --- [수정 3] 이름표 할당 로직 (결정성 보장) ---
+        gm.usedNametagsInSim.clear(); 
+
+        if (gm.isNametagEnabled && gm.nametagList.length > 0) {
+            
+            // --- 결정론적 난수 소모 (에디터/리플레이 공통 실행) ---
+            // 이 셔플 로직은 prng.next()를 호출하므로,
+            // 리플레이 결과의 일관성을 위해 *반드시* 두 모드에서 모두 실행되어야 합니다.
+            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); 
+            const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
+            // ---
+
+            if (!gm.isReplayMode) {
+                // [에디터 모드]
+                // 셔플된 이름표를 실제 gm.units 객체에 적용합니다.
+                gm.units.forEach(unit => {
+                    unit.name = ''; 
+                    unit.nameColor = gm.nametagColor;
+                });
+
+                for (let i = 0; i < assignmentCount; i++) {
+                    gm.units[i].name = shuffledNames[i];
+                    gm.usedNametagsInSim.add(shuffledNames[i]); 
+                }
+            } else {
+                // [리플레이 모드]
+                // 이름표를 적용하지 않습니다. (gm.units에 로드된 스왑된 이름표 유지)
+                // 하지만, 원본 시뮬레이션(에디터)과 동일하게 'usedNametagsInSim' 세트는 채워줍니다.
+                // 그래야 spawnUnit에서 동일한 이름표가 할당됩니다.
+                for (let i = 0; i < assignmentCount; i++) {
+                    gm.usedNametagsInSim.add(shuffledNames[i]);
+                }
+            }
+        } else if (!gm.isReplayMode) {
+            gm.units.forEach(unit => unit.name = '');
+        }
+        
+        // --- [수정 4] 나머지 초기 상태 저장 (여기서 gm.initialUnitsState 할당 제거) ---
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
         
-        gm.initialUnitsState = cleanUnits;
         gm.initialWeaponsState = JSON.stringify(cleanWeapons);
         gm.initialNexusesState = JSON.stringify(cleanNexuses);
         gm.initialMapState = JSON.stringify(gm.map);
