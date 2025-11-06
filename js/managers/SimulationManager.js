@@ -67,6 +67,17 @@ export class SimulationManager {
         }
 
 
+        // [수정] === 누락된 코드 시작 ===
+        // 이름표 할당이 완료된 *이후*의 유닛 상태를 저장합니다.
+        const cleanUnits = gm.units.map(u => {
+            const unitData = cleanDataForJSON(u);
+            unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
+            return unitData;
+        });
+        gm.initialUnitsState = cleanUnits;
+        // [수정] === 누락된 코드 끝 ===
+
+
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);
         const cleanGrowingFields = gm.growingFields.map(cleanDataForJSON);
