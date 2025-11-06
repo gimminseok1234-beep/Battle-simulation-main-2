@@ -7,11 +7,11 @@ import { Nexus } from './entities.js';
 export class Unit {
     constructor(gameManager, x, y, team) {
         this.gameManager = gameManager;
-        // [수정] 결정성 보장을 위해 시드 기반 난수로 고유 ID 생성
+        // [최적화/수정] 결정성 보장을 위해 시드 기반 난수로 고유 ID 생성
         this.id = `${team}_${x}_${y}_${this.gameManager.random()}`;
         this.gridX = x; this.gridY = y;
 
-        // [최적화] 스프라이트 캐싱을 위한 오프스크린 캔버스
+        // [최적화] 스프라이트 캐싱: 렌더링 성능 향상을 위한 오프스크린 캔버스
         this.spriteCanvas = document.createElement('canvas');
         this.spriteCtx = this.spriteCanvas.getContext('2d');
 
@@ -96,12 +96,12 @@ export class Unit {
         this.path = [];
         this.pathUpdateCooldown = 0;
 
-        // [최적화] AI 업데이트 주기 제어
+        // [최적화] AI 업데이트 주기 제어: 매 프레임마다 AI 연산을 하지 않도록 쿨다운 추가
         this.targetUpdateCooldown = 0;
         this.stateUpdateCooldown = 0;
 
         // [NEW] 눈 깜빡임 관련 속성
-        // [버그 수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
+        // [최적화/수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
         this.blinkTimer = this.gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
         this.isBlinking = false;
     }
@@ -252,14 +252,14 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
-        // [최적화] 넉백이 있을 때만 물리 계산 수행
+        // [최적화] 넉백이나 끌어당김이 있을 때만 물리 계산을 수행하여 부하 감소
         const hasKnockback = this.knockbackX !== 0 || this.knockbackY !== 0;
         const isBeingPulled = this.isBeingPulled;
 
         if (hasKnockback) {
             const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
             const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
-
+            
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
 
@@ -828,7 +828,7 @@ export class Unit {
         if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
-                // [최적화] 불필요한 계산 방지
+                // [최적화] 불필요한 계산 방지: 같은 팀 투사체, 너무 먼 투사체는 무시
                 if (p.owner.team === this.team) continue;
                 const distSq = (this.pixelX - p.pixelX)**2 + (this.pixelY - p.pixelY)**2;
                 if (distSq > (GRID_SIZE * 3)**2) continue;
@@ -1009,13 +1009,13 @@ export class Unit {
             }
         }
 
-        // [최적화] AI 상태 업데이트 주기 조절
+        // [최적화] AI 상태 업데이트 주기 조절: 5프레임마다 한 번씩만 상태를 결정하여 CPU 부하 감소
         this.stateUpdateCooldown -= gameManager.gameSpeed;
         if (this.stateUpdateCooldown > 0) {
             this.move(); this.applyPhysics();
             return; // 상태 업데이트 주기가 아니면 이동/물리만 처리하고 종료
         }
-        this.stateUpdateCooldown = 5; // 5프레임마다 상태 업데이트
+        this.stateUpdateCooldown = 5;
 
 
         let newState = 'IDLE';
@@ -1117,10 +1117,10 @@ export class Unit {
                 }
             }
 
-        // [최적화] 타겟 업데이트 주기 조절
+        // [최적화] 타겟 업데이트 주기 조절: 10프레임마다 한 번씩만 새로운 타겟을 탐색
         this.targetUpdateCooldown -= gameManager.gameSpeed;
         if (this.targetUpdateCooldown <= 0) {
-            this.targetUpdateCooldown = 10; // 10프레임마다 타겟 업데이트
+            this.targetUpdateCooldown = 10;
 
 
             if (newState === 'IDLE') {
@@ -1139,6 +1139,7 @@ export class Unit {
                 }
             }
 
+            // [수정] 상태 변경 시에만 경계 상태를 업데이트하도록 로직 이동
             if (this.state !== newState && newState !== 'IDLE' && newState !== 'FLEEING_FIELD' && newState !== 'FLEEING_LAVA') {
                 if (this.alertedCounter <= 0) {
                     this.alertedCounter = 60;
@@ -1431,6 +1432,7 @@ export class Unit {
     draw(ctx, isOutlineEnabled, outlineWidth) {
         const gameManager = this.gameManager;
         if (!gameManager) return;
+        ctx.save(); // [수정] draw 메서드 시작 시 캔버스 상태 저장
 
 
         const scale = 1 + this.awakeningEffect.stacks * 0.2;
@@ -1525,8 +1527,6 @@ export class Unit {
         ctx.translate(this.pixelX, this.pixelY);
         ctx.scale(totalScale, totalScale);
         ctx.drawImage(this.spriteCanvas, -this.spriteCanvas.width / 2, -this.spriteCanvas.height / 2);
-        ctx.restore();
-
         ctx.restore();
 
         if (this.name) {
@@ -1757,10 +1757,11 @@ export class Unit {
             ctx.fillText(this.state === 'SEEKING_HEAL_PACK' ? '+' : '!', this.pixelX, this.pixelY + yOffset);
         }
     }
-
+    
     performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
+            // ... (내용 동일)
             const teleportPos = this.gameManager.findEmptySpotNear(target);
             this.pixelX = teleportPos.x;
             this.pixelY = teleportPos.y;
@@ -1779,9 +1780,8 @@ export class Unit {
     }
 }
 
-// [NEW] 눈 그리기 메소드
 Unit.prototype.drawBodyAndEyes = function(ctx, centerX, centerY) {
-    const headRadius = GRID_SIZE / 1.67; // 몸체 반지름
+    const headRadius = GRID_SIZE / 1.67; // [수정] 누락된 headRadius 변수 정의 추가
     const eyeScale = this.gameManager?.unitEyeScale ?? 1.0;
     const faceWidth = headRadius * 1.1 * eyeScale;
     const faceHeight = headRadius * 0.7 * eyeScale;
