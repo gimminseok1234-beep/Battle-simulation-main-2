@@ -22,21 +22,24 @@ export class SimulationManager {
         
         gm.usedNametagsInSim.clear();
 
-        if (gm.isNametagEnabled && gm.nametagList.length > 0) {
-            gm.units.forEach(unit => {
-                unit.name = '';
-                unit.nameColor = gm.nametagColor;
-            });
-
-            const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next()); // [FIX] 시뮬레이션 결과에 영향을 주므로 prng를 사용합니다.
-            const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
-
-            for (let i = 0; i < assignmentCount; i++) {
-                gm.units[i].name = shuffledNames[i];
-                gm.usedNametagsInSim.add(shuffledNames[i]);
+        // [수정] 리플레이 모드가 아닐 때만 이름표를 새로 할당합니다.
+        if (!gm.isReplayMode) {
+            if (gm.isNametagEnabled && gm.nametagList.length > 0) {
+                gm.units.forEach(unit => {
+                    unit.name = '';
+                    unit.nameColor = gm.nametagColor;
+                });
+    
+                const shuffledNames = [...gm.nametagList].sort(() => 0.5 - gm.prng.next());
+                const assignmentCount = Math.min(gm.units.length, shuffledNames.length);
+    
+                for (let i = 0; i < assignmentCount; i++) {
+                    gm.units[i].name = shuffledNames[i];
+                    gm.usedNametagsInSim.add(shuffledNames[i]);
+                }
+            } else {
+                gm.units.forEach(unit => unit.name = '');
             }
-        } else {
-            gm.units.forEach(unit => unit.name = '');
         }
 
         const cleanDataForJSON = (obj) => {
