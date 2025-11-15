@@ -493,7 +493,7 @@ export class GameManager {
 
     resetMap() {
         cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
+        this.animationFrameId = null; this.lastTime = 0;
         this.state = 'EDIT';
         this.map = this.createEmptyMap(this.canvas.width, this.canvas.height);
         this.units = []; this.weapons = []; this.nexuses = []; this.growingFields = [];
@@ -672,7 +672,12 @@ export class GameManager {
         this.draw();
     }
 
-    gameLoop() {
+    gameLoop(timestamp = 0) {
+        // [버그 수정] deltaTime 계산 로직 추가
+        if (!this.lastTime || this.lastTime === 0) this.lastTime = timestamp;
+        const deltaTime = (timestamp - this.lastTime) / 1000; // 초 단위
+        this.lastTime = timestamp;
+
         // Follow Cam Logic
         if (this.isFollowCamEnabled && this.followedUnit) {
             if (this.followedUnit.hp > 0) {
@@ -718,7 +723,7 @@ export class GameManager {
         }
 
         if (this.state === 'SIMULATE' || this.state === 'ENDING') {
-            this.simulationManager.update(deltaTime || 0); // deltaTime 전달 (오류 방지)
+            this.simulationManager.update(deltaTime);
         }
         
         if (this.timerElement && (this.state === 'SIMULATE' || this.state === 'PAUSED' || this.state === 'ENDING' || this.state === 'DONE')) {
@@ -739,7 +744,7 @@ export class GameManager {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         } else {
-            this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
+            this.animationFrameId = requestAnimationFrame(timestamp => this.gameLoop(timestamp));
         }
     }
 
@@ -1236,6 +1241,7 @@ export class GameManager {
     }
 
     updatePoisonPuddles(deltaTime) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         this.poisonPuddles.forEach(puddle => {
             puddle.duration -= dt;
@@ -1398,7 +1404,7 @@ export class GameManager {
 
     resetSimulationState() {
         cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
+        this.animationFrameId = null; this.lastTime = 0;
         this.state = 'EDIT';
         this.effects = [];
         this.projectiles = [];

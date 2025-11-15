@@ -41,7 +41,7 @@ export class Nexus {
         }
     }
     update(deltaTime) {
-        if (!this.isDestroying) return;
+        if (!this.isDestroying || !deltaTime) return;
         const dt = deltaTime * 60; // 60fps 기준 보정
         this.explosionParticles.forEach(p => {
             p.x += Math.cos(p.angle) * p.speed * dt;
@@ -105,6 +105,7 @@ export class GrowingMagneticField {
     }
 
     update(deltaTime) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         if (this.delayTimer < this.delay) {
             this.delayTimer += dt;
@@ -185,6 +186,7 @@ export class MagicCircle {
     }
 
     update(deltaTime) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         this.duration -= dt;
         this.animationTimer += dt;
@@ -245,6 +247,7 @@ export class PoisonCloud {
     }
 
     update(deltaTime) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         this.duration -= dt;
         this.animationTimer += dt;

@@ -117,7 +117,7 @@ export class SimulationManager {
         }
         // [버그 수정] gameLoop를 직접 호출하는 대신 requestAnimationFrame을 사용하여
         // timestamp 인자를 전달하고 루프를 시작합니다. (this 바인딩 추가)
-        gm.animationFrameId = requestAnimationFrame(gm.gameLoop.bind(gm));
+        gm.animationFrameId = requestAnimationFrame(timestamp => gm.gameLoop(timestamp));
     }
 
     pauseSimulation() {
@@ -138,7 +138,7 @@ export class SimulationManager {
         document.getElementById('simPlayBtn').classList.add('hidden');
         // [버그 수정] 루프를 재개할 때도 requestAnimationFrame을 사용합니다.
         gm.lastTime = 0; // 일시정지 동안의 시간을 건너뛰기 위해 리셋
-        gm.animationFrameId = requestAnimationFrame(gm.gameLoop.bind(gm));
+        gm.animationFrameId = requestAnimationFrame(timestamp => gm.gameLoop(timestamp));
     }
 
     checkGameOver() {
@@ -231,7 +231,7 @@ export class SimulationManager {
 
     update(deltaTime) {
         const gm = this.gameManager;
-        if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
+        if (gm.state === 'PAUSED' || gm.state === 'DONE' || !deltaTime) return;
 
         const dt = deltaTime * 60; // 60FPS 기준의 시간 보정값
 
@@ -310,7 +310,7 @@ export class SimulationManager {
             gm.audioManager.play('unitDeath');
         }
         
-        gm.nexuses.forEach(n => n.update(deltaTime));
+        gm.nexuses.forEach(n => n.update(deltaTime)); // [버그 수정] Nexus 업데이트에 deltaTime 전달
 
         gm.projectiles.forEach(p => p.update(deltaTime));
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);

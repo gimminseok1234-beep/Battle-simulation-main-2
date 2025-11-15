@@ -675,12 +675,13 @@ export class Particle {
         return this.life > 0;
     }
 
-    update(deltaTime) {
+    update(deltaTime = 0) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         this.x += this.vx * dt;
         this.y += this.vy * dt;
         this.vy += this.gravity * dt;
-        this.life -= deltaTime;
+        this.life -= deltaTime; // life는 초 단위이므로 dt가 아닌 deltaTime 사용
     }
 
     draw(ctx) {
@@ -973,9 +974,9 @@ export class Projectile {
         }
     }
 
-    update(deltaTime) {
+    update(deltaTime = 0) {
         const gameManager = this.gameManager;
-        if (!gameManager) return;
+        if (!gameManager || !deltaTime) return;
         const dt = deltaTime * 60;
         
         if (this.type === 'returning_shuriken') {
@@ -1733,11 +1734,12 @@ export class AreaEffect {
             }
         }
     }
-    update(deltaTime) {
+    update(deltaTime = 0) {
+        if (!deltaTime) return;
         const dt = deltaTime * 60;
         const gameManager = this.gameManager;
         if (!gameManager) return;
-        this.duration -= dt;
+        this.duration -= dt; // 이미 dt가 계산되어 있음
         this.currentRadius = this.maxRadius * (1 - (this.duration / 30));
         
         if (this.type === 'fire_pillar') {
