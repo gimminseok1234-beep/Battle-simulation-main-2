@@ -96,7 +96,7 @@ export class SimulationManager {
         gm.winnerTeam = null;
         gm.magicCircles = [];
         gm.poisonClouds = [];
-        gm.particles = [];
+        gm.activeParticles = []; // [최적화] 파티클 배열 초기화
 
         gm.state = 'SIMULATE';
         document.getElementById('statusText').textContent = "시뮬레이션 진행 중...";
@@ -106,6 +106,7 @@ export class SimulationManager {
         document.getElementById('simPlayBtn').classList.add('hidden');
         
         gm.simulationTime = 0;
+        gm.lastTime = 0; // [최적화] 루프 타이머 초기화
         if (gm.timerElement) {
             gm.timerElement.style.display = 'block';
             gm.timerElement.textContent = '00:00';
@@ -115,8 +116,8 @@ export class SimulationManager {
             document.getElementById('toolbox').style.pointerEvents = 'none';
         }
         // [버그 수정] gameLoop를 직접 호출하는 대신 requestAnimationFrame을 사용하여
-        // timestamp 인자를 전달하고 루프를 시작합니다.
-        gm.animationFrameId = requestAnimationFrame((t) => gm.gameLoop(t));
+        // timestamp 인자를 전달하고 루프를 시작합니다. (this 바인딩 추가)
+        gm.animationFrameId = requestAnimationFrame(gm.gameLoop.bind(gm));
     }
 
     pauseSimulation() {
@@ -135,7 +136,9 @@ export class SimulationManager {
         document.getElementById('statusText').textContent = "시뮬레이션 진행 중...";
         document.getElementById('simPauseBtn').classList.remove('hidden');
         document.getElementById('simPlayBtn').classList.add('hidden');
-        gm.gameLoop();
+        // [버그 수정] 루프를 재개할 때도 requestAnimationFrame을 사용합니다.
+        gm.lastTime = 0; // 일시정지 동안의 시간을 건너뛰기 위해 리셋
+        gm.animationFrameId = requestAnimationFrame(gm.gameLoop.bind(gm));
     }
 
     checkGameOver() {
@@ -226,22 +229,20 @@ export class SimulationManager {
         }
     }
 
-    update() {
+    update(deltaTime) {
         const gm = this.gameManager;
         if (gm.state === 'PAUSED' || gm.state === 'DONE') return;
 
-        if (gm.state === 'SIMULATE') {
-            gm.simulationTime += 1 / 60;
-        }
+        const dt = deltaTime * 60; // 60FPS 기준의 시간 보정값
+
+        if (gm.state === 'SIMULATE') gm.simulationTime += deltaTime;
 
         if (gm.state === 'ENDING') {
-            gm.nexuses.forEach(n => n.update());
-            gm.projectiles.forEach(p => p.update());
+            gm.nexuses.forEach(n => n.update(deltaTime));
+            gm.projectiles.forEach(p => p.update(deltaTime));
             gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
             return;
         }
-
-        gm.gameSpeed = 1;
 
         if (gm.autoMagneticField.isActive) {
             gm.autoMagneticField.simulationTime++;
@@ -273,7 +274,7 @@ export class SimulationManager {
             }
         }
         
-        gm.growingFields.forEach(field => field.update());
+        gm.growingFields.forEach(field => field.update(deltaTime));
         
         const unitsBeforeUpdate = gm.units.length;
 
@@ -309,9 +310,9 @@ export class SimulationManager {
             gm.audioManager.play('unitDeath');
         }
         
-        gm.nexuses.forEach(n => n.update());
+        gm.nexuses.forEach(n => n.update(deltaTime));
 
-        gm.projectiles.forEach(p => p.update());
+        gm.projectiles.forEach(p => p.update(deltaTime));
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
 
         for (let i = gm.projectiles.length - 1; i >= 0; i--) {
@@ -494,23 +495,29 @@ export class SimulationManager {
         
         gm.projectiles = gm.projectiles.filter(p => !p.destroyed);
         
-        gm.magicCircles.forEach(circle => circle.update());
+        gm.magicCircles.forEach(circle => circle.update(deltaTime));
         gm.magicCircles = gm.magicCircles.filter(c => c.duration > 0);
         
-        gm.poisonClouds.forEach(cloud => cloud.update());
+        gm.poisonClouds.forEach(cloud => cloud.update(deltaTime));
         gm.poisonClouds = gm.poisonClouds.filter(c => c.duration > 0);
 
         // [신규] 독 장판 업데이트 로직 추가
-        gm.updatePoisonPuddles();
+        gm.updatePoisonPuddles(deltaTime);
 
         gm.weapons = gm.weapons.filter(w => !w.isEquipped);
 
-        gm.effects.forEach(e => e.update());
+        gm.effects.forEach(e => e.update(deltaTime));
         gm.effects = gm.effects.filter(e => e.duration > 0);
-        gm.areaEffects.forEach(e => e.update());
+        gm.areaEffects.forEach(e => e.update(deltaTime));
         gm.areaEffects = gm.areaEffects.filter(e => e.duration > 0);
 
-        gm.particles.forEach(p => p.update(gm.gameSpeed));
-        gm.particles = gm.particles.filter(p => p.isAlive());
+        // [최적화] 파티클 업데이트 및 풀링
+        for (let i = gm.activeParticles.length - 1; i >= 0; i--) {
+            const p = gm.activeParticles[i];
+            p.update(deltaTime);
+            if (!p.isAlive()) {
+                gm.particlePool.push(gm.activeParticles.splice(i, 1)[0]);
+            }
+        }
     }
 }

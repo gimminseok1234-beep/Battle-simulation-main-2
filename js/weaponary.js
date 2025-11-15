@@ -675,11 +675,12 @@ export class Particle {
         return this.life > 0;
     }
 
-    update(gameSpeed = 1) {
-        this.x += this.vx * gameSpeed;
-        this.y += this.vy * gameSpeed;
-        this.vy += this.gravity * gameSpeed;
-        this.life -= (1 / 60) * gameSpeed; // Assuming 60 FPS
+    update(deltaTime) {
+        const dt = deltaTime * 60;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.vy += this.gravity * dt;
+        this.life -= deltaTime;
     }
 
     draw(ctx) {
@@ -972,16 +973,17 @@ export class Projectile {
         }
     }
 
-    update() {
+    update(deltaTime) {
         const gameManager = this.gameManager;
         if (!gameManager) return;
+        const dt = deltaTime * 60;
         
         if (this.type === 'returning_shuriken') {
-            this.rotationAngle += this.lingerRotationSpeed * gameManager.gameSpeed;
+            this.rotationAngle += this.lingerRotationSpeed * dt;
 
             if (this.state === 'MOVING_OUT') {
-                const moveX = Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
-                const moveY = Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
+                const moveX = Math.cos(this.angle) * this.speed * dt;
+                const moveY = Math.sin(this.angle) * this.speed * dt;
                 this.pixelX += moveX;
                 this.pixelY += moveY;
                 this.distanceTraveled += Math.hypot(moveX, moveY);
@@ -997,8 +999,8 @@ export class Projectile {
                     this.state = 'LINGERING';
                 }
             } else if (this.state === 'LINGERING') {
-                this.lingerDuration -= gameManager.gameSpeed;
-                this.damageCooldown -= gameManager.gameSpeed;
+                this.lingerDuration -= dt;
+                this.damageCooldown -= dt;
 
                 if (this.damageCooldown <= 0) {
                     for (const unit of gameManager.units) {
@@ -1021,14 +1023,14 @@ export class Projectile {
                 const dy = this.owner.pixelY - this.pixelY;
                 const dist = Math.hypot(dx, dy);
 
-                if (dist < this.speed * gameManager.gameSpeed) {
+                if (dist < this.speed * dt) {
                     this.destroyed = true;
                     return;
                 }
 
                 const returnAngle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(returnAngle) * this.speed * gameManager.gameSpeed;
-                this.pixelY += Math.sin(returnAngle) * this.speed * gameManager.gameSpeed;
+                this.pixelX += Math.cos(returnAngle) * this.speed * dt;
+                this.pixelY += Math.sin(returnAngle) * this.speed * dt;
 
                 for (const unit of gameManager.units) {
                     if (unit.team !== this.owner.team && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
@@ -1080,9 +1082,9 @@ export class Projectile {
                 while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
                 while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-                const turnSpeed = 0.03; // 프레임당 회전 속도 (라디안)
+                const turnSpeed = 0.03 * dt; // 프레임당 회전 속도 (라디안)
                 if (Math.abs(angleDiff) > turnSpeed) {
-                    this.angle += Math.sign(angleDiff) * turnSpeed * gameManager.gameSpeed;
+                    this.angle += Math.sign(angleDiff) * turnSpeed;
                 } else {
                     this.angle = targetAngle;
                 }
@@ -1094,7 +1096,7 @@ export class Projectile {
             if (this.trail.length > 10) this.trail.shift();
         }
         if (this.type.includes('shuriken') || this.type.includes('boomerang') || this.type.includes('bouncing_sword')) {
-            this.rotationAngle += 0.4 * gameManager.gameSpeed;
+            this.rotationAngle += 0.4 * dt;
         }
 
         if (this.type === 'ice_diamond_projectile' && gameManager.uiPrng.next() > 0.4) {
@@ -1105,8 +1107,8 @@ export class Projectile {
             });
         }
 
-        const nextX = this.pixelX + Math.cos(this.angle) * gameManager.gameSpeed * this.speed;
-        const nextY = this.pixelY + Math.sin(this.angle) * gameManager.gameSpeed * this.speed;
+        const nextX = this.pixelX + Math.cos(this.angle) * dt * this.speed;
+        const nextY = this.pixelY + Math.sin(this.angle) * dt * this.speed;
         const gridX = Math.floor(nextX / GRID_SIZE);
         const gridY = Math.floor(nextY / GRID_SIZE);
 
@@ -1731,17 +1733,18 @@ export class AreaEffect {
             }
         }
     }
-    update() {
+    update(deltaTime) {
+        const dt = deltaTime * 60;
         const gameManager = this.gameManager;
         if (!gameManager) return;
-        this.duration -= gameManager.gameSpeed;
+        this.duration -= dt;
         this.currentRadius = this.maxRadius * (1 - (this.duration / 30));
         
         if (this.type === 'fire_pillar') {
             // [버그 수정] 파티클의 움직임은 시각 효과이므로, 시뮬레이션용 난수 생성기(random) 대신 UI용 난수 생성기(uiPrng)를 사용합니다.
             this.particles.forEach(p => {
-                p.y -= p.speed * gameManager.gameSpeed;
-                p.lifespan -= gameManager.gameSpeed;
+                p.y -= p.speed * dt;
+                p.lifespan -= dt;
                 p.x += (this.gameManager.uiPrng.next() - 0.5) * 0.5;
             });
             this.particles = this.particles.filter(p => p.lifespan > 0);

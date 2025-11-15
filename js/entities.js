@@ -40,12 +40,13 @@ export class Nexus {
             });
         }
     }
-    update() {
+    update(deltaTime) {
         if (!this.isDestroying) return;
+        const dt = deltaTime * 60; // 60fps 기준 보정
         this.explosionParticles.forEach(p => {
-            p.x += Math.cos(p.angle) * p.speed;
-            p.y += Math.sin(p.angle) * p.speed;
-            p.lifespan -= 1;
+            p.x += Math.cos(p.angle) * p.speed * dt;
+            p.y += Math.sin(p.angle) * p.speed * dt;
+            p.lifespan -= 1 * dt;
             p.speed *= 0.97;
         });
         this.explosionParticles = this.explosionParticles.filter(p => p.lifespan > 0);
@@ -103,15 +104,16 @@ export class GrowingMagneticField {
         this.progress = 0;
     }
 
-    update() {
+    update(deltaTime) {
+        const dt = deltaTime * 60;
         if (this.delayTimer < this.delay) {
-            this.delayTimer++;
+            this.delayTimer += dt;
             return;
         }
         if (this.animationTimer < this.totalFrames) {
-            this.animationTimer++;
+            this.animationTimer += dt;
         }
-        const linearProgress = this.animationTimer / this.totalFrames;
+        const linearProgress = Math.min(1, this.animationTimer / this.totalFrames);
         this.progress = -(Math.cos(Math.PI * linearProgress) - 1) / 2;
     }
 
@@ -182,9 +184,10 @@ export class MagicCircle {
         this.animationTimer = 0;
     }
 
-    update() {
-        this.duration--;
-        this.animationTimer++;
+    update(deltaTime) {
+        const dt = deltaTime * 60;
+        this.duration -= dt;
+        this.animationTimer += dt;
     }
 
     draw(ctx) {
@@ -241,9 +244,10 @@ export class PoisonCloud {
         this.animationTimer = 0;
     }
 
-    update() {
-        this.duration--;
-        this.animationTimer++;
+    update(deltaTime) {
+        const dt = deltaTime * 60;
+        this.duration -= dt;
+        this.animationTimer += dt;
         const gameManager = this.gameManager;
         if (!gameManager) return;
         
@@ -255,9 +259,9 @@ export class PoisonCloud {
                const dy = Math.abs(target.pixelY - this.pixelY);
                if (dx < GRID_SIZE * 2.5 && dy < GRID_SIZE * 2.5) {
                    if(target.constructor.name === 'Unit') { 
-                       target.takeDamage(0, { poison: { damage: this.damage * gameManager.gameSpeed }, isTileDamage: true });
+                       target.takeDamage(0, { poison: { damage: this.damage * dt }, isTileDamage: true });
                    } else if (target.constructor.name === 'Nexus') { 
-                       target.takeDamage(this.damage * gameManager.gameSpeed);
+                       target.takeDamage(this.damage * dt);
                    }
                }
            }

@@ -700,7 +700,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            // [최적화] 카메라 ease 값은 결정론적이어야 합니다.
+            // [버그 수정] 카메라 ease 값은 결정론적이어야 합니다.
             // 시뮬레이션 RNG를 사용하지 않고, 항상 동일한 속도 값을 사용하도록 변경합니다.
             const ease = cam.zoomSpeed / 20.0;
             cam.current.x += (cam.target.x - cam.current.x) * ease;
@@ -718,7 +718,7 @@ export class GameManager {
         }
 
         if (this.state === 'SIMULATE' || this.state === 'ENDING') {
-            this.simulationManager.update(deltaTime); // deltaTime 전달
+            this.simulationManager.update(deltaTime || 0); // deltaTime 전달 (오류 방지)
         }
         
         if (this.timerElement && (this.state === 'SIMULATE' || this.state === 'PAUSED' || this.state === 'ENDING' || this.state === 'DONE')) {
@@ -739,7 +739,7 @@ export class GameManager {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         } else {
-            this.animationFrameId = requestAnimationFrame((t) => this.gameLoop(t));
+            this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
         }
     }
 
@@ -1235,9 +1235,10 @@ export class GameManager {
         });
     }
 
-    updatePoisonPuddles() {
+    updatePoisonPuddles(deltaTime) {
+        const dt = deltaTime * 60;
         this.poisonPuddles.forEach(puddle => {
-            puddle.duration -= this.gameSpeed;
+            puddle.duration -= dt;
         });
         this.poisonPuddles = this.poisonPuddles.filter(puddle => puddle.duration > 0);
     }
