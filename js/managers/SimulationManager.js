@@ -114,7 +114,9 @@ export class SimulationManager {
         if (!gm.isReplayMode) {
             document.getElementById('toolbox').style.pointerEvents = 'none';
         }
-        gm.gameLoop();
+        // [버그 수정] gameLoop를 직접 호출하는 대신 requestAnimationFrame을 사용하여
+        // timestamp 인자를 전달하고 루프를 시작합니다.
+        gm.animationFrameId = requestAnimationFrame((t) => gm.gameLoop(t));
     }
 
     pauseSimulation() {
