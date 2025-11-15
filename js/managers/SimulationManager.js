@@ -231,7 +231,7 @@ export class SimulationManager {
 
     update(deltaTime) {
         const gm = this.gameManager;
-        if (gm.state === 'PAUSED' || gm.state === 'DONE' || !deltaTime) return;
+        if (gm.state === 'PAUSED' || gm.state === 'DONE' || deltaTime === undefined) return;
 
         const dt = deltaTime * 60; // 60FPS 기준의 시간 보정값
 
@@ -290,7 +290,7 @@ export class SimulationManager {
         gm.units.forEach(unit => {
             const enemyTeams = allTeamKeys.filter(key => key !== unit.team);
             const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
-            unit.update(enemies, gm.weapons, gm.projectiles);
+            unit.update(enemies, gm.weapons, gm.projectiles, deltaTime);
         });
         
         const deadUnits = gm.units.filter(u => u.hp <= 0);

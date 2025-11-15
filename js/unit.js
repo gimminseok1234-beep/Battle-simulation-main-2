@@ -245,13 +245,13 @@ export class Unit {
         return { item: bestTarget, distance: bestDistance };
     }
 
-    applyPhysics() {
+    applyPhysics(deltaTime) {
         const gameManager = this.gameManager;
-        if (!gameManager) return;
+        if (!gameManager || deltaTime === undefined) return;
 
-        const dt = gameManager.gameSpeed; // deltaTime은 move()에서 처리되므로 여기선 gameSpeed만 사용
+        const dt = deltaTime * 60;
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX * dt;
+            const nextX = this.pixelX + this.knockbackX * dt; // dt를 직접 사용
             const nextY = this.pixelY + this.knockbackY * dt;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
@@ -378,7 +378,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * dt; // [버그 수정] 0으로 나누기 방지
+        const currentSpeed = this.speed * dt;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -540,7 +540,7 @@ export class Unit {
         if (!gameManager) {
             return;
         }
-        if (!deltaTime) return; // deltaTime 유효성 검사
+        if (deltaTime === undefined) return;
         const dt = deltaTime * 60;
 
         // [추가] 부드러운 체력바 감소 및 피격 효과 처리
@@ -1256,9 +1256,9 @@ export class Unit {
                 break;
         }
 
-        this.move(deltaTime);
+        this.move(deltaTime); // deltaTime 전달
 
-        this.applyPhysics();
+        this.applyPhysics(deltaTime); // deltaTime 전달
 
         if (this.moveTarget) {
             const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y) / dt;
