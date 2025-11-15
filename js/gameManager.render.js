@@ -54,9 +54,9 @@ export function drawImpl(mouseEvent) {
     this.nexuses.forEach(n => n.draw(this.ctx));
     this.projectiles.forEach(p => p.draw(this.ctx));
     this.units.forEach(u => u.draw(this.ctx, this.isUnitOutlineEnabled, this.unitOutlineWidth));
-    this.effects.forEach(e => e.draw(this.ctx));
+    this.effects.forEach(e => e.draw(this.ctx)); // effects are short-lived, no pooling needed for now
     this.areaEffects.forEach(e => e.draw(this.ctx));
-    this.particles.forEach(p => p.draw(this.ctx));
+    this.activeParticles.forEach(p => p.draw(this.ctx)); // [최적화] activeParticles 렌더링
 
     if (this.state === 'EDIT' && this.currentTool.tool === 'growing_field' && this.inputManager.dragStartPos && this.inputManager.isDragging && mouseEvent) {
         const currentPos = this.inputManager.getMousePos(mouseEvent);
@@ -190,14 +190,14 @@ function drawSpecialAttackGlows() {
                 const pulse = Math.sin(this.animationFrameCounter * 0.15) * 0.5 + 0.5;
 
                 // [MODIFIED] 1. 넓고 부드러운 외부 광원 효과 (밝기 재조정)
-                this.ctx.globalAlpha = pulse * 0.3; // 투명도 (0.4 -> 0.3)
-                this.ctx.shadowBlur = 20; // 빛 번짐 효과 (15 -> 20)
+                this.ctx.globalAlpha = pulse * 0.25; // 투명도 (0.3 -> 0.25)
+                this.ctx.shadowBlur = 15; // 빛 번짐 효과 (20 -> 15)
                 this.ctx.shadowColor = teamColor;
                 unit.weapon.drawEquipped(this.ctx, { ...unit, pixelX: 0, pixelY: 0 });
 
                 // [MODIFIED] 2. 밝고 선명한 내부 광원 효과 (밝기 재조정)
-                this.ctx.globalAlpha = pulse * 0.4; // 투명도 (0.5 -> 0.4)
-                this.ctx.shadowBlur = 10; // 내부 빛 번짐 효과 (8 -> 10)
+                this.ctx.globalAlpha = pulse * 0.35; // 투명도 (0.4 -> 0.35)
+                this.ctx.shadowBlur = 8; // 내부 빛 번짐 효과 (10 -> 8)
                 this.ctx.shadowColor = teamColor;
                 unit.weapon.drawEquipped(this.ctx, { ...unit, pixelX: 0, pixelY: 0 });
 

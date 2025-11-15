@@ -48,7 +48,14 @@ export class GameManager {
         this.magicCircles = [];
         this.poisonClouds = [];
         this.poisonPuddles = []; // [신규] 독 장판 배열 초기화
-        this.particles = [];
+        
+        // [최적화] 파티클 객체 풀링
+        this.particlePool = [];
+        this.activeParticles = [];
+
+        // [최적화] 공간 분할 그리드
+        this.spatialGrid = new Map();
+
         this.currentTool = { tool: 'tile', type: 'FLOOR' }; // initialUnitsState를 객체 배열로 관리
         this.initialUnitsState = [];
         this.initialWeaponsState = [];
@@ -58,6 +65,10 @@ export class GameManager {
         this.initialAutoFieldState = {};
         this.animationFrameId = null;
         this.animationFrameCounter = 0;
+
+        // [최적화] Delta Time
+        this.lastTime = 0;
+
         this.gameSpeed = 1;
         this.currentWallColor = COLORS.WALL;
         this.currentFloorColor = COLORS.FLOOR;
@@ -157,7 +168,15 @@ export class GameManager {
     }
 
     addParticle(options) {
-        this.particles.push(new Particle(this, options));
+        // [최적화] 객체 풀링 사용
+        let p;
+        if (this.particlePool.length > 0) {
+            p = this.particlePool.pop();
+            p.init(options);
+        } else {
+            p = new Particle(this, options);
+        }
+        this.activeParticles.push(p);
     }
 
     setCurrentUser(user) {
@@ -681,7 +700,7 @@ export class GameManager {
         
         if (this.actionCam.isAnimating) {
             const cam = this.actionCam;
-            // [버그 수정] 카메라 ease 값은 결정론적이어야 합니다.
+            // [최적화] 카메라 ease 값은 결정론적이어야 합니다.
             // 시뮬레이션 RNG를 사용하지 않고, 항상 동일한 속도 값을 사용하도록 변경합니다.
             const ease = cam.zoomSpeed / 20.0;
             cam.current.x += (cam.target.x - cam.current.x) * ease;
@@ -699,7 +718,7 @@ export class GameManager {
         }
 
         if (this.state === 'SIMULATE' || this.state === 'ENDING') {
-            this.simulationManager.update();
+            this.simulationManager.update(deltaTime); // deltaTime 전달
         }
         
         if (this.timerElement && (this.state === 'SIMULATE' || this.state === 'PAUSED' || this.state === 'ENDING' || this.state === 'DONE')) {
@@ -720,7 +739,7 @@ export class GameManager {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         } else {
-            this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+            this.animationFrameId = requestAnimationFrame((t) => this.gameLoop(t));
         }
     }
 
@@ -889,6 +908,40 @@ export class GameManager {
 
     hasLineOfSightForWeapon(startUnit, endTarget) {
         return this.hasLineOfSight(startUnit, endTarget, true);
+    }
+
+    // [최적화] 공간 분할 그리드 업데이트
+    updateSpatialGrid() {
+        this.spatialGrid.clear();
+        const getGridKey = (x, y) => `${x}|${y}`;
+
+        for (const unit of this.units) {
+            const gridX = Math.floor(unit.pixelX / GRID_SIZE / 2); // 그리드 셀 크기를 2배로 키워 검사 범위 확장
+            const gridY = Math.floor(unit.pixelY / GRID_SIZE / 2);
+            const key = getGridKey(gridX, gridY);
+            if (!this.spatialGrid.has(key)) {
+                this.spatialGrid.set(key, []);
+            }
+            this.spatialGrid.get(key).push(unit);
+        }
+    }
+
+    // [최적화] 주변 유닛 가져오기
+    getNearbyUnits(unit) {
+        const nearbyUnits = [];
+        const gridX = Math.floor(unit.pixelX / GRID_SIZE / 2);
+        const gridY = Math.floor(unit.pixelY / GRID_SIZE / 2);
+        const getGridKey = (x, y) => `${x}|${y}`;
+
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const key = getGridKey(gridX + dx, gridY + dy);
+                if (this.spatialGrid.has(key)) {
+                    nearbyUnits.push(...this.spatialGrid.get(key));
+                }
+            }
+        }
+        return nearbyUnits;
     }
 
     createWeapon(x, y, type) {

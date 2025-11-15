@@ -215,7 +215,10 @@ export class Unit {
         let bestTarget = null;
         let maxScore = -Infinity;
 
-        for (const enemy of enemies) {
+        // [최적화] 주변 적들만 탐색
+        const nearbyEnemies = this.gameManager.getNearbyUnits(this).filter(u => u.team !== this.team);
+
+        for (const enemy of nearbyEnemies) {
             if (!enemy) continue; // 방어 코드 추가
 
             const distance = Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY);
@@ -246,9 +249,10 @@ export class Unit {
         const gameManager = this.gameManager;
         if (!gameManager) return;
 
+        const dt = gameManager.gameSpeed; // deltaTime은 move()에서 처리되므로 여기선 gameSpeed만 사용
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
-            const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
+            const nextX = this.pixelX + this.knockbackX * dt;
+            const nextY = this.pixelY + this.knockbackY * dt;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
             const gridY = Math.floor(nextY / GRID_SIZE);
@@ -270,7 +274,10 @@ export class Unit {
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
-        gameManager.units.forEach(otherUnit => {
+        // [최적화] 주변 유닛과만 충돌 계산
+        const nearbyUnits = gameManager.getNearbyUnits(this);
+
+        nearbyUnits.forEach(otherUnit => {
             if (this !== otherUnit) {
                 const dx = otherUnit.pixelX - this.pixelX;
                 const dy = otherUnit.pixelY - this.pixelY;
@@ -338,10 +345,11 @@ export class Unit {
         }
     }
 
-    move() {
+    move(deltaTime) {
         if (!this.moveTarget || this.isCasting || this.isStunned > 0 || this.isAimingMagicDagger) return;
         const gameManager = this.gameManager;
         if (!gameManager) return;
+        const dt = deltaTime * 60;
 
         // [NEW] A* 길찾기 로직 적용
         if (this.path.length > 0 && this.stuckTimer > 30) {
@@ -352,7 +360,7 @@ export class Unit {
             const dx = targetPixelX - this.pixelX;
             const dy = targetPixelY - this.pixelY;
             const distance = Math.hypot(dx, dy);
-            const currentSpeed = this.speed * gameManager.gameSpeed;
+            const currentSpeed = this.speed * dt;
 
             if (distance < currentSpeed) {
                 this.path.shift();
@@ -370,7 +378,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * gameManager.gameSpeed;
+        const currentSpeed = this.speed * dt;
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -527,33 +535,34 @@ export class Unit {
         if (!gameManager) return; // [수정] 독 포션 자폭 로직 제거
     }
 
-    update(enemies, weapons, projectiles) {
+    update(enemies, weapons, projectiles, deltaTime) {
         const gameManager = this.gameManager;
         if (!gameManager) {
             return;
         }
+        const dt = deltaTime * 60;
 
         // [추가] 부드러운 체력바 감소 및 피격 효과 처리
         if (this.displayHp > this.hp) {
             // 현재 체력과 표시 체력의 차이에 비례하여 빠르게 감소 (0.1은 속도 조절 계수)
-            this.displayHp -= (this.displayHp - this.hp) * 0.1 * this.gameManager.gameSpeed;
+            this.displayHp -= (this.displayHp - this.hp) * 0.1 * dt;
         } else {
             this.displayHp = this.hp;
         }
         if (this.damageFlash > 0) {
-            this.damageFlash -= 0.05 * this.gameManager.gameSpeed;
+            this.damageFlash -= 0.05 * dt;
         }
 
         // [NEW] 체력바 알파값 부드럽게 조절
         const healthBarShouldBeVisible = this.hp < this.maxHp || this.hpBarVisibleTimer > 0;
         if (healthBarShouldBeVisible) {
             if (this.hpBarAlpha < 1) {
-                this.hpBarAlpha += 0.1 * this.gameManager.gameSpeed;
+                this.hpBarAlpha += 0.1 * dt;
                 if (this.hpBarAlpha > 1) this.hpBarAlpha = 1;
             }
         } else {
             if (this.hpBarAlpha > 0) {
-                this.hpBarAlpha -= 0.05 * this.gameManager.gameSpeed;
+                this.hpBarAlpha -= 0.05 * dt;
                 if (this.hpBarAlpha < 0) this.hpBarAlpha = 0;
             }
         }
@@ -561,7 +570,7 @@ export class Unit {
 
         // [MODIFIED] 레벨 2 이상일 때 유닛 주변에서 파티클이 생성되도록 수정
         if (this.level >= 2 && gameManager.isLevelUpEnabled) {
-            this.levelUpParticleCooldown -= gameManager.gameSpeed;
+            this.levelUpParticleCooldown -= dt;
             if (this.levelUpParticleCooldown <= 0) {
                 this.levelUpParticleCooldown = 15 - this.level;
 
@@ -598,14 +607,14 @@ export class Unit {
 
         // [NEW] 눈 깜빡임 타이머 업데이트
         if (!this.isBlinking && this.hp > 0) {
-            this.blinkTimer -= gameManager.gameSpeed;
+            this.blinkTimer -= dt;
             if (this.blinkTimer <= 0) {
                 this.isBlinking = true;
                 // 깜빡임 지속 시간 (짧게)
                 this.blinkTimer = 10; 
             }
         } else if (this.isBlinking) {
-            this.blinkTimer -= gameManager.gameSpeed;
+            this.blinkTimer -= dt;
             if (this.blinkTimer <= 0) {
                 this.isBlinking = false;
                 // 다음 깜빡임까지의 시간
@@ -626,7 +635,7 @@ export class Unit {
                 case 'UP': moveY = -this.dashSpeed; break;
             }
 
-            for (let i = 0; i < gameManager.gameSpeed; i++) {
+            for (let i = 0; i < dt; i++) {
                 const nextX = this.pixelX + moveX;
                 const nextY = this.pixelY + moveY;
                 const gridX = Math.floor(nextX / GRID_SIZE);
@@ -660,13 +669,13 @@ export class Unit {
             return;
         }
 
-        if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer--;
+        if (this.hpBarVisibleTimer > 0) this.hpBarVisibleTimer -= dt;
 
         if (this.isBeingPulled && this.puller) {
             const dx = this.pullTargetPos.x - this.pixelX;
             const dy = this.pullTargetPos.y - this.pixelY;
             const dist = Math.hypot(dx, dy);
-            const pullSpeed = 4;
+            const pullSpeed = 4 * dt;
 
             if (dist < pullSpeed * gameManager.gameSpeed) {
                 this.pixelX = this.pullTargetPos.x;
@@ -679,8 +688,8 @@ export class Unit {
                 this.puller = null;
             } else {
                 const angle = Math.atan2(dy, dx);
-                this.pixelX += Math.cos(angle) * pullSpeed * gameManager.gameSpeed;
-                this.pixelY += Math.sin(angle) * pullSpeed * gameManager.gameSpeed;
+                this.pixelX += Math.cos(angle) * pullSpeed;
+                this.pixelY += Math.sin(angle) * pullSpeed;
                 this.knockbackX = 0;
                 this.knockbackY = 0;
             }
@@ -743,7 +752,7 @@ export class Unit {
         }
 
         if (this.isStunned > 0) {
-            this.isStunned -= gameManager.gameSpeed;
+            this.isStunned -= dt;
             if (this.isStunned <= 0) {
                 this.stunnedByMagicCircle = false;
             }
@@ -752,18 +761,18 @@ export class Unit {
         }
 
         if (this.isSlowed > 0) {
-            this.isSlowed -= gameManager.gameSpeed;
+            this.isSlowed -= dt;
         }
 
         if (this.isMarkedByDualSword.active) {
-            this.isMarkedByDualSword.timer -= gameManager.gameSpeed;
+            this.isMarkedByDualSword.timer -= dt;
             if (this.isMarkedByDualSword.timer <= 0) {
                 this.isMarkedByDualSword.active = false;
             }
         }
 
         if (this.awakeningEffect.active && this.awakeningEffect.stacks < 3) {
-            this.awakeningEffect.timer += gameManager.gameSpeed;
+            this.awakeningEffect.timer += dt;
             if (this.awakeningEffect.timer >= 300) {
                 this.awakeningEffect.timer = 0;
                 this.awakeningEffect.stacks++;
@@ -789,27 +798,27 @@ export class Unit {
             }
         }
 
-        if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= gameManager.gameSpeed;
-        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= gameManager.gameSpeed;
-        if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= gameManager.gameSpeed;
-        if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= gameManager.gameSpeed;
-        if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= gameManager.gameSpeed;
-        if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= gameManager.gameSpeed;
-        if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= gameManager.gameSpeed;
-        if (this.attackCooldown > 0) this.attackCooldown -= gameManager.gameSpeed;
-        if (this.teleportCooldown > 0) this.teleportCooldown -= gameManager.gameSpeed;
-        if (this.alertedCounter > 0) this.alertedCounter -= gameManager.gameSpeed; // [수정] 마법창 특수 공격 쿨다운
-        if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= gameManager.gameSpeed;
-        if (this.evasionCooldown > 0) this.evasionCooldown -= gameManager.gameSpeed;
-        if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= gameManager.gameSpeed;
-        if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= gameManager.gameSpeed;
-        if (this.boomerangCooldown > 0) this.boomerangCooldown -= gameManager.gameSpeed;
-        if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= gameManager.gameSpeed;
-        if (this.fireStaffSpecialCooldown > 0) this.fireStaffSpecialCooldown -= gameManager.gameSpeed;
-        if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= gameManager.gameSpeed; // [신규] 독 포션 쿨다운 감소
-        if (this.fleeingCooldown > 0) this.fleeingCooldown -= gameManager.gameSpeed;
+        if (this.magicDaggerSkillCooldown > 0) this.magicDaggerSkillCooldown -= dt;
+        if (this.axeSkillCooldown > 0) this.axeSkillCooldown -= dt;
+        if (this.spinAnimationTimer > 0) this.spinAnimationTimer -= dt;
+        if (this.swordSpecialAttackAnimationTimer > 0) this.swordSpecialAttackAnimationTimer -= dt;
+        if (this.dualSwordSkillCooldown > 0) this.dualSwordSkillCooldown -= dt;
+        if (this.dualSwordTeleportDelayTimer > 0) this.dualSwordTeleportDelayTimer -= dt;
+        if (this.dualSwordSpinAttackTimer > 0) this.dualSwordSpinAttackTimer -= dt;
+        if (this.attackCooldown > 0) this.attackCooldown -= dt;
+        if (this.teleportCooldown > 0) this.teleportCooldown -= dt;
+        if (this.alertedCounter > 0) this.alertedCounter -= dt; // [수정] 마법창 특수 공격 쿨다운
+        if (this.isKing && this.spawnCooldown > 0) this.spawnCooldown -= dt;
+        if (this.evasionCooldown > 0) this.evasionCooldown -= dt;
+        if (this.attackAnimationTimer > 0) this.attackAnimationTimer -= dt;
+        if (this.magicSpearSpecialCooldown > 0) this.magicSpearSpecialCooldown -= dt;
+        if (this.boomerangCooldown > 0) this.boomerangCooldown -= dt;
+        if (this.shurikenSkillCooldown > 0) this.shurikenSkillCooldown -= dt;
+        if (this.fireStaffSpecialCooldown > 0) this.fireStaffSpecialCooldown -= dt;
+        if (this.poisonPotionCooldown > 0) this.poisonPotionCooldown -= dt; // [신규] 독 포션 쿨다운 감소
+        if (this.fleeingCooldown > 0) this.fleeingCooldown -= dt;
 
-        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= gameManager.gameSpeed;
+        if (this.pathUpdateCooldown > 0) this.pathUpdateCooldown -= dt;
         if (this.weapon && (this.weapon.type === 'shuriken' || this.weapon.type === 'lightning') && this.evasionCooldown <= 0) {
             for (const p of projectiles) {
                 if (p.owner.team === this.team) continue;
@@ -832,8 +841,8 @@ export class Unit {
         }
 
         if (this.poisonEffect.active) {
-            this.poisonEffect.duration -= gameManager.gameSpeed;
-            this.takeDamage(this.poisonEffect.damage, { isTileDamage: true });
+            this.poisonEffect.duration -= dt;
+            this.takeDamage(this.poisonEffect.damage * dt, { isTileDamage: true });
             if (this.poisonEffect.duration <= 0) {
                 this.poisonEffect.active = false;
             }
@@ -841,7 +850,7 @@ export class Unit {
 
         if (this.weapon && this.weapon.type === 'ice_diamond') {
             if (this.iceDiamondCharges < 5) {
-                this.iceDiamondChargeTimer += gameManager.gameSpeed;
+                this.iceDiamondChargeTimer += dt;
                 if (this.iceDiamondChargeTimer >= 240) {
                     this.iceDiamondCharges++;
                     this.iceDiamondChargeTimer = 0;
@@ -850,13 +859,13 @@ export class Unit {
         }
 
         if (this.dualSwordTeleportDelayTimer > 0) {
-            this.dualSwordTeleportDelayTimer -= gameManager.gameSpeed;
+            this.dualSwordTeleportDelayTimer -= dt;
             if (this.dualSwordTeleportDelayTimer <= 0) {
                 this.performDualSwordTeleportAttack(enemies);
             }
         }
 
-        if (this.isKing && this.spawnCooldown <= 0) {
+        if (this.isKing && this.spawnCooldown <= 0 && this.state !== 'FLEEING_FIELD' && this.state !== 'FLEEING_LAVA') {
             this.spawnCooldown = this.spawnInterval;
             gameManager.spawnUnit(this, false);
         }
@@ -884,7 +893,7 @@ export class Unit {
         }
 
         if (this.isAimingMagicDagger) {
-            this.magicDaggerAimTimer -= gameManager.gameSpeed;
+            this.magicDaggerAimTimer -= dt;
             if (this.magicDaggerAimTimer <= 0) {
                 this.isAimingMagicDagger = false;
                 this.magicDaggerSkillCooldown = 420;
@@ -1246,13 +1255,13 @@ export class Unit {
                 break;
         }
 
-        this.move();
+        this.move(deltaTime);
 
         this.applyPhysics();
 
         if (this.moveTarget) {
-            const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y);
-            if (distMoved < 0.2 * gameManager.gameSpeed) {
+            const distMoved = Math.hypot(this.pixelX - this.lastPosition.x, this.pixelY - this.lastPosition.y) / dt;
+            if (distMoved < 0.2) {
                 this.stuckTimer += 1;
             } else {
                 this.stuckTimer = 0;
@@ -1278,12 +1287,12 @@ export class Unit {
         const finalGridY = Math.floor(this.pixelY / GRID_SIZE);
 
         if (this.isInMagneticField) {
-            this.takeDamage(0.3 * gameManager.gameSpeed, { isTileDamage: true });
+            this.takeDamage(0.3 * dt, { isTileDamage: true });
         }
 
         // [신규] 독 장판 데미지 처리
         if (this.poisonPuddleDamageCooldown > 0) {
-            this.poisonPuddleDamageCooldown -= gameManager.gameSpeed;
+            this.poisonPuddleDamageCooldown -= dt;
         }
         const isOnPuddle = gameManager.isPosInPoisonPuddle(finalGridX, finalGridY);
         if (isOnPuddle && this.poisonPuddleDamageCooldown <= 0) {
@@ -1296,7 +1305,7 @@ export class Unit {
 
         if (finalGridY >= 0 && finalGridY < gameManager.ROWS && finalGridX >= 0 && finalGridX < gameManager.COLS) {
             const currentTile = gameManager.map[finalGridY][finalGridX];
-            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2 * gameManager.gameSpeed, { isTileDamage: true });
+            if (currentTile.type === TILE.LAVA) this.takeDamage(0.2 * dt, { isTileDamage: true });
             if (currentTile.type === TILE.HEAL_PACK) {
                 this.hp = this.maxHp;
                 gameManager.map[finalGridY][finalGridX] = { type: TILE.FLOOR, color: gameManager.currentFloorColor };
