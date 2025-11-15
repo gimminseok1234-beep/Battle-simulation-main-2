@@ -531,14 +531,14 @@ export class GameManager {
         this.units = unitsData.map(uData => {
             const unit = Object.assign(new Unit(this, uData.gridX, uData.gridY, uData.team), uData);
             
-            // [버그 수정] 유닛 크기, 레벨, 및 각성 효과 초기화
-            unit.scale = 1;
-            unit.level = 1;
-            unit.awakeningEffect = { active: false, stacks: 0, timer: 0 };
-
             if (uData.weapon && uData.weapon.type) {
                 unit.equipWeapon(uData.weapon.type, unit.isKing);
             }
+
+            // [버그 수정] Object.assign 이후에 상태를 초기화해야 덮어쓰이지 않습니다.
+            unit.scale = 1;
+            unit.level = 1;
+            unit.awakeningEffect = { active: false, stacks: 0, timer: 0 };
             return unit;
         });
         this.weapons = weaponsData.map(wData => Object.assign(new Weapon(this, wData.gridX, wData.gridY, wData.type), wData));
