@@ -530,10 +530,13 @@ export class GameManager {
 
         this.units = unitsData.map(uData => {
             const unit = Object.assign(new Unit(this, uData.gridX, uData.gridY, uData.team), uData);
+            
+            // [버그 수정] 유닛 크기, 레벨, 및 각성 효과 초기화
+            unit.scale = 1;
+            unit.level = 1;
+            unit.awakeningEffect = { active: false, stacks: 0, timer: 0 };
+
             if (uData.weapon && uData.weapon.type) {
-                // [버그 수정] 유닛 크기 및 레벨 초기화
-                unit.scale = 1;
-                unit.level = 1;
                 unit.equipWeapon(uData.weapon.type, unit.isKing);
             }
             return unit;
