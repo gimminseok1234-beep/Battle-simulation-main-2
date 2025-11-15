@@ -18,6 +18,9 @@ export class SimulationManager {
             gm.simulationSeed = Date.now();
         }
         gm.prng = new SeededRandom(gm.simulationSeed);
+        // [수정] 시각 효과용 난수 생성기도 동일한 시드로 초기화하여 결정성을 보장합니다.
+        gm.uiPrng = new SeededRandom(gm.simulationSeed);
+
         gm.enableDeterministicRng();
         
         // cleanDataForJSON 함수는 유닛 데이터를 정리하는 데 사용됩니다. (한 번만 정의)
@@ -26,6 +29,16 @@ export class SimulationManager {
             delete data.gameManager;
             return data;
         };
+
+        // [수정] 리플레이 결정성을 위해, 이름표 할당 로직 전에 유닛의 '순수' 상태를 먼저 저장합니다.
+        const cleanUnits = gm.units.map(u => {
+            const unitData = cleanDataForJSON(u);
+            unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
+            return unitData;
+        });
+        gm.initialUnitsState = cleanUnits;
+
+
 
         gm.usedNametagsInSim.clear(); // 이 줄은 if 문 밖에 둡니다.
 
@@ -68,14 +81,6 @@ export class SimulationManager {
             // 리플레이 모드에서는 gm.units의 이름표를 건드리지 않습니다.
             // 사용자가 바꾼 이름표가 그대로 유지되어야 합니다.
         }
-
-        // [수정] 이름표 할당 로직이 완료된 *이후*에 유닛 상태를 저장합니다.
-        const cleanUnits = gm.units.map(u => {
-            const unitData = cleanDataForJSON(u);
-            unitData.weapon = u.weapon ? { type: u.weapon.type } : null;
-            return unitData;
-        });
-        gm.initialUnitsState = cleanUnits; // <-- 수정된 위치
 
         const cleanWeapons = gm.weapons.map(cleanDataForJSON);
         const cleanNexuses = gm.nexuses.map(cleanDataForJSON);

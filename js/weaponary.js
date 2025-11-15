@@ -847,8 +847,8 @@ export class Projectile {
             targetX = this.pixelX + Math.cos(options.angle);
             targetY = this.pixelY + Math.sin(options.angle);
         } else {
-            targetX = target.pixelX + (gameManager.random() - 0.5) * inaccuracy;
-            targetY = target.pixelY + (gameManager.random() - 0.5) * inaccuracy;
+                    targetX = target.pixelX + (this.gameManager.random() - 0.5) * inaccuracy;
+                    targetY = target.pixelY + (this.gameManager.random() - 0.5) * inaccuracy;
         }
 
         const dx = targetX - this.pixelX; const dy = targetY - this.pixelY;

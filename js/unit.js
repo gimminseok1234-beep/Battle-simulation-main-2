@@ -8,7 +8,7 @@ export class Unit {
     constructor(gameManager, x, y, team) {
         this.gameManager = gameManager;
         // [수정] 결정성 보장을 위해 시드 기반 난수로 고유 ID 생성
-        this.id = `${team}_${x}_${y}_${this.gameManager.random()}`;
+        this.id = `${team}_${x}_${y}_${gameManager.random()}`;
         this.gridX = x; this.gridY = y;
         this.pixelX = x * GRID_SIZE + GRID_SIZE / 2;
         this.pixelY = y * GRID_SIZE + GRID_SIZE / 2;
@@ -81,6 +81,9 @@ export class Unit {
         this.dualSwordSpinAttackTimer = 0;
         this.isMarkedByDualSword = { active: false, timer: 0 };
 
+        this.bowSpecialAttack = { active: false, timer: 0, target: null };
+        this.iceDiamondAttackQueue = [];
+
         this.isInLava = false;
         this.fleeingCooldown = 0;
 
@@ -93,7 +96,7 @@ export class Unit {
 
         // [NEW] 눈 깜빡임 관련 속성
         // [버그 수정] 유닛의 상태는 리플레이 시 동일하게 보장되어야 하므로, 시뮬레이션용 난수 생성기(random)를 사용합니다.
-        this.blinkTimer = this.gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
+        this.blinkTimer = gameManager.random() * 300 + 120; // 2~7초 사이 랜덤
         this.isBlinking = false;
     }
 
@@ -1236,7 +1239,7 @@ export class Unit {
             case 'IDLE': default:
                 // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
                 if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
-                    // [버그 수정] 유닛의 이동은 시뮬레이션 결과에 영향을 주므로, UI용 난수 생성기(uiPrng) 대신 시뮬레이션용 난수 생성기(random)를 사용해야 합니다.
+                    // [수정] 결정성 보장을 위해 시드 기반 난수 사용
                     const angle = gameManager.random() * Math.PI * 2;
                     this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
                 }
