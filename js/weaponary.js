@@ -675,7 +675,7 @@ export class Particle {
         return this.life > 0;
     }
 
-    update(deltaTime = 0) {
+    update(deltaTime) {
         if (!deltaTime) return;
         const dt = deltaTime * 60;
         this.x += this.vx * dt;
@@ -974,9 +974,9 @@ export class Projectile {
         }
     }
 
-    update(deltaTime = 0) {
+    update(deltaTime) {
         const gameManager = this.gameManager;
-        if (!gameManager || !deltaTime) return;
+        if (!gameManager || !deltaTime) return; // deltaTime 유효성 검사
         const dt = deltaTime * 60;
         
         if (this.type === 'returning_shuriken') {
@@ -1734,8 +1734,8 @@ export class AreaEffect {
             }
         }
     }
-    update(deltaTime = 0) {
-        if (!deltaTime) return;
+    update(deltaTime) {
+        if (!deltaTime) return; // deltaTime 유효성 검사
         const dt = deltaTime * 60;
         const gameManager = this.gameManager;
         if (!gameManager) return;

@@ -378,7 +378,7 @@ export class Unit {
 
         const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
-        const currentSpeed = this.speed * dt;
+        const currentSpeed = this.speed * dt; // [버그 수정] 0으로 나누기 방지
         if (distance < currentSpeed) {
             this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
             this.moveTarget = null; return;
@@ -540,6 +540,7 @@ export class Unit {
         if (!gameManager) {
             return;
         }
+        if (!deltaTime) return; // deltaTime 유효성 검사
         const dt = deltaTime * 60;
 
         // [추가] 부드러운 체력바 감소 및 피격 효과 처리

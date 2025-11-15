@@ -41,7 +41,7 @@ export class Nexus {
         }
     }
     update(deltaTime) {
-        if (!this.isDestroying || !deltaTime) return;
+        if (!this.isDestroying || !deltaTime) return; // deltaTime 유효성 검사
         const dt = deltaTime * 60; // 60fps 기준 보정
         this.explosionParticles.forEach(p => {
             p.x += Math.cos(p.angle) * p.speed * dt;
