@@ -921,8 +921,8 @@ export class Projectile {
 
     // [NEW] 쌍검 칼날비 파티클 효과
     handleBouncingSwordTrail() {
-        // [최적화] 파티클 생성 빈도를 줄여 렌더링 부하를 낮춥니다. (0.3 -> 0.6)
-        if (this.gameManager.uiPrng.next() > 0.6) {
+        // [최적화] 파티클 생성 빈도를 추가로 줄여 렌더링 부하를 낮춥니다. (0.6 -> 0.8)
+        if (this.gameManager.uiPrng.next() > 0.8) {
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
                 vx: (this.gameManager.uiPrng.next() - 0.5) * 1.0,
