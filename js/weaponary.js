@@ -671,6 +671,22 @@ export class Particle {
         this.gravity = options.gravity || 0;
     }
 
+    /**
+     * [버그 수정] 객체 풀링을 위한 초기화 메서드
+     * @param {object} options 
+     */
+    init(options) {
+        this.x = options.x;
+        this.y = options.y;
+        this.vx = options.vx;
+        this.vy = options.vy;
+        this.life = options.life;
+        this.initialLife = options.life;
+        this.color = options.color;
+        this.size = options.size;
+        this.gravity = options.gravity || 0;
+    }
+
     isAlive() {
         return this.life > 0;
     }
