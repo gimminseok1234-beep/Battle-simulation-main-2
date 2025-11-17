@@ -921,7 +921,8 @@ export class Projectile {
 
     // [NEW] 쌍검 칼날비 파티클 효과
     handleBouncingSwordTrail() {
-        if (this.gameManager.uiPrng.next() > 0.3) {
+        // [최적화] 파티클 생성 빈도를 줄여 렌더링 부하를 낮춥니다. (0.3 -> 0.6)
+        if (this.gameManager.uiPrng.next() > 0.6) {
             this.gameManager.addParticle({
                 x: this.pixelX, y: this.pixelY,
                 vx: (this.gameManager.uiPrng.next() - 0.5) * 1.0,
@@ -1069,8 +1070,9 @@ export class Projectile {
             this.handleSwordWaveTrail();
         }
 
-        // [NEW] 쌍검 칼날비 파티클 생성 로직 호출
-        if (this.type === 'bouncing_sword') {
+        // [버그 수정] 쌍검의 '칼날비' 특수 공격 투사체에만 잔상 효과가 나타나도록 수정합니다.
+        // 기존에는 일반 이동 시에도 파티클이 생성되어 프레임 드랍을 유발했습니다.
+        if (this.type === 'bouncing_sword') { 
             this.handleBouncingSwordTrail();
         }
 
