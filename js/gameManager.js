@@ -481,6 +481,12 @@ export class GameManager {
         this.canvas.style.width = this.logicalWidth + 'px';
         this.canvas.style.height = this.logicalHeight + 'px';
 
+        // [NEW] Force pixelated scaling in the browser
+        // 브라우저가 캔버스를 축소(다운스케일)할 때 안티에일리어싱을 끄고 픽셀을 선명하게 유지시킵니다.
+        this.canvas.style.imageRendering = 'pixelated';
+        this.canvas.style.imageRendering = '-moz-crisp-edges';
+        this.canvas.style.imageRendering = '-webkit-crisp-edges';
+
         document.getElementById('widthInput').value = this.logicalWidth;
         document.getElementById('heightInput').value = this.logicalHeight;
         document.getElementById('renderScaleSelect').value = this.resolutionScale;
