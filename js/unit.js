@@ -208,12 +208,12 @@ export class Unit {
     /**
      * [NEW] 점수 기반으로 최적의 공격 대상을 찾습니다.
      * 체력이 낮은 적에게 높은 점수를 부여합니다.
-     * @param {Unit[]} enemies - 잠재적 공격 대상 목록
      * @returns {{item: Unit | null, distance: number}}
      */
-    findBestTarget(enemies) {
+    findBestTarget() {
         let bestTarget = null;
         let maxScore = -Infinity;
+        let bestDistance = Infinity;
 
         // [최적화] 주변 적들만 탐색
         const nearbyEnemies = this.gameManager.getNearbyUnits(this).filter(u => u.team !== this.team);
@@ -238,10 +238,10 @@ export class Unit {
             if (score > maxScore) {
                 maxScore = score;
                 bestTarget = enemy;
+                bestDistance = distance;
             }
         }
 
-        const bestDistance = bestTarget ? Math.hypot(this.pixelX - bestTarget.pixelX, this.pixelY - bestTarget.pixelY) : Infinity;
         return { item: bestTarget, distance: bestDistance };
     }
 
@@ -535,7 +535,7 @@ export class Unit {
         if (!gameManager) return; // [수정] 독 포션 자폭 로직 제거
     }
 
-    update(enemies, weapons, projectiles, deltaTime) {
+    update(weapons, projectiles, deltaTime) {
         const gameManager = this.gameManager;
         if (!gameManager) {
             return;
@@ -1056,7 +1056,7 @@ export class Unit {
             this.fleeingCooldown = 60;
         } else if (this.fleeingCooldown <= 0) {
             const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
-            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
+            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget();
 
             const visibleWeapons = weapons.filter(w => !w.isEquipped && gameManager.hasLineOfSightForWeapon(this, w));
             const { item: targetWeapon, distance: weaponDist } = this.findClosest(visibleWeapons); // 무기는 가장 가까운 것
@@ -1195,7 +1195,7 @@ export class Unit {
                     }
 
                     if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
-                        const { item: closestEnemy } = this.findClosest(enemies);
+                        const { item: closestEnemy } = this.findClosest(gameManager.units.filter(u => u.team !== this.team));
                         if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
                             this.axeSkillCooldown = 240;
                             this.spinAnimationTimer = 30;

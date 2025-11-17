@@ -278,19 +278,12 @@ export class SimulationManager {
         
         const unitsBeforeUpdate = gm.units.length;
 
-        const unitsByTeam = {};
-        for (const unit of gm.units) {
-            if (!unitsByTeam[unit.team]) {
-                unitsByTeam[unit.team] = [];
-            }
-            unitsByTeam[unit.team].push(unit);
-        }
-        const allTeamKeys = Object.keys(unitsByTeam);
+        // [최적화] 공간 분할 그리드 업데이트
+        gm.updateSpatialGrid();
         
         gm.units.forEach(unit => {
-            const enemyTeams = allTeamKeys.filter(key => key !== unit.team);
-            const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
-            unit.update(enemies, gm.weapons, gm.projectiles, deltaTime);
+            // [최적화] unit.update에서 더 이상 모든 적 목록을 필요로 하지 않으므로, 관련 로직을 제거합니다.
+            unit.update(gm.weapons, gm.projectiles, deltaTime);
         });
         
         const deadUnits = gm.units.filter(u => u.hp <= 0);
