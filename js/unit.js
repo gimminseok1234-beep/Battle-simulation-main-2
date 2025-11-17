@@ -216,10 +216,7 @@ export class Unit {
         let maxScore = -Infinity;
         let bestDistance = Infinity;
 
-        // [최적화] 주변 적들만 탐색
-        const nearbyEnemies = this.gameManager.getNearbyUnits(this).filter(u => u.team !== this.team);
-
-        for (const enemy of enemies) { // [버그 수정] nearbyEnemies 대신 인자로 받은 enemies를 사용하도록 복원
+        for (const enemy of enemies) {
             if (!enemy) continue; // 방어 코드 추가
 
             const distance = Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY);
@@ -275,8 +272,8 @@ export class Unit {
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
-        // [최적화] 주변 유닛과만 충돌 계산
-        const nearbyUnits = gameManager.getNearbyUnits(this);
+        // [버그 수정] 주변 유닛과만 충돌 계산하도록 로직 복원
+        const nearbyUnits = this.gameManager.getNearbyUnits(this);
 
         nearbyUnits.forEach(otherUnit => {
             if (this !== otherUnit) {
