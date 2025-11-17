@@ -1258,9 +1258,6 @@ export class Projectile {
             ctx.rotate(this.rotationAngle);
             ctx.scale(0.8, 0.8);
 
-            ctx.shadowColor = 'rgba(200, 200, 200, 0.8)';
-            ctx.shadowBlur = 10;
-
             const bladeGradient = ctx.createLinearGradient(0, -GRID_SIZE, 0, GRID_SIZE);
             bladeGradient.addColorStop(0, '#f9fafb');
             bladeGradient.addColorStop(0.5, '#9ca3af');
