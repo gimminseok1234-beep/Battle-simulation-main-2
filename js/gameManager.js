@@ -31,6 +31,12 @@ export class GameManager {
         this.ctx.imageSmoothingQuality = 'low'; // [수정] 스무딩을 사용하지 않으므로 'low'로 변경
         this.ctx.textRenderingOptimization = 'optimizeQuality';
         this.ctx.textBaseline = 'middle';
+
+        // [NEW] Add logical dimensions and scale
+        this.logicalWidth = 460;
+        this.logicalHeight = 800;
+        this.resolutionScale = 1;
+        
         this.COLS = 0;
         this.ROWS = 0;
         
@@ -412,8 +418,9 @@ export class GameManager {
     }
 
     resetActionCam(isInstant = true) {
-        const targetX = this.canvas.width / 2;
-        const targetY = this.canvas.height / 2;
+        // [MODIFIED] Use logicalWidth/Height for camera centering
+        const targetX = this.logicalWidth / 2;
+        const targetY = this.logicalHeight / 2;
         const targetScale = 1;
 
         if (isInstant) {
@@ -461,22 +468,36 @@ export class GameManager {
         }
     }
 
-    resizeCanvas(width, height) {
-        this.canvas.width = width;
-        this.canvas.height = height;
-        document.getElementById('widthInput').value = width;
-        document.getElementById('heightInput').value = height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
+    // [MODIFIED] This function now applies logical size AND render scale
+    applyCanvasDimensions(width, height, scale) {
+        this.logicalWidth = width;
+        this.logicalHeight = height;
+        this.resolutionScale = scale;
+
+        this.canvas.width = this.logicalWidth * this.resolutionScale;
+        this.canvas.height = this.logicalHeight * this.resolutionScale;
         
-        this.resetMap();
+        // Set CSS for display size
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+
+        document.getElementById('widthInput').value = this.logicalWidth;
+        document.getElementById('heightInput').value = this.logicalHeight;
+        document.getElementById('renderScaleSelect').value = this.resolutionScale;
+
+        // [MODIFIED] COLS/ROWS must be based on LOGICAL dimensions
+        this.COLS = Math.floor(this.logicalWidth / GRID_SIZE);
+        this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE);
+        
+        this.resetMap(); // This will create a new map based on the new dimensions
     }
 
     resetMap() {
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
         this.state = 'EDIT';
-        this.map = this.createEmptyMap(this.canvas.width, this.canvas.height);
+        // [MODIFIED] Use logical dimensions to create the map
+        this.map = this.createEmptyMap(this.logicalWidth, this.logicalHeight);
         this.units = []; this.weapons = []; this.nexuses = []; this.growingFields = [];
         this.effects = []; this.projectiles = []; this.areaEffects = []; this.magicCircles = []; this.poisonClouds = []; this.particles = [];
         this.initialUnitsState = []; this.initialWeaponsState = [];
@@ -1251,12 +1272,23 @@ export class GameManager {
         
         this.currentMapId = mapId;
         this.currentMapName = mapData.name;
-        this.canvas.width = mapData.width || 600;
-        this.canvas.height = mapData.height || 900;
-        document.getElementById('widthInput').value = this.canvas.width;
-        document.getElementById('heightInput').value = this.canvas.height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
+
+        // [MODIFIED] Set logical dimensions and apply 1x scale
+        this.logicalWidth = mapData.width || 600;
+        this.logicalHeight = mapData.height || 900;
+        this.resolutionScale = 1; // Default to 1x scale on load
+        
+        this.canvas.width = this.logicalWidth * this.resolutionScale;
+        this.canvas.height = this.logicalHeight * this.resolutionScale;
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+
+        document.getElementById('widthInput').value = this.logicalWidth;
+        document.getElementById('heightInput').value = this.logicalHeight;
+        document.getElementById('renderScaleSelect').value = this.resolutionScale; // Update modal UI
+
+        this.COLS = Math.floor(this.logicalWidth / GRID_SIZE); // Use logical
+        this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE); // Use logical
 
         this.handleMapColors(mapData);
 
@@ -1306,12 +1338,23 @@ export class GameManager {
         await this.audioManager.init();
         
         this.currentMapName = mapData.name;
-        this.canvas.width = mapData.width;
-        this.canvas.height = mapData.height;
-        document.getElementById('widthInput').value = this.canvas.width;
-        document.getElementById('heightInput').value = this.canvas.height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
+
+        // [MODIFIED] Set logical dimensions and apply 1x scale
+        this.logicalWidth = mapData.width;
+        this.logicalHeight = mapData.height;
+        this.resolutionScale = 1; // Default to 1x scale on load
+
+        this.canvas.width = this.logicalWidth * this.resolutionScale;
+        this.canvas.height = this.logicalHeight * this.resolutionScale;
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+
+        document.getElementById('widthInput').value = this.logicalWidth;
+        document.getElementById('heightInput').value = this.logicalHeight;
+        document.getElementById('renderScaleSelect').value = this.resolutionScale; // Update modal UI
+
+        this.COLS = Math.floor(this.logicalWidth / GRID_SIZE); // Use logical
+        this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE); // Use logical
 
         this.handleMapColors(mapData);
 
@@ -1491,8 +1534,16 @@ export class GameManager {
         this.hadokenKnockback = replayData.hadokenKnockback || 15;
         this.isLavaAvoidanceEnabled = replayData.isLavaAvoidanceEnabled !== undefined ? replayData.isLavaAvoidanceEnabled : false;
 
-        this.canvas.width = replayData.mapWidth;
-        this.canvas.height = replayData.mapHeight;
+        // [MODIFIED] Set logical dimensions and apply 1x scale
+        this.logicalWidth = replayData.mapWidth;
+        this.logicalHeight = replayData.mapHeight;
+        this.resolutionScale = 1; // Replays always load at 1x first
+
+        this.canvas.width = this.logicalWidth * this.resolutionScale;
+        this.canvas.height = this.logicalHeight * this.resolutionScale;
+        this.canvas.style.width = this.logicalWidth + 'px';
+        this.canvas.style.height = this.logicalHeight + 'px';
+        
         const map = JSON.parse(replayData.initialMapState);
         this.COLS = map[0].length;
         this.ROWS = map.length;
@@ -1506,6 +1557,11 @@ export class GameManager {
             recentWallColors: replayData.recentWallColors
         };
         this.handleMapColors(mapColorData);
+
+        // [MODIFIED] Update the modal UI even in replay mode
+        document.getElementById('widthInput').value = this.logicalWidth;
+        document.getElementById('heightInput').value = this.logicalHeight;
+        document.getElementById('renderScaleSelect').value = this.resolutionScale;
 
         this.initialUnitsState = JSON.parse(replayData.initialUnitsState || '[]');
         this.initialWeaponsState = JSON.parse(replayData.initialWeaponsState || '[]');

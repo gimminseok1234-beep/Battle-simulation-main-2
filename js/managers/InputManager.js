@@ -16,15 +16,19 @@ export class InputManager {
 
     getMousePos(evt) {
         const rect = this.gameManager.canvas.getBoundingClientRect();
-        const scaleX = this.gameManager.canvas.width / rect.width;
-        const scaleY = this.gameManager.canvas.height / rect.height;
+        // [MODIFIED] Use logicalWidth/Height to calculate scale, as rect reflects the *CSS* size
+        const scaleX = this.gameManager.logicalWidth / rect.width;
+        const scaleY = this.gameManager.logicalHeight / rect.height;
 
         // 카메라 변환을 고려한 월드 좌표 계산
         const cam = this.gameManager.actionCam.current;
+        // [MODIFIED] Calculate mouse position relative to the *logical* canvas, not physical
         const canvasX = (evt.clientX - rect.left) * scaleX;
         const canvasY = (evt.clientY - rect.top) * scaleY;
-        const worldX = (canvasX - this.gameManager.canvas.width / 2) / cam.scale + cam.x;
-        const worldY = (canvasY - this.gameManager.canvas.height / 2) / cam.scale + cam.y;
+        
+        // [MODIFIED] Center calculations must use LOGICAL dimensions
+        const worldX = (canvasX - this.gameManager.logicalWidth / 2) / cam.scale + cam.x;
+        const worldY = (canvasY - this.gameManager.logicalHeight / 2) / cam.scale + cam.y;
 
         return {
             pixelX: worldX,

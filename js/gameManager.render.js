@@ -9,8 +9,13 @@ export function drawImpl(mouseEvent) {
     this.ctx.fillStyle = '#1f2937';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // [NEW] Apply the global rendering scale
+    // This scales up all drawing operations (2x, 3x, etc.)
+    this.ctx.scale(this.resolutionScale, this.resolutionScale);
+
     const cam = this.actionCam;
-    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+    // [MODIFIED] Camera center must be based on LOGICAL dimensions
+    this.ctx.translate(this.logicalWidth / 2, this.logicalHeight / 2);
     this.ctx.scale(cam.current.scale, cam.current.scale);
     this.ctx.translate(-cam.current.x, -cam.current.y);
 

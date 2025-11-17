@@ -173,8 +173,16 @@ export class UIManager {
         document.getElementById('simPlayBtn').addEventListener('click', () => this.gameManager.simulationManager.playSimulation());
         document.getElementById('simPlacementResetBtn').addEventListener('click', () => this.gameManager.resetPlacement());
         document.getElementById('simResetBtn').addEventListener('click', () => this.gameManager.resetMap());
+        
+        // [MODIFIED] 'resizeBtn' now applies logical size AND render scale
         document.getElementById('resizeBtn').addEventListener('click', () => {
-            this.gameManager.resizeCanvas(parseInt(document.getElementById('widthInput').value), parseInt(document.getElementById('heightInput').value));
+            const width = parseInt(document.getElementById('widthInput').value) || this.gameManager.logicalWidth;
+            const height = parseInt(document.getElementById('heightInput').value) || this.gameManager.logicalHeight;
+            const scale = parseFloat(document.getElementById('renderScaleSelect').value) || 1;
+            
+            // Call the new function in GameManager
+            this.gameManager.applyCanvasDimensions(width, height, scale);
+            
             this.closeModal('mapSettingsModal');
         });
         

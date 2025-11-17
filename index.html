@@ -196,9 +196,17 @@
         <div class="modal-content">
             <h3 class="text-xl font-bold mb-4">맵 설정</h3>
             <div class="flex items-center gap-2 mb-4">
-                <input type="number" id="widthInput" class="modal-input w-full">
+                <input type="number" id="widthInput" class="modal-input w-full" placeholder="논리적 너비">
                 <span>x</span>
-                <input type="number" id="heightInput" class="modal-input w-full">
+                <input type="number" id="heightInput" class="modal-input w-full" placeholder="논리적 높이">
+            </div>
+            <div class="text-left mb-4">
+                <label for="renderScaleSelect" class="font-semibold">렌더링 배율 (녹화 품질):</label>
+                <select id="renderScaleSelect" class="modal-input mt-1">
+                    <option value="1">1x (기본: 460x800)</option>
+                    <option value="2">2x (고화질: 920x1600)</option>
+                    <option value="3">3x (초고화질: 1380x2400)</option>
+                </select>
             </div>
             <div class="flex items-center justify-between mb-2">
                 <label for="killSoundToggle" class="font-semibold">킬 사운드</label>
