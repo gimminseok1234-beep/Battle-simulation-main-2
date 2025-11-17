@@ -272,8 +272,9 @@ export class Unit {
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
-        // [버그 수정] 주변 유닛과만 충돌 계산하도록 로직 복원
-        const nearbyUnits = this.gameManager.getNearbyUnits(this);
+        // [버그 수정] 유닛 간 충돌 로직이 누락되어 있었습니다.
+        // 공간 분할 그리드를 사용해 주변 유닛과만 충돌을 계산하도록 로직을 복원하고 최적화합니다.
+        const nearbyUnits = gameManager.getNearbyUnits(this);
 
         nearbyUnits.forEach(otherUnit => {
             if (this !== otherUnit) {
