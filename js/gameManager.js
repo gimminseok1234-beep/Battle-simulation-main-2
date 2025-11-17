@@ -27,8 +27,8 @@ export class GameManager {
         this.ctx = this.canvas.getContext('2d');
         
         // 고품질 렌더링 설정
-        this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.imageSmoothingEnabled = false; // [수정] 픽셀을 선명하게 렌더링
+        this.ctx.imageSmoothingQuality = 'low'; // [수정] 스무딩을 사용하지 않으므로 'low'로 변경
         this.ctx.textRenderingOptimization = 'optimizeQuality';
         this.ctx.textBaseline = 'middle';
         this.COLS = 0;
