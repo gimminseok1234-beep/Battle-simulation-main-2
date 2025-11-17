@@ -173,16 +173,15 @@ export class UIManager {
         document.getElementById('simPlayBtn').addEventListener('click', () => this.gameManager.simulationManager.playSimulation());
         document.getElementById('simPlacementResetBtn').addEventListener('click', () => this.gameManager.resetPlacement());
         document.getElementById('simResetBtn').addEventListener('click', () => this.gameManager.resetMap());
-        
-        // [MODIFIED] 'resizeBtn' now applies logical size AND render scale
+
+        // [MODIFIED] 'resizeBtn' now ONLY applies logical size
         document.getElementById('resizeBtn').addEventListener('click', () => {
             const width = parseInt(document.getElementById('widthInput').value) || this.gameManager.logicalWidth;
             const height = parseInt(document.getElementById('heightInput').value) || this.gameManager.logicalHeight;
-            const scale = parseFloat(document.getElementById('renderScaleSelect').value) || 1;
-            
+
             // Call the new function in GameManager
-            this.gameManager.applyCanvasDimensions(width, height, scale);
-            
+            this.gameManager.setLogicalDimensions(width, height);
+
             this.closeModal('mapSettingsModal');
         });
         
@@ -331,6 +330,9 @@ export class UIManager {
             document.getElementById('homeUnitEyeSizeValue').textContent = (this.gameManager.unitEyeScale ?? 1.3).toFixed(2);
             document.getElementById('homeActionCamZoomMax').value = (this.gameManager.actionCam.maxZoom ?? 1.4);
             document.getElementById('homeActionCamZoomMaxValue').textContent = (this.gameManager.actionCam.maxZoom ?? 1.4).toFixed(2);
+
+            // [NEW] Load current render scale into modal
+            document.getElementById('renderScaleSelect').value = this.gameManager.resolutionScale;
             this.openModal('homeSettingsModal');
         });
 
@@ -363,6 +365,11 @@ export class UIManager {
             this.gameManager.unitEyeScale = parseFloat(document.getElementById('homeUnitEyeSizeControl').value);
             this.gameManager.actionCam.maxZoom = parseFloat(document.getElementById('homeActionCamZoomMax').value);
             
+            // [NEW] Read and apply the new resolution scale
+            const newScale = parseFloat(document.getElementById('renderScaleSelect').value) || 1;
+            this.gameManager.setResolutionScale(newScale); // 배율 즉시 적용
+            localStorage.setItem('resolutionScale', String(newScale)); // 설정 저장
+
             localStorage.setItem('actionCamMaxZoom', String(this.gameManager.actionCam.maxZoom));
             localStorage.setItem('levelUpEnabled', String(this.gameManager.isLevelUpEnabled));
             localStorage.setItem('unitOutlineEnabled', String(this.gameManager.isUnitOutlineEnabled));

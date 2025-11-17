@@ -35,7 +35,8 @@ export class GameManager {
         // [NEW] Add logical dimensions and scale
         this.logicalWidth = 460;
         this.logicalHeight = 800;
-        this.resolutionScale = 1;
+        // [MODIFIED] Load saved scale preference
+        this.resolutionScale = parseFloat(localStorage.getItem('resolutionScale') || '1');
         
         this.COLS = 0;
         this.ROWS = 0;
@@ -468,12 +469,15 @@ export class GameManager {
         }
     }
 
-    // [MODIFIED] This function now applies logical size AND render scale
-    applyCanvasDimensions(width, height, scale) {
+    /**
+     * [NEW] 맵의 논리적 크기(그리드 수)를 설정하고 맵을 리셋합니다.
+     * (맵 설정 모달에서 호출)
+     */
+    setLogicalDimensions(width, height) {
         this.logicalWidth = width;
         this.logicalHeight = height;
-        this.resolutionScale = scale;
 
+        // 물리적 캔버스 크기 업데이트 (현재 배율 유지)
         this.canvas.width = this.logicalWidth * this.resolutionScale;
         this.canvas.height = this.logicalHeight * this.resolutionScale;
         
@@ -481,21 +485,38 @@ export class GameManager {
         this.canvas.style.width = this.logicalWidth + 'px';
         this.canvas.style.height = this.logicalHeight + 'px';
 
-        // [NEW] Force pixelated scaling in the browser
-        // 브라우저가 캔버스를 축소(다운스케일)할 때 안티에일리어싱을 끄고 픽셀을 선명하게 유지시킵니다.
-        this.canvas.style.imageRendering = 'pixelated';
-        this.canvas.style.imageRendering = '-moz-crisp-edges';
-        this.canvas.style.imageRendering = '-webkit-crisp-edges';
-
+        // 모달 UI 업데이트
         document.getElementById('widthInput').value = this.logicalWidth;
         document.getElementById('heightInput').value = this.logicalHeight;
-        document.getElementById('renderScaleSelect').value = this.resolutionScale;
 
         // [MODIFIED] COLS/ROWS must be based on LOGICAL dimensions
         this.COLS = Math.floor(this.logicalWidth / GRID_SIZE);
         this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE);
         
-        this.resetMap(); // This will create a new map based on the new dimensions
+        this.resetMap(); // 맵 크기가 변경되었으므로 리셋
+    }
+
+    /**
+     * [NEW] 렌더링 배율(녹화 품질)을 설정합니다.
+     * (홈 설정 모달에서 호출)
+     */
+    setResolutionScale(scale) {
+        this.resolutionScale = scale;
+
+        // 물리적 캔버스 크기만 업데이트
+        this.canvas.width = this.logicalWidth * this.resolutionScale;
+        this.canvas.height = this.logicalHeight * this.resolutionScale;
+        
+        // 픽셀 선명도 유지를 위한 CSS 적용
+        this.canvas.style.imageRendering = 'pixelated';
+        this.canvas.style.imageRendering = '-moz-crisp-edges';
+        this.canvas.style.imageRendering = '-webkit-crisp-edges';
+        
+        // 모달 UI 업데이트
+        document.getElementById('renderScaleSelect').value = this.resolutionScale;
+
+        // 맵 리셋 없이 즉시 다시 그리기
+        this.draw();
     }
 
     resetMap() {
@@ -1279,22 +1300,9 @@ export class GameManager {
         this.currentMapId = mapId;
         this.currentMapName = mapData.name;
 
-        // [MODIFIED] Set logical dimensions and apply 1x scale
-        this.logicalWidth = mapData.width || 600;
-        this.logicalHeight = mapData.height || 900;
-        this.resolutionScale = 1; // Default to 1x scale on load
-        
-        this.canvas.width = this.logicalWidth * this.resolutionScale;
-        this.canvas.height = this.logicalHeight * this.resolutionScale;
-        this.canvas.style.width = this.logicalWidth + 'px';
-        this.canvas.style.height = this.logicalHeight + 'px';
-
-        document.getElementById('widthInput').value = this.logicalWidth;
-        document.getElementById('heightInput').value = this.logicalHeight;
-        document.getElementById('renderScaleSelect').value = this.resolutionScale; // Update modal UI
-
-        this.COLS = Math.floor(this.logicalWidth / GRID_SIZE); // Use logical
-        this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE); // Use logical
+        // [MODIFIED] Set logical dimensions and reset scale via new functions
+        this.setLogicalDimensions(mapData.width || 600, mapData.height || 900);
+        this.setResolutionScale(1); // 맵을 로드할 때는 항상 1x 배율로 리셋
 
         this.handleMapColors(mapData);
 
@@ -1345,22 +1353,9 @@ export class GameManager {
         
         this.currentMapName = mapData.name;
 
-        // [MODIFIED] Set logical dimensions and apply 1x scale
-        this.logicalWidth = mapData.width;
-        this.logicalHeight = mapData.height;
-        this.resolutionScale = 1; // Default to 1x scale on load
-
-        this.canvas.width = this.logicalWidth * this.resolutionScale;
-        this.canvas.height = this.logicalHeight * this.resolutionScale;
-        this.canvas.style.width = this.logicalWidth + 'px';
-        this.canvas.style.height = this.logicalHeight + 'px';
-
-        document.getElementById('widthInput').value = this.logicalWidth;
-        document.getElementById('heightInput').value = this.logicalHeight;
-        document.getElementById('renderScaleSelect').value = this.resolutionScale; // Update modal UI
-
-        this.COLS = Math.floor(this.logicalWidth / GRID_SIZE); // Use logical
-        this.ROWS = Math.floor(this.logicalHeight / GRID_SIZE); // Use logical
+        // [MODIFIED] Set logical dimensions and reset scale via new functions
+        this.setLogicalDimensions(mapData.width, mapData.height);
+        this.setResolutionScale(1); // 맵을 로드할 때는 항상 1x 배율로 리셋
 
         this.handleMapColors(mapData);
 
@@ -1540,15 +1535,9 @@ export class GameManager {
         this.hadokenKnockback = replayData.hadokenKnockback || 15;
         this.isLavaAvoidanceEnabled = replayData.isLavaAvoidanceEnabled !== undefined ? replayData.isLavaAvoidanceEnabled : false;
 
-        // [MODIFIED] Set logical dimensions and apply 1x scale
-        this.logicalWidth = replayData.mapWidth;
-        this.logicalHeight = replayData.mapHeight;
-        this.resolutionScale = 1; // Replays always load at 1x first
-
-        this.canvas.width = this.logicalWidth * this.resolutionScale;
-        this.canvas.height = this.logicalHeight * this.resolutionScale;
-        this.canvas.style.width = this.logicalWidth + 'px';
-        this.canvas.style.height = this.logicalHeight + 'px';
+        // [MODIFIED] Set logical dimensions and reset scale via new functions
+        this.setLogicalDimensions(replayData.mapWidth, replayData.mapHeight);
+        this.setResolutionScale(1); // 리플레이는 항상 1x 배율로 리셋
         
         const map = JSON.parse(replayData.initialMapState);
         this.COLS = map[0].length;
@@ -1563,11 +1552,6 @@ export class GameManager {
             recentWallColors: replayData.recentWallColors
         };
         this.handleMapColors(mapColorData);
-
-        // [MODIFIED] Update the modal UI even in replay mode
-        document.getElementById('widthInput').value = this.logicalWidth;
-        document.getElementById('heightInput').value = this.logicalHeight;
-        document.getElementById('renderScaleSelect').value = this.resolutionScale;
 
         this.initialUnitsState = JSON.parse(replayData.initialUnitsState || '[]');
         this.initialWeaponsState = JSON.parse(replayData.initialWeaponsState || '[]');
