@@ -921,8 +921,11 @@ export class GameManager {
         const getGridKey = (x, y) => `${x}|${y}`;
 
         for (const unit of this.units) {
-            const gridX = Math.floor(unit.pixelX / GRID_SIZE / 2); // 그리드 셀 크기를 2배로 키워 검사 범위 확장
-            const gridY = Math.floor(unit.pixelY / GRID_SIZE / 2);
+            // [버그 수정] 그리드 셀 크기를 유닛의 최대 탐지 범위(약 120~160px)보다 크게 설정합니다.
+            // 기존 GRID_SIZE * 2 (40px)는 너무 작아서 가까운 적만 탐지되는 문제가 있었습니다.
+            const spatialGridCellSize = GRID_SIZE * 8; // 160px
+            const gridX = Math.floor(unit.pixelX / spatialGridCellSize);
+            const gridY = Math.floor(unit.pixelY / spatialGridCellSize);
             const key = getGridKey(gridX, gridY);
             if (!this.spatialGrid.has(key)) {
                 this.spatialGrid.set(key, []);
@@ -934,8 +937,9 @@ export class GameManager {
     // [최적화] 주변 유닛 가져오기
     getNearbyUnits(unit) {
         const nearbyUnits = [];
-        const gridX = Math.floor(unit.pixelX / GRID_SIZE / 2);
-        const gridY = Math.floor(unit.pixelY / GRID_SIZE / 2);
+        const spatialGridCellSize = GRID_SIZE * 8; // 160px
+        const gridX = Math.floor(unit.pixelX / spatialGridCellSize);
+        const gridY = Math.floor(unit.pixelY / spatialGridCellSize);
         const getGridKey = (x, y) => `${x}|${y}`;
 
         for (let dy = -1; dy <= 1; dy++) {
