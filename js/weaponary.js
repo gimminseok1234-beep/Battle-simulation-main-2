@@ -1229,12 +1229,13 @@ export class Projectile {
             ctx.rotate(this.angle - Math.PI / 2);
             
             // [MODIFIED] 검기 이펙트를 원래의 곡선 모양으로 되돌리고, 시각 효과는 강화
-            ctx.shadowColor = 'rgba(255, 0, 0, 1)';
-            ctx.shadowBlur = 20;
-            ctx.globalCompositeOperation = 'lighter';
+            // [최적화] shadowBlur와 lighter 제거
+            // ctx.shadowColor = 'rgba(255, 0, 0, 1)';
+            // ctx.shadowBlur = 20;
+            // ctx.globalCompositeOperation = 'lighter';
 
             // 1. 부드러운 외부 광원
-            ctx.strokeStyle = 'rgba(255, 50, 50, 0.6)';
+            ctx.strokeStyle = 'rgba(255, 50, 50, 0.4)'; // [수정] 투명도 낮춤
             ctx.lineWidth = 7;
             ctx.beginPath();
             ctx.arc(0, 0, GRID_SIZE * 0.7, 0, Math.PI, false);
@@ -1303,8 +1304,9 @@ export class Projectile {
             grad.addColorStop(1, `rgba(${teamColorRgb}, 0.5)`);
 
             ctx.fillStyle = grad;
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = 25;
+            // [최적화] shadowBlur 제거
+            // ctx.shadowColor = shadowColor;
+            // ctx.shadowBlur = 25;
             ctx.beginPath();
             ctx.arc(this.pixelX, this.pixelY, radius, 0, Math.PI * 2);
             ctx.fill();
@@ -1328,11 +1330,12 @@ export class Projectile {
             ctx.translate(this.pixelX, this.pixelY);
             ctx.rotate(this.angle);
 
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.shadowColor = '#fde047';
-            ctx.shadowBlur = 20;
+            // [최적화] lighter와 shadowBlur 제거
+            // ctx.globalCompositeOperation = 'lighter';
+            // ctx.shadowColor = '#fde047';
+            // ctx.shadowBlur = 20;
 
-            ctx.strokeStyle = '#fef08a';
+            ctx.strokeStyle = 'rgba(254, 240, 138, 0.8)'; // [수정]
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.moveTo(-GRID_SIZE * 0.6, 0);

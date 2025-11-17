@@ -281,20 +281,12 @@ export class SimulationManager {
         // [버그 수정] 공간 분할 그리드를 매 프레임 업데이트하여 충돌 계산을 활성화합니다.
         gm.updateSpatialGrid();
 
-        // [버그 수정] unit.update에 enemies 목록을 다시 전달하기 위해 로직 복원
-        const unitsByTeam = {};
-        for (const unit of gm.units) {
-            if (!unitsByTeam[unit.team]) {
-                unitsByTeam[unit.team] = [];
-            }
-            unitsByTeam[unit.team].push(unit);
-        }
-        const allTeamKeys = Object.keys(unitsByTeam);
+        // [최적화] O(N^2)을 유발하는 로직 제거
         
         gm.units.forEach(unit => {
-            const enemyTeams = allTeamKeys.filter(key => key !== unit.team);
-            const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
-            unit.update(enemies, gm.weapons, gm.projectiles, deltaTime);
+            // [최적화] enemies 배열 대신, unit.update 내부에서 getNearbyUnits를 사용하도록 null을 전달합니다.
+            // const enemies = enemyTeams.flatMap(key => unitsByTeam[key]);
+            unit.update(null, gm.weapons, gm.projectiles, deltaTime); // [수정]
         });
         
         const deadUnits = gm.units.filter(u => u.hp <= 0);

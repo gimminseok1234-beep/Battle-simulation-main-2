@@ -175,8 +175,9 @@ export function drawMapImpl() {
  */
 function drawSpecialAttackGlows() {
     this.ctx.save();
-    // [MODIFIED] 'lighter' 혼합 모드를 다시 추가하되, alpha와 blur 값을 조정하여 밝기를 조절합니다.
-    this.ctx.globalCompositeOperation = 'lighter';
+    // [최적화] 'lighter'와 'shadowBlur'는 매우 비싼 연산입니다. 
+    // 대규모 유닛 전투 시 렉을 유발하므로 제거합니다.
+    // this.ctx.globalCompositeOperation = 'lighter';
 
     for (const unit of this.units) {
         // 유닛이 무기를 가지고 있고, 해당 무기가 빛나는 무기 타입에 포함되며, 특수 공격이 준비된 경우
@@ -184,22 +185,28 @@ function drawSpecialAttackGlows() {
             const teamColor = COLORS[`TEAM_${unit.team}`];
             if (teamColor) {
                 this.ctx.save();
-                // drawEquipped는 (0,0)을 기준으로 그리므로 유닛의 실제 위치로 이동해야 합니다.
                 this.ctx.translate(unit.pixelX, unit.pixelY);
 
                 const pulse = Math.sin(this.animationFrameCounter * 0.15) * 0.5 + 0.5;
+                const radius = (GRID_SIZE / 1.67) * 1.5 + (pulse * 5); // 펄스 크기
+                const opacity = 0.4 + pulse * 0.3; // 펄스 투명도
 
-                // [MODIFIED] 1. 넓고 부드러운 외부 광원 효과 (밝기 재조정)
-                this.ctx.globalAlpha = pulse * 0.25; // 투명도 (0.3 -> 0.25)
-                this.ctx.shadowBlur = 15; // 빛 번짐 효과 (20 -> 15)
-                this.ctx.shadowColor = teamColor;
-                unit.weapon.drawEquipped(this.ctx, { ...unit, pixelX: 0, pixelY: 0 });
+                // [최적화] shadowBlur 대신 radialGradient로 가벼운 광원 효과 구현
+                const gradient = this.ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, radius);
+                
+                // teamColor가 #ef4444 형태이므로 rgba로 변환
+                let rgbaColor = teamColor.replace('#', '');
+                let r = parseInt(rgbaColor.substring(0, 2), 16);
+                let g = parseInt(rgbaColor.substring(2, 4), 16);
+                let b = parseInt(rgbaColor.substring(4, 6), 16);
 
-                // [MODIFIED] 2. 밝고 선명한 내부 광원 효과 (밝기 재조정)
-                this.ctx.globalAlpha = pulse * 0.35; // 투명도 (0.4 -> 0.35)
-                this.ctx.shadowBlur = 8; // 내부 빛 번짐 효과 (10 -> 8)
-                this.ctx.shadowColor = teamColor;
-                unit.weapon.drawEquipped(this.ctx, { ...unit, pixelX: 0, pixelY: 0 });
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${opacity * 0.7})`);
+                gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                this.ctx.fill();
 
                 this.ctx.restore();
             }

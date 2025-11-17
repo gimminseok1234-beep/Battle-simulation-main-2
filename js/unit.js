@@ -24,6 +24,9 @@ export class Unit {
         this.maxLevel = 5;
         this.killedBy = null;
         this.specialAttackLevelBonus = 0;
+        // [최적화] 이동 좌표 객체를 재사용하여 GC 부담 감소
+        this.moveTarget = null; // null: 이동 안 함, true: moveTargetPos로 이동
+        this.moveTargetPos = { x: 0, y: 0 }; 
         this.levelUpParticleCooldown = 0; // 레벨업 파티클 생성 쿨다운
 
         this.baseSpeed = 1.0; this.facingAngle = gameManager.random() * Math.PI * 2;
@@ -31,8 +34,8 @@ export class Unit {
         this.baseDetectionRange = 6 * GRID_SIZE;
         this.attackCooldown = 0; this.baseCooldownTime = 80;
         this.state = 'IDLE'; this.alertedCounter = 0;
-        this.weapon = null; this.target = null; this.moveTarget = null;
-        this.isCasting = false; this.castingProgress = 0; this.castTargetPos = null;
+        this.weapon = null; this.target = null;
+        this.isCasting = false; this.castingProgress = 0; this.castTargetPos = null; 
         this.castDuration = 180;
         this.teleportCooldown = 0;
         this.isKing = false; this.spawnCooldown = 0; this.spawnInterval = 720;
@@ -345,6 +348,7 @@ export class Unit {
     }
 
     move(deltaTime) {
+        // [수정] this.moveTarget이 true일 때만 moveTargetPos를 사용해 이동
         if (!this.moveTarget || this.isCasting || this.isStunned > 0 || this.isAimingMagicDagger) return;
         const gameManager = this.gameManager;
         if (!gameManager) return;
@@ -375,12 +379,14 @@ export class Unit {
             return; // A* 경로를 따라 이동 중에는 아래 로직을 건너뜁니다.
         }
 
-        const dx = this.moveTarget.x - this.pixelX, dy = this.moveTarget.y - this.pixelY;
+        // [수정] this.moveTarget.x -> this.moveTargetPos.x
+        const dx = this.moveTargetPos.x - this.pixelX, dy = this.moveTargetPos.y - this.pixelY;
         const distance = Math.hypot(dx, dy);
         const currentSpeed = this.speed * dt;
         if (distance < currentSpeed) {
-            this.pixelX = this.moveTarget.x; this.pixelY = this.moveTarget.y;
-            this.moveTarget = null; return;
+            this.pixelX = this.moveTargetPos.x; this.pixelY = this.moveTargetPos.y;
+            this.moveTarget = null; // [수정] 이동 완료
+            return;
         }
 
         let angle = Math.atan2(dy, dx);
@@ -438,7 +444,7 @@ export class Unit {
                 if (this.path.length === 0) {
                     const bounceAngle = this.facingAngle + Math.PI + (gameManager.random() - 0.5);
                     this.knockbackX += Math.cos(bounceAngle) * 1.5;
-                    this.knockbackY += Math.sin(bounceAngle) * 1.5;
+                    this.knockbackY += Math.sin(bounceAngle) * 1.5; // [수정] 이동 중지
                     this.moveTarget = null;
                 }
                 return;
@@ -534,13 +540,20 @@ export class Unit {
         if (!gameManager) return; // [수정] 독 포션 자폭 로직 제거
     }
 
-    update(enemies, weapons, projectiles, deltaTime) {
+    update(enemies, weapons, projectiles, deltaTime) { // 'enemies'는 이제 null이 됩니다.
         const gameManager = this.gameManager;
         if (!gameManager) {
             return;
         }
         if (deltaTime === undefined) return;
         const dt = deltaTime * 60;
+
+        // [최적화 시작]
+        // 전체 'enemies' 배열 대신, 공간 그리드를 통해 '주변의' 유닛만 가져옵니다.
+        const nearbyUnits = this.gameManager.getNearbyUnits(this);
+        const localEnemies = nearbyUnits.filter(u => u.team !== this.team && u.hp > 0 && u !== this);
+        // [최적화 끝]
+
 
         // [추가] 부드러운 체력바 감소 및 피격 효과 처리
         if (this.displayHp > this.hp) {
@@ -876,7 +889,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'magic_dagger' && !this.isAimingMagicDagger && this.magicDaggerSkillCooldown <= 0 && this.attackCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findClosest(localEnemies); // [수정]
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
                 if (dist < this.detectionRange) {
@@ -902,7 +915,7 @@ export class Unit {
                 const startPos = { x: this.pixelX, y: this.pixelY };
                 const endPos = this.magicDaggerTargetPos;
  
-                enemies.forEach(enemy => {
+                localEnemies.forEach(enemy => { // [수정]
                     const distToLine = Math.abs((endPos.y - startPos.y) * enemy.pixelX - (endPos.x - startPos.x) * enemy.pixelY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
                     if (distToLine < GRID_SIZE) {
                         enemy.takeDamage(this.attackPower * 1.2, { stun: 60 }, this);
@@ -935,7 +948,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findClosest(localEnemies); // [수정]
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
                 if (dist <= this.attackRange) {
@@ -952,14 +965,14 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findClosest(localEnemies); // [수정]
             if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
                 gameManager.audioManager.play('axe');
                 gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
 
-                const damageRadius = GRID_SIZE * 3.5;
+                const damageRadius = GRID_SIZE * 3.5; // [수정]
                 enemies.forEach(enemy => {
                     if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
                         enemy.takeDamage(this.attackPower * 1.5, {}, this);
@@ -990,7 +1003,7 @@ export class Unit {
 
         // [신규] 독 포션 공격 로직
         if (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown <= 0) {
-            const { item: closestEnemy } = this.findClosest(enemies);
+            const { item: closestEnemy } = this.findClosest(localEnemies); // [수정]
             if (closestEnemy) {
                 this.poisonPotionCooldown = 300; // 5초 쿨다운
                 this.attack(closestEnemy);
@@ -1055,7 +1068,7 @@ export class Unit {
             this.fleeingCooldown = 60;
         } else if (this.fleeingCooldown <= 0) {
             const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
-            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
+            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(localEnemies); // [수정]
 
             const visibleWeapons = weapons.filter(w => !w.isEquipped && gameManager.hasLineOfSightForWeapon(this, w));
             const { item: targetWeapon, distance: weaponDist } = this.findClosest(visibleWeapons); // 무기는 가장 가까운 것
@@ -1134,25 +1147,35 @@ export class Unit {
 
         switch (this.state) {
             case 'FLEEING_FIELD':
-                this.moveTarget = gameManager.findClosestSafeSpot(this.pixelX, this.pixelY); // A* 사용 안함
+                const safeSpotField = gameManager.findClosestSafeSpot(this.pixelX, this.pixelY);
+                this.moveTargetPos.x = safeSpotField.x;
+                this.moveTargetPos.y = safeSpotField.y;
+                this.moveTarget = true;
                 break;
             case 'FLEEING_LAVA':
-                this.moveTarget = gameManager.findClosestSafeSpotFromLava(this.pixelX, this.pixelY); // A* 사용 안함
+                const safeSpotLava = gameManager.findClosestSafeSpotFromLava(this.pixelX, this.pixelY);
+                this.moveTargetPos.x = safeSpotLava.x;
+                this.moveTargetPos.y = safeSpotLava.y;
+                this.moveTarget = true;
                 break;
             case 'FLEEING':
                 if (this.target) {
                     const fleeAngle = Math.atan2(this.pixelY - this.target.pixelY, this.pixelX - this.target.pixelX);
-                    this.moveTarget = { x: this.pixelX + Math.cos(fleeAngle) * GRID_SIZE * 5, y: this.pixelY + Math.sin(fleeAngle) * GRID_SIZE * 5 };
+                    this.moveTargetPos.x = this.pixelX + Math.cos(fleeAngle) * GRID_SIZE * 5;
+                    this.moveTargetPos.y = this.pixelY + Math.sin(fleeAngle) * GRID_SIZE * 5;
+                    this.moveTarget = true;
                 }
                 break;
             case 'SEEKING_HEAL_PACK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
-                break;
             case 'SEEKING_QUESTION_MARK':
-                if (this.target) this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
-                break;
             case 'SEEKING_WEAPON':
-                if (this.target) { // 무기를 주으러 갈 때
+                if (this.target) {
+                    this.moveTargetPos.x = this.target.pixelX;
+                    this.moveTargetPos.y = this.target.pixelY;
+                    this.moveTarget = true;
+                }
+                 // [수정] 무기 줍는 로직은 SEEKING_WEAPON 로직 안에 이미 있습니다.
+                if (this.state === 'SEEKING_WEAPON' && this.target) {
                     const distance = Math.hypot(this.pixelX - this.target.pixelX, this.pixelY - this.target.pixelY);
                     if (distance < GRID_SIZE * 0.8 && !this.target.isEquipped) {
                         this.equipWeapon(this.target.type);
@@ -1160,7 +1183,7 @@ export class Unit {
                         this.target = null;
                     } else { // [수정] 무기를 주으러 갈 때도 일단 직선 이동
                         this.moveTarget = { x: this.target.pixelX, y: this.target.pixelY };
-                    }
+                    } // [수정] 이동 중지
                 }
                 break;
             case 'ATTACKING_NEXUS':
@@ -1246,11 +1269,12 @@ export class Unit {
                 }
                 break;
             case 'IDLE': default:
-                // [수정] A* 경로가 없고, 이동 목표도 없을 때만 새로운 목표 설정
-                if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTarget.x, this.pixelY - this.moveTarget.y) < GRID_SIZE) {
-                    // [수정] 결정성 보장을 위해 시드 기반 난수 사용
+                // [수정] IDLE 상태에서 새 객체 생성 방지
+                if (!this.moveTarget || Math.hypot(this.pixelX - this.moveTargetPos.x, this.pixelY - this.moveTargetPos.y) < GRID_SIZE) {
                     const angle = gameManager.random() * Math.PI * 2;
-                    this.moveTarget = { x: this.pixelX + Math.cos(angle) * GRID_SIZE * 8, y: this.pixelY + Math.sin(angle) * GRID_SIZE * 8 };
+                    this.moveTargetPos.x = this.pixelX + Math.cos(angle) * GRID_SIZE * 8;
+                    this.moveTargetPos.y = this.pixelY + Math.sin(angle) * GRID_SIZE * 8;
+                    this.moveTarget = true;
                 }
                 break;
         }
@@ -1269,7 +1293,7 @@ export class Unit {
 
             if (this.stuckTimer > 30) {
                 // [수정] 막혔을 때만 A* 경로 탐색
-                if (this.path.length === 0) {
+                if (this.path.length === 0) { // A* 경로가 있으면 직접 이동 목표는 비활성화
                     this.updatePathTo(this.moveTarget); 
                 } else {
                     // A* 경로를 따라가는데도 막혔다면, 경로를 초기화하고 다시 탐색 유도
@@ -1387,7 +1411,7 @@ export class Unit {
         };
 
         this.path = astar(this.gameManager.map, startNode, endNode);
-        this.moveTarget = null; // A* 경로가 있으면 직접 이동 목표는 비활성화
+        this.moveTarget = null; 
         this.pathUpdateCooldown = 15; // 0.25초마다 경로 재계산
     }
 
@@ -1750,14 +1774,14 @@ export class Unit {
         }
     }
 
-    performDualSwordTeleportAttack(enemies) {
+    performDualSwordTeleportAttack(enemies) { // [수정] 이 함수는 localEnemies를 받도록 이름만 enemies로 둡니다.
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
             const teleportPos = this.gameManager.findEmptySpotNear(target);
             this.pixelX = teleportPos.x;
             this.pixelY = teleportPos.y;
             this.dualSwordSpinAttackTimer = 20;
-
+            // [수정] 이 enemies는 localEnemies입니다.
             const damageRadius = GRID_SIZE * 2;
             enemies.forEach(enemy => {
                 if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
