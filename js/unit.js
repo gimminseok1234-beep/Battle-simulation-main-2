@@ -208,9 +208,10 @@ export class Unit {
     /**
      * [NEW] 점수 기반으로 최적의 공격 대상을 찾습니다.
      * 체력이 낮은 적에게 높은 점수를 부여합니다.
+     * @param {Unit[]} enemies - 잠재적 공격 대상 목록
      * @returns {{item: Unit | null, distance: number}}
      */
-    findBestTarget() {
+    findBestTarget(enemies) {
         let bestTarget = null;
         let maxScore = -Infinity;
         let bestDistance = Infinity;
@@ -218,7 +219,7 @@ export class Unit {
         // [최적화] 주변 적들만 탐색
         const nearbyEnemies = this.gameManager.getNearbyUnits(this).filter(u => u.team !== this.team);
 
-        for (const enemy of nearbyEnemies) {
+        for (const enemy of enemies) { // [버그 수정] nearbyEnemies 대신 인자로 받은 enemies를 사용하도록 복원
             if (!enemy) continue; // 방어 코드 추가
 
             const distance = Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY);
@@ -535,7 +536,7 @@ export class Unit {
         if (!gameManager) return; // [수정] 독 포션 자폭 로직 제거
     }
 
-    update(weapons, projectiles, deltaTime) {
+    update(enemies, weapons, projectiles, deltaTime) {
         const gameManager = this.gameManager;
         if (!gameManager) {
             return;
@@ -860,9 +861,9 @@ export class Unit {
         }
 
         if (this.dualSwordTeleportDelayTimer > 0) {
-            this.dualSwordTeleportDelayTimer -= dt; // [버그 수정] enemies 매개변수 제거
+            this.dualSwordTeleportDelayTimer -= dt;
             if (this.dualSwordTeleportDelayTimer <= 0) {
-                this.performDualSwordTeleportAttack();
+                this.performDualSwordTeleportAttack(enemies);
             }
         }
 
@@ -903,8 +904,7 @@ export class Unit {
                 const startPos = { x: this.pixelX, y: this.pixelY };
                 const endPos = this.magicDaggerTargetPos;
  
-                // [버그 수정] enemies 변수를 직접 가져오도록 수정
-                gameManager.units.filter(u => u.team !== this.team).forEach(enemy => {
+                enemies.forEach(enemy => {
                     const distToLine = Math.abs((endPos.y - startPos.y) * enemy.pixelX - (endPos.x - startPos.x) * enemy.pixelY + endPos.x * startPos.y - endPos.y * startPos.x) / Math.hypot(endPos.y - startPos.y, endPos.x - startPos.x);
                     if (distToLine < GRID_SIZE) {
                         enemy.takeDamage(this.attackPower * 1.2, { stun: 60 }, this);
@@ -937,8 +937,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'boomerang' && this.boomerangCooldown <= 0) {
-            // [버그 수정] enemies 변수를 직접 가져오도록 수정
-            const { item: closestEnemy } = this.findClosest(gameManager.units.filter(u => u.team !== this.team));
+            const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && gameManager.hasLineOfSight(this, closestEnemy)) {
                 const dist = Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY);
                 if (dist <= this.attackRange) {
@@ -955,8 +954,7 @@ export class Unit {
         }
 
         if (this.weapon && this.weapon.type === 'axe' && this.axeSkillCooldown <= 0) {
-            // [버그 수정] enemies 변수를 직접 가져오도록 수정
-            const { item: closestEnemy } = this.findClosest(gameManager.units.filter(u => u.team !== this.team));
+            const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
                 this.axeSkillCooldown = 240;
                 this.spinAnimationTimer = 30;
@@ -964,8 +962,7 @@ export class Unit {
                 gameManager.createEffect('axe_spin_effect', this.pixelX, this.pixelY, this);
 
                 const damageRadius = GRID_SIZE * 3.5;
-                // [버그 수정] enemies 변수를 직접 가져오도록 수정
-                gameManager.units.filter(u => u.team !== this.team).forEach(enemy => {
+                enemies.forEach(enemy => {
                     if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
                         enemy.takeDamage(this.attackPower * 1.5, {}, this);
                     }
@@ -995,8 +992,7 @@ export class Unit {
 
         // [신규] 독 포션 공격 로직
         if (this.weapon?.type === 'poison_potion' && this.poisonPotionCooldown <= 0) {
-            // [버그 수정] enemies 변수를 직접 가져오도록 수정
-            const { item: closestEnemy } = this.findClosest(gameManager.units.filter(u => u.team !== this.team));
+            const { item: closestEnemy } = this.findClosest(enemies);
             if (closestEnemy) {
                 this.poisonPotionCooldown = 300; // 5초 쿨다운
                 this.attack(closestEnemy);
@@ -1061,7 +1057,7 @@ export class Unit {
             this.fleeingCooldown = 60;
         } else if (this.fleeingCooldown <= 0) {
             const enemyNexus = gameManager.nexuses.find(n => n.team !== this.team && !n.isDestroying);
-            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget();
+            const { item: bestEnemy, distance: enemyDist } = this.findBestTarget(enemies);
 
             const visibleWeapons = weapons.filter(w => !w.isEquipped && gameManager.hasLineOfSightForWeapon(this, w));
             const { item: targetWeapon, distance: weaponDist } = this.findClosest(visibleWeapons); // 무기는 가장 가까운 것
@@ -1200,7 +1196,7 @@ export class Unit {
                     }
 
                     if (this.weapon?.type === 'axe' && this.axeSkillCooldown <= 0) {
-                        const { item: closestEnemy } = this.findClosest(gameManager.units.filter(u => u.team !== this.team));
+                        const { item: closestEnemy } = this.findClosest(enemies);
                         if (closestEnemy && Math.hypot(this.pixelX - closestEnemy.pixelX, this.pixelY - closestEnemy.pixelY) < GRID_SIZE * 3) {
                             this.axeSkillCooldown = 240;
                             this.spinAnimationTimer = 30;
@@ -1756,17 +1752,16 @@ export class Unit {
         }
     }
 
-    performDualSwordTeleportAttack() {
+    performDualSwordTeleportAttack(enemies) {
         const target = this.dualSwordTeleportTarget;
         if (target && target.hp > 0) {
             const teleportPos = this.gameManager.findEmptySpotNear(target);
             this.pixelX = teleportPos.x;
             this.pixelY = teleportPos.y;
             this.dualSwordSpinAttackTimer = 20;
-            
+
             const damageRadius = GRID_SIZE * 2;
-            // [버그 수정] enemies 변수를 직접 가져오도록 수정
-            this.gameManager.units.filter(u => u.team !== this.team).forEach(enemy => {
+            enemies.forEach(enemy => {
                 if (Math.hypot(this.pixelX - enemy.pixelX, this.pixelY - enemy.pixelY) < damageRadius) {
                     enemy.takeDamage(this.attackPower * 1.5, {}, this); // [버그 수정] this.attackPower 사용
                 }
