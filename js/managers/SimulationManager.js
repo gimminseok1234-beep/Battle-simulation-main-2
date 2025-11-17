@@ -278,6 +278,9 @@ export class SimulationManager {
         
         const unitsBeforeUpdate = gm.units.length;
 
+        // [버그 수정] 공간 분할 그리드를 매 프레임 업데이트하여 충돌 계산을 활성화합니다.
+        gm.updateSpatialGrid();
+
         // [버그 수정] unit.update에 enemies 목록을 다시 전달하기 위해 로직 복원
         const unitsByTeam = {};
         for (const unit of gm.units) {
