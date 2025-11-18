@@ -103,7 +103,6 @@
         <div class="flex items-start gap-4 w-full">
             <div class="flex flex-col gap-4 w-64">
                 <div id="toolbox" class="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-1 overflow-y-auto"></div>
-                <!-- [신규] 이름표 바꾸기 패널 -->
                 <div id="nametagSwapPanel" class="hidden bg-gray-800 p-4 rounded-lg shadow-lg flex-col gap-2">
                     <div class="flex items-center justify-between">
                         <label for="nametagSwapToggle" class="font-semibold text-white">이름표 바꾸기</label>
@@ -196,9 +195,9 @@
         <div class="modal-content">
             <h3 class="text-xl font-bold mb-4">맵 설정</h3>
             <div class="flex items-center gap-2 mb-4">
-                <input type="number" id="widthInput" class="modal-input w-full">
+                <input type="number" id="widthInput" class="modal-input w-full" placeholder="논리적 너비">
                 <span>x</span>
-                <input type="number" id="heightInput" class="modal-input w-full">
+                <input type="number" id="heightInput" class="modal-input w-full" placeholder="논리적 높이">
             </div>
             <div class="flex items-center justify-between mb-2">
                 <label for="killSoundToggle" class="font-semibold">킬 사운드</label>
@@ -245,6 +244,16 @@
                 <label for="homeActionCamZoomMax" class="font-semibold whitespace-nowrap">액션캠 배율: <span id="homeActionCamZoomMaxValue">1.40</span>x</label>
                 <input type="range" id="homeActionCamZoomMax" min="1.2" max="3.0" step="0.05" value="1.4" class="w-full">
             </div>
+
+            <div class="text-left mb-4">
+                <label for="renderScaleSelect" class="font-semibold">렌더링 배율 (녹화 품질):</label>
+                <select id="renderScaleSelect" class="modal-input mt-1">
+                    <option value="1">1x (기본)</option>
+                    <option value="2">2x (고화질)</option>
+                    <option value="3">3x (초고화질)</option>
+                </select>
+            </div>
+
             <div class="modal-buttons">
                 <button id="saveHomeSettingsBtn" class="btn-confirm">설정 저장</button>
                 <button id="closeHomeSettingsModal" class="btn-cancel">닫기</button>
