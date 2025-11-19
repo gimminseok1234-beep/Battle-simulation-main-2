@@ -242,6 +242,7 @@ export class Unit {
         return { item: bestTarget, distance: bestDistance };
     }
 
+    // [수정] 물리 엔진 최적화 (공간 분할 사용)
     applyPhysics() {
         const gameManager = this.gameManager;
         if (!gameManager) return;
@@ -249,7 +250,6 @@ export class Unit {
         // 1. 벽/맵 충돌 처리는 기존 로직 유지 (knockback 처리 등)
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
             // ... (기존 넉백 이동 로직 그대로 유지) ...
-            const nextX = this.pixelX + this.knockbackX * gameManager.gameSpeed;
             const nextY = this.pixelY + this.knockbackY * gameManager.gameSpeed;
 
             const gridX = Math.floor(nextX / GRID_SIZE);
@@ -275,20 +275,20 @@ export class Unit {
 
 
         // 2. [최적화] 유닛 간 충돌 처리: 전체 유닛 루프 대신 SpatialHash 사용
-        // gameManager.units.forEach 대신 nearbyUnits 사용
+        // 전체 유닛을 돌지 않고, 내 주변 격자에 있는 유닛만 가져와서 검사합니다.
         const nearbyUnits = gameManager.spatialHash.query(this.pixelX, this.pixelY);
         
+        const minDistance = (GRID_SIZE / 1.67) * 2;
+        const minDistanceSq = minDistance * minDistance;
+
         for (const otherUnit of nearbyUnits) {
             if (this !== otherUnit && otherUnit.hp > 0) {
                 const dx = otherUnit.pixelX - this.pixelX;
                 const dy = otherUnit.pixelY - this.pixelY;
-                
                 // 거리 제곱을 사용하여 Math.hypot(제곱근 연산) 최소화
                 const distSq = dx*dx + dy*dy;
-                const minDistance = (GRID_SIZE / 1.67) * 2;
-                const minDistanceSq = minDistance * minDistance;
 
-                if (distSq < minDistanceSq && distSq > 0.0001) {
+                if (distSq < minDistanceSq && distSq > 0.001) {
                     const distance = Math.sqrt(distSq);
                     const overlap = minDistance - distance;
                     // 밀어내는 힘을 약간 부드럽게 적용
@@ -298,25 +298,22 @@ export class Unit {
                     const moveX = Math.cos(angle) * force;
                     const moveY = Math.sin(angle) * force;
 
-                    // 서로 반대 방향으로 밀어냄 (간단한 위치 보정)
+                    // 서로 밀어내기
                     this.pixelX -= moveX * 0.5;
                     this.pixelY -= moveY * 0.5;
                     otherUnit.pixelX += moveX * 0.5;
                     otherUnit.pixelY += moveY * 0.5;
-                    
-                    // 벽 뚫기 방지 (간단한 체크)
-                    // (실제로는 여기서 벽 체크를 다시 해야 완벽하지만, 성능상 생략하거나 간단히 처리)
                 }
             }
         }
 
-        // 맵 경계 처리 (기존 코드 유지)
+        // 3. 맵 경계 처리
         const radius = GRID_SIZE / 1.67;
-        // ... (화면 밖으로 나가지 않게 하는 기존 로직) ...
-         if (this.pixelX < radius) this.pixelX = radius;
-        else if (this.pixelX > gameManager.canvas.width - radius) this.pixelX = gameManager.canvas.width - radius;
-        if (this.pixelY < radius) this.pixelY = radius;
-        else if (this.pixelY > gameManager.canvas.height - radius) this.pixelY = gameManager.canvas.height - radius;
+        if (this.pixelX < radius) { this.pixelX = radius; this.knockbackX *= -0.5; }
+        else if (this.pixelX > gameManager.canvas.width - radius) { this.pixelX = gameManager.canvas.width - radius; this.knockbackX *= -0.5; }
+        
+        if (this.pixelY < radius) { this.pixelY = radius; this.knockbackY *= -0.5; }
+        else if (this.pixelY > gameManager.canvas.height - radius) { this.pixelY = gameManager.canvas.height - radius; this.knockbackY *= -0.5; }
     }
 
     move() {
@@ -422,6 +419,7 @@ export class Unit {
         this.facingAngle = angle; this.pixelX = nextPixelX; this.pixelY = nextPixelY;
     }
 
+    // [수정] 메인 업데이트 루프 (스로틀링 적용)
     attack(target) {
         if (!target || this.attackCooldown > 0 || this.isStunned > 0) return;
         if (this.isCasting && this.weapon && this.weapon.type !== 'poison_potion') return;
