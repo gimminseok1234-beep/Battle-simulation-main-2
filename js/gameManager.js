@@ -5,12 +5,11 @@ import { AudioManager } from './audioManager.js';
 import { TILE, TEAM, COLORS, GRID_SIZE } from './constants.js';
 import { drawImpl, drawMapImpl } from './gameManager.render.js';
 import { localMaps } from './maps/index.js';
-import { SeededRandom } from './utils.js';
+import { SeededRandom, SpatialHash } from './utils.js';
 import { UIManager } from './managers/UIManager.js';
 import { PersistenceManager } from './managers/PersistenceManager.js';
 import { SimulationManager } from './managers/SimulationManager.js';
 import { InputManager } from './managers/InputManager.js';
-import { SpatialHash } from './utils.js';
 
 let instance = null;
 
@@ -84,7 +83,6 @@ export class GameManager {
             // [추가] 공간 분할 시스템 초기화 (격자 크기는 GRID_SIZE * 2 정도가 적당)
             simulationTime: 0,
             spatialHash: new SpatialHash(GRID_SIZE * 3),
-            simulationTime: 0,
             totalShrinkTime: 60 * 60,
             shrinkType: 'all',
             currentBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
@@ -92,6 +90,9 @@ export class GameManager {
         this.hadokenKnockback = 15;
         this.initialNexusCount = 0;
         this.winnerTeam = null;
+
+        // 공간 분할 시스템 초기화 (격자 크기는 GRID_SIZE * 3 정도가 적당)
+        this.spatialHash = new SpatialHash(GRID_SIZE * 3);
 
         // Managers
         this.persistenceManager = new PersistenceManager(this);
