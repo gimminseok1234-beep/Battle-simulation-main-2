@@ -979,15 +979,17 @@ export class Projectile {
         if (this.type === 'returning_shuriken') {
             this.rotationAngle += this.lingerRotationSpeed * gameManager.gameSpeed;
 
+            // [최적화] 투사체 충돌 검사
+            const nearbyUnits = gameManager.spatialHash.query(this.pixelX, this.pixelY);
             if (this.state === 'MOVING_OUT') {
                 const moveX = Math.cos(this.angle) * this.speed * gameManager.gameSpeed;
                 const moveY = Math.sin(this.angle) * this.speed * gameManager.gameSpeed;
                 this.pixelX += moveX;
                 this.pixelY += moveY;
                 this.distanceTraveled += Math.hypot(moveX, moveY);
-                
-                for (const unit of gameManager.units) {
-                    if (unit.team !== this.owner.team && !this.hitTargets.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
+
+                for (const unit of nearbyUnits) {
+                    if (unit.team !== this.owner.team && unit.hp > 0 && !this.hitTargets.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 1.5) {
                         unit.takeDamage(this.damage, {}, this.owner);
                         this.hitTargets.add(unit);
                     }
@@ -1001,8 +1003,8 @@ export class Projectile {
                 this.damageCooldown -= gameManager.gameSpeed;
 
                 if (this.damageCooldown <= 0) {
-                    for (const unit of gameManager.units) {
-                        if (unit.team !== this.owner.team && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE * 2) {
+                    for (const unit of nearbyUnits) {
+                        if (unit.team !== this.owner.team && unit.hp > 0 && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE * 2) {
                             unit.takeDamage(this.damage * 0.15, {}, this.owner); // Reduced lingering damage
                         }
                     }
@@ -1030,8 +1032,8 @@ export class Projectile {
                 this.pixelX += Math.cos(returnAngle) * this.speed * gameManager.gameSpeed;
                 this.pixelY += Math.sin(returnAngle) * this.speed * gameManager.gameSpeed;
 
-                for (const unit of gameManager.units) {
-                    if (unit.team !== this.owner.team && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 2) {
+                for (const unit of nearbyUnits) {
+                    if (unit.team !== this.owner.team && unit.hp > 0 && !this.alreadyDamagedOnReturn.has(unit) && Math.hypot(this.pixelX - unit.pixelX, this.pixelY - unit.pixelY) < GRID_SIZE / 1.5) {
                         unit.takeDamage(this.damage, {}, this.owner);
                         this.alreadyDamagedOnReturn.add(unit);
                     }

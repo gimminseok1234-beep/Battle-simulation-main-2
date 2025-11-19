@@ -1,7 +1,7 @@
 import { Unit } from './unit.js';
 import { Weapon, Projectile, AreaEffect, Effect, MagicDaggerDashEffect, createFireballHitEffect, Particle } from './weaponary.js';
 import { Nexus, GrowingMagneticField, MagicCircle, PoisonCloud } from './entities.js';
-import { AudioManager } from './audioManager.js';
+import { AudioManager } from './audioManager.js'; 
 import { TILE, TEAM, COLORS, GRID_SIZE } from './constants.js';
 import { drawImpl, drawMapImpl } from './gameManager.render.js';
 import { localMaps } from './maps/index.js';
@@ -10,6 +10,7 @@ import { UIManager } from './managers/UIManager.js';
 import { PersistenceManager } from './managers/PersistenceManager.js';
 import { SimulationManager } from './managers/SimulationManager.js';
 import { InputManager } from './managers/InputManager.js';
+import { SpatialHash } from './utils.js';
 
 let instance = null;
 
@@ -80,6 +81,9 @@ export class GameManager {
         this.autoMagneticField = {
             isActive: false,
             safeZoneSize: 6,
+            // [추가] 공간 분할 시스템 초기화 (격자 크기는 GRID_SIZE * 2 정도가 적당)
+            simulationTime: 0,
+            spatialHash: new SpatialHash(GRID_SIZE * 3),
             simulationTime: 0,
             totalShrinkTime: 60 * 60,
             shrinkType: 'all',
@@ -157,6 +161,10 @@ export class GameManager {
     }
 
     addParticle(options) {
+        // [최적화] 파티클 개수 제한 (너무 많으면 오래된 것부터 제거)
+        if (this.particles.length > 300) { 
+            this.particles.shift();
+        }
         this.particles.push(new Particle(this, options));
     }
 
@@ -680,6 +688,19 @@ export class GameManager {
         this.animationFrameCounter++;
         
         if (this.actionCam.isAnimating) {
+            // [최적화] 매 프레임 시작 전 공간 해시 업데이트
+            this.spatialHash.clear();
+            const activeUnits = this.units;
+            for (let i = 0; i < activeUnits.length; i++) {
+                if (activeUnits[i].hp > 0) {
+                    this.spatialHash.add(activeUnits[i]);
+                }
+            }
+
+            this.simulationManager.update();
+        }
+        
+        if (this.state === 'SIMULATE' || this.state === 'ENDING') {
             const cam = this.actionCam;
             // [버그 수정] 카메라 ease 값은 결정론적이어야 합니다.
             // 시뮬레이션 RNG를 사용하지 않고, 항상 동일한 속도 값을 사용하도록 변경합니다.
@@ -1584,4 +1605,3 @@ export class GameManager {
         }
     }
 }
-
