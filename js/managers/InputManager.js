@@ -16,28 +16,30 @@ export class InputManager {
 
     getMousePos(evt) {
         const rect = this.gameManager.canvas.getBoundingClientRect();
-        // 스케일 계산: 실제 캔버스 픽셀 크기 / 화면에 보이는 CSS 크기
-        // gameManager.js에서 width * resolutionScale을 했으므로,
-        // scaleX, scaleY는 resolutionScale 값과 비슷하게 됩니다.
-        const scaleX = this.gameManager.canvas.width / rect.width;
-        const scaleY = this.gameManager.canvas.height / rect.height;
+        const gm = this.gameManager;
 
-        const cam = this.gameManager.actionCam.current;
+        // [안전장치] 해상도 배율이 설정되지 않았을 경우 1로 기본값 설정
+        const resScale = gm.resolutionScale || 1;
 
-        // 1. 캔버스 상의 실제 픽셀 좌표 (고해상도 기준)
-        const rawCanvasX = (evt.clientX - rect.left) * scaleX;
-        const rawCanvasY = (evt.clientY - rect.top) * scaleY;
+        // 1. 현재 캔버스의 '논리적' 크기(게임 로직상 크기) 계산
+        // 물리적 버퍼 크기(canvas.width)를 해상도 배율로 나누어 원래 게임 크기를 구합니다.
+        const logicalWidth = gm.canvas.width / resScale;
+        const logicalHeight = gm.canvas.height / resScale;
 
-        // 2. 게임 로직용 논리 좌표로 변환 (resolutionScale로 나눔)
-        // GameManager에 resolutionScale이 있으므로 사용
-        const logicalCanvasX = rawCanvasX / this.gameManager.resolutionScale;
-        const logicalCanvasY = rawCanvasY / this.gameManager.resolutionScale;
+        // 2. 화면(CSS) 상에서의 마우스 상대 좌표 구하기
+        const relativeX = evt.clientX - rect.left;
+        const relativeY = evt.clientY - rect.top;
 
-        // 3. 논리 좌표를 기준으로 월드 좌표 계산
-        // this.gameManager.canvas.width/height는 고해상도 크기이므로
-        // 중심점 계산 시 resolutionScale로 나누어주어야 함
-        const worldX = (logicalCanvasX - (this.gameManager.canvas.width / this.gameManager.resolutionScale) / 2) / cam.scale + cam.x;
-        const worldY = (logicalCanvasY - (this.gameManager.canvas.height / this.gameManager.resolutionScale) / 2) / cam.scale + cam.y;
+        // 3. 화면 좌표를 게임의 논리 좌표로 변환
+        // 비례식: (마우스위치 / 화면에보이는크기) * 게임실제크기
+        const logicalX = (relativeX / rect.width) * logicalWidth;
+        const logicalY = (relativeY / rect.height) * logicalHeight;
+
+        // 4. 카메라(ActionCam) 변환 적용하여 월드 좌표(pixelX, pixelY) 계산
+        // 논리적 화면의 중심점을 기준으로 변환합니다.
+        const cam = gm.actionCam.current;
+        const worldX = (logicalX - logicalWidth / 2) / cam.scale + cam.x;
+        const worldY = (logicalY - logicalHeight / 2) / cam.scale + cam.y;
 
         return {
             pixelX: worldX,
