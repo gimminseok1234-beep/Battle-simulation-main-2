@@ -6,11 +6,20 @@ const GLOWING_WEAPON_TYPES = new Set([
 
 export function drawImpl(mouseEvent) {
     this.ctx.save();
+
+    // [수정 1] 배경 지우기 (논리적 크기만큼만 덮기)
+    // this.canvas.width는 실제 픽셀이므로 배율로 나눠야 논리적 크기가 됨
+    const logicalWidth = this.canvas.width / this.resolutionScale;
+    const logicalHeight = this.canvas.height / this.resolutionScale;
+
     this.ctx.fillStyle = '#1f2937';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
     const cam = this.actionCam;
-    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+    // [수정 2] 카메라 중앙 정렬 좌표 수정 (핵심 원인 해결)
+    // 기존: this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+    // 변경: 해상도 배율을 나눈 '논리적 중앙값'을 사용해야 함
+    this.ctx.translate(logicalWidth / 2, logicalHeight / 2);
     this.ctx.scale(cam.current.scale, cam.current.scale);
     this.ctx.translate(-cam.current.x, -cam.current.y);
 
@@ -24,8 +33,8 @@ export function drawImpl(mouseEvent) {
             this.ctx.fillStyle = `rgba(168, 85, 247, 0.2)`;
             const b = this.autoMagneticField.currentBounds;
             if (this.autoMagneticField.shrinkType === 'vertical') {
-                this.ctx.fillRect(0, 0, this.canvas.width, b.minY * GRID_SIZE);
-                this.ctx.fillRect(0, b.maxY * GRID_SIZE, this.canvas.width, this.canvas.height - b.maxY * GRID_SIZE);
+                this.ctx.fillRect(0, 0, logicalWidth, b.minY * GRID_SIZE);
+                this.ctx.fillRect(0, b.maxY * GRID_SIZE, logicalWidth, logicalHeight - b.maxY * GRID_SIZE);
             } else {
                 this.ctx.fillRect(0, 0, b.minX * GRID_SIZE, this.canvas.height);
                 this.ctx.fillRect(b.maxX * GRID_SIZE, 0, this.canvas.width - b.maxX * GRID_SIZE, this.canvas.height);

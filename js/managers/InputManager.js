@@ -22,7 +22,7 @@ export class InputManager {
         const resScale = gm.resolutionScale || 1;
 
         // 1. 현재 캔버스의 '논리적' 크기(게임 로직상 크기) 계산
-        // 물리적 버퍼 크기(canvas.width)를 해상도 배율로 나누어 원래 게임 크기를 구합니다.
+        // 물리적 버퍼 크기(canvas.width)를 해상도 배율로 나누어 원래 게임 크기를 구합니다. (예: 460x800)
         const logicalWidth = gm.canvas.width / resScale;
         const logicalHeight = gm.canvas.height / resScale;
 
@@ -30,16 +30,16 @@ export class InputManager {
         const relativeX = evt.clientX - rect.left;
         const relativeY = evt.clientY - rect.top;
 
-        // 3. 화면 좌표를 게임의 논리 좌표로 변환
+        // 3. 화면 좌표를 게임의 논리 좌표(논리적 마우스 위치)로 변환
         // 비례식: (마우스위치 / 화면에보이는크기) * 게임실제크기
-        const logicalX = (relativeX / rect.width) * logicalWidth;
-        const logicalY = (relativeY / rect.height) * logicalHeight;
+        const logicalMouseX = (relativeX / rect.width) * logicalWidth;
+        const logicalMouseY = (relativeY / rect.height) * logicalHeight;
 
         // 4. 카메라(ActionCam) 변환 적용하여 월드 좌표(pixelX, pixelY) 계산
         // 논리적 화면의 중심점을 기준으로 변환합니다.
         const cam = gm.actionCam.current;
-        const worldX = (logicalX - logicalWidth / 2) / cam.scale + cam.x;
-        const worldY = (logicalY - logicalHeight / 2) / cam.scale + cam.y;
+        const worldX = (logicalMouseX - logicalWidth / 2) / cam.scale + cam.x;
+        const worldY = (logicalMouseY - logicalHeight / 2) / cam.scale + cam.y;
 
         return {
             pixelX: worldX,
