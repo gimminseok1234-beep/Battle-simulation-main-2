@@ -415,8 +415,10 @@ export class GameManager {
     }
 
     resetActionCam(isInstant = true) {
-        const targetX = this.canvas.width / 2;
-        const targetY = this.canvas.height / 2;
+        // [수정] this.canvas.width 대신 this.logicalWidth를 사용해야 함
+        // 1380의 절반이 아니라 460의 절반인 230을 잡아야 중앙이 맞습니다.
+        const targetX = (this.logicalWidth || this.canvas.width / this.resolutionScale) / 2;
+        const targetY = (this.logicalHeight || this.canvas.height / this.resolutionScale) / 2;
         const targetScale = 1;
 
         if (isInstant) {
