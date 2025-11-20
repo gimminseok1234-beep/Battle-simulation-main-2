@@ -17,29 +17,27 @@ export class InputManager {
     getMousePos(evt) {
         const rect = this.gameManager.canvas.getBoundingClientRect();
         const gm = this.gameManager;
-
-        // [안전장치] 해상도 배율이 설정되지 않았을 경우 1로 기본값 설정
-        const resScale = gm.resolutionScale || 1;
-
-        // 1. 현재 캔버스의 '논리적' 크기(게임 로직상 크기) 계산
-        // 물리적 버퍼 크기(canvas.width)를 해상도 배율로 나누어 원래 게임 크기를 구합니다. (예: 460x800)
-        const logicalWidth = gm.canvas.width / resScale;
-        const logicalHeight = gm.canvas.height / resScale;
-
-        // 2. 화면(CSS) 상에서의 마우스 상대 좌표 구하기
+        
+        // 1. 논리적 게임 해상도 (render.js에서 사용한 것과 동일해야 함)
+        // gm.canvas.width는 (460 * 3)이지만, 우리는 460이 필요함.
+        const logicalWidth = gm.canvas.width / gm.resolutionScale;
+        const logicalHeight = gm.canvas.height / gm.resolutionScale;
+        
+        // 2. 마우스의 CSS상 상대 좌표
         const relativeX = evt.clientX - rect.left;
         const relativeY = evt.clientY - rect.top;
 
-        // 3. 화면 좌표를 게임의 논리 좌표(논리적 마우스 위치)로 변환
-        // 비례식: (마우스위치 / 화면에보이는크기) * 게임실제크기
-        const logicalMouseX = (relativeX / rect.width) * logicalWidth;
-        const logicalMouseY = (relativeY / rect.height) * logicalHeight;
+        // 3. 비율 계산 (CSS 크기 대비 마우스 위치) -> 논리 좌표로 변환
+        // 예: 화면 폭이 460px이고 마우스가 230px에 있다면, 게임 내에서도 230px (논리적)이어야 함.
+        const logicalX = (relativeX / rect.width) * logicalWidth;
+        const logicalY = (relativeY / rect.height) * logicalHeight;
 
-        // 4. 카메라(ActionCam) 변환 적용하여 월드 좌표(pixelX, pixelY) 계산
-        // 논리적 화면의 중심점을 기준으로 변환합니다.
+        // 4. 카메라 역변환 (World 좌표 구하기)
         const cam = gm.actionCam.current;
-        const worldX = (logicalMouseX - logicalWidth / 2) / cam.scale + cam.x;
-        const worldY = (logicalMouseY - logicalHeight / 2) / cam.scale + cam.y;
+        
+        // 카메라가 (0,0)에 있을 때 화면 중앙은 (logicalWidth/2, logicalHeight/2)
+        const worldX = (logicalX - logicalWidth / 2) / cam.scale + cam.x;
+        const worldY = (logicalY - logicalHeight / 2) / cam.scale + cam.y;
 
         return {
             pixelX: worldX,

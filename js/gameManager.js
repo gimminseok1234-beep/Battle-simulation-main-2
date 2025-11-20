@@ -464,28 +464,29 @@ export class GameManager {
         }
     }
 
-    // [수정 2] resizeCanvas 메서드 전체 수정
     resizeCanvas(width, height) {
-        // 1. CSS 스타일(화면에 보이는 크기) 설정
+        // 1. 해상도 배율 설정 (없으면 기본값 3)
+        this.resolutionScale = this.resolutionScale || 3;
+
+        // 2. CSS 스타일 (화면에 보이는 크기)
         this.canvas.style.width = `${width}px`;
         this.canvas.style.height = `${height}px`;
 
-        // 2. 캔버스 버퍼(실제 픽셀 수)를 스케일만큼 확대
+        // 3. 캔버스 버퍼 (실제 픽셀 수 - 고해상도)
         this.canvas.width = width * this.resolutionScale;
         this.canvas.height = height * this.resolutionScale;
 
-        // 3. 입력 필드 값은 논리적 크기(width, height)로 유지
+        // 4. 논리적 크기 저장 (InputManager 등에서 사용)
+        this.logicalWidth = width;
+        this.logicalHeight = height;
+
         document.getElementById('widthInput').value = width;
         document.getElementById('heightInput').value = height;
-
-        // 4. 게임 내부 그리드 계산은 논리적 크기 기준
         this.COLS = Math.floor(width / GRID_SIZE);
         this.ROWS = Math.floor(height / GRID_SIZE);
 
-        // 5. 렌더링 컨텍스트를 스케일만큼 확대하여 모든 드로잉이 커지도록 설정
-        this.ctx.scale(this.resolutionScale, this.resolutionScale);
-
-        // 텍스트 렌더링 설정 초기화 (크기 변경 시 초기화될 수 있음)
+        // [중요] 여기서 ctx.scale을 하지 않습니다. drawImpl에서 매 프레임 처리합니다.
+        // 픽셀 아트 설정
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.textBaseline = 'middle';
 
@@ -1604,4 +1605,3 @@ export class GameManager {
         }
     }
 }
-

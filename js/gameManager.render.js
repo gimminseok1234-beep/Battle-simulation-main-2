@@ -5,24 +5,32 @@ const GLOWING_WEAPON_TYPES = new Set([
 ]);
 
 export function drawImpl(mouseEvent) {
+    // [수정 1] 렌더링 시작 전 좌표계 초기화 및 배경 지우기
+    // 캔버스 전체(고해상도 버퍼 전체)를 지우기 위해 transform을 초기화합니다.
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.fillStyle = '#1f2937';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // [수정 2] 고해상도 스케일 적용
+    // 이제부터 그려지는 모든 것은 resolutionScale 배율로 커집니다.
+    this.ctx.scale(this.resolutionScale, this.resolutionScale);
+
+    // 픽셀 아트 설정 유지 (매 프레임 확실하게)
+    this.ctx.imageSmoothingEnabled = false;
+
     this.ctx.save();
 
-    // [수정 1] 배경 지우기 (논리적 크기만큼만 덮기)
-    // this.canvas.width는 실제 픽셀이므로 배율로 나눠야 논리적 크기가 됨
-    const logicalWidth = this.canvas.width / this.resolutionScale;
-    const logicalHeight = this.canvas.height / this.resolutionScale;
-
-    this.ctx.fillStyle = '#1f2937';
-    this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+    // [수정 3] 카메라 이동 (논리적 좌표 기준)
+    // this.logicalWidth를 사용하거나 canvas.width / scale을 사용해야 중앙이 맞습니다.
+    const logicalW = this.canvas.width / this.resolutionScale;
+    const logicalH = this.canvas.height / this.resolutionScale;
 
     const cam = this.actionCam;
-    // [수정 2] 카메라 중앙 정렬 좌표 수정 (핵심 원인 해결)
-    // 기존: this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-    // 변경: 해상도 배율을 나눈 '논리적 중앙값'을 사용해야 함
-    this.ctx.translate(logicalWidth / 2, logicalHeight / 2);
+    this.ctx.translate(logicalW / 2, logicalH / 2);
     this.ctx.scale(cam.current.scale, cam.current.scale);
     this.ctx.translate(-cam.current.x, -cam.current.y);
 
+    // --- 이하 기존 그리기 로직 유지 ---
     this.drawMap();
     this.magicCircles.forEach(c => c.draw(this.ctx));
     this.poisonClouds.forEach(c => c.draw(this.ctx));
@@ -33,13 +41,13 @@ export function drawImpl(mouseEvent) {
             this.ctx.fillStyle = `rgba(168, 85, 247, 0.2)`;
             const b = this.autoMagneticField.currentBounds;
             if (this.autoMagneticField.shrinkType === 'vertical') {
-                this.ctx.fillRect(0, 0, logicalWidth, b.minY * GRID_SIZE);
-                this.ctx.fillRect(0, b.maxY * GRID_SIZE, logicalWidth, logicalHeight - b.maxY * GRID_SIZE);
+                this.ctx.fillRect(0, 0, logicalW, b.minY * GRID_SIZE);
+                this.ctx.fillRect(0, b.maxY * GRID_SIZE, logicalW, logicalH - b.maxY * GRID_SIZE);
             } else {
-                this.ctx.fillRect(0, 0, b.minX * GRID_SIZE, this.canvas.height);
-                this.ctx.fillRect(b.maxX * GRID_SIZE, 0, this.canvas.width - b.maxX * GRID_SIZE, this.canvas.height);
+                this.ctx.fillRect(0, 0, b.minX * GRID_SIZE, logicalH);
+                this.ctx.fillRect(b.maxX * GRID_SIZE, 0, logicalW - b.maxX * GRID_SIZE, logicalH);
                 this.ctx.fillRect(b.minX * GRID_SIZE, 0, (b.maxX - b.minX) * GRID_SIZE, b.minY * GRID_SIZE);
-                this.ctx.fillRect(b.minX * GRID_SIZE, b.maxY * GRID_SIZE, (b.maxX - b.minX) * GRID_SIZE, this.canvas.height - b.maxY * GRID_SIZE);
+                this.ctx.fillRect(b.minX * GRID_SIZE, b.maxY * GRID_SIZE, (b.maxX - b.minX) * GRID_SIZE, logicalH - b.maxY * GRID_SIZE);
             }
         }
 
@@ -80,51 +88,51 @@ export function drawImpl(mouseEvent) {
         this.ctx.strokeRect(x, y, width, height);
     }
 
-    // [추가] 모든 요소가 그려진 후, 특수 공격 빛 효과를 마지막에 덧그립니다.
-    drawSpecialAttackGlows.call(this);
+    this.ctx.restore(); // 카메라 변환 종료 (이제 다시 순수 resolutionScale 상태)
 
-    // [신규] 이름표 바꾸기 모드에서 드래그 중인 이름표를 마우스 커서에 그립니다.
+    // [수정 4] UI / 비네트 / 이름표 그리기
+    // 이미 상단에서 scale(resolutionScale)을 했으므로, 여기서는 setTransform을 할 필요가 없거나
+    // 하려면 스케일을 포함해야 합니다.
+
     if (this.isNametagSwapMode && this.draggedUnitForSwap && mouseEvent) {
-        const pos = this.inputManager.getMousePos(mouseEvent);
         const unit = this.draggedUnitForSwap;
 
         if (unit.name) {
             this.ctx.save();
-            // 카메라 줌과 관계없이 항상 같은 크기로 보이도록 스케일 초기화
-            // 변경: 해상도 스케일 반영
+            // 좌표계 초기화 후 스케일만 적용 (카메라 무시)
             this.ctx.setTransform(this.resolutionScale, 0, 0, this.resolutionScale, 0, 0);
 
-            // 캔버스 좌표로 변환
-            const canvasX = (pos.pixelX - cam.current.x) * cam.current.scale + (this.canvas.width / this.resolutionScale) / 2;
-            const canvasY = (pos.pixelY - cam.current.y) * cam.current.scale + (this.canvas.height / this.resolutionScale) / 2;
+            // 기존 로직을 유지하되 좌표 변환만 주의
+            const pos = this.inputManager.getMousePos(mouseEvent); // 여기서 가져오거나 인자로 받음
+            const canvasX = (pos.pixelX - cam.current.x) * cam.current.scale + logicalW / 2;
+            const canvasY = (pos.pixelY - cam.current.y) * cam.current.scale + logicalH / 2;
 
             this.ctx.font = 'bold 10px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillStyle = unit.nameColor || '#000000';
-            this.ctx.fillText(unit.name, canvasX, canvasY - 20); // 커서 약간 위에 표시
+            this.ctx.fillText(unit.name, canvasX, canvasY - 20);
             this.ctx.restore();
         }
     }
 
-    // [신규] 비네트 효과 그리기
+    // 비네트 효과
     if (this.actionCam.vignetteEnabled && (this.isActionCam || this.isFollowCamEnabled) && cam.current.scale > 1.05) {
         this.ctx.save();
-        // 카메라 변환을 초기화하고 캔버스 좌표계에서 그립니다.
-        // 변경: 해상도 스케일 반영
-        this.ctx.setTransform(this.resolutionScale, 0, 0, this.resolutionScale, 0, 0);
-        const w = this.canvas.width / this.resolutionScale;
-        const h = this.canvas.height / this.resolutionScale;
+        // 카메라 변환 없이 화면 전체에 그려야 함.
+        // 현재 상태: scale(3,3) 적용됨. (0,0)은 좌상단.
+        
+        const w = logicalW;
+        const h = logicalH;
+        
         const outerRadius = Math.hypot(w, h) / 2;
         const gradient = this.ctx.createRadialGradient(w / 2, h / 2, h / 2.5, w / 2, h / 2, outerRadius);
-        const vignetteStrength = Math.min(1.0, (cam.current.scale - 1) * 2.7); // 1.8 -> 2.7 (1.5배 더 강화)
+        const vignetteStrength = Math.min(1.0, (cam.current.scale - 1) * 2.7);
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength})`); // 기존 로직은 vignetteStrength * 1.2 였으므로 제거
+        gradient.addColorStop(1, `rgba(0,0,0,${vignetteStrength})`);
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, w, h);
         this.ctx.restore();
     }
-
-    this.ctx.restore();
 }
 
 export function drawMapImpl() {
