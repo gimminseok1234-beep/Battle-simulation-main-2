@@ -436,63 +436,6 @@ export class GameManager {
         }
     }
 
-    handleActionCamClick(pos) {
-        if (this.isFollowCamEnabled) {
-            const clickedUnit = this.units.find(u => Math.hypot(u.pixelX - pos.pixelX, u.pixelY - pos.pixelY) < GRID_SIZE);
-            if (clickedUnit) {
-                this.followedUnit = clickedUnit;
-                this.uiManager.updateFollowedUnitInfo(clickedUnit);
-            } else {
-                this.followedUnit = null;
-                this.uiManager.updateFollowedUnitInfo(null);
-                this.resetActionCam(false);
-            }
-        } else if (this.isActionCam) { // 팔로우캠이 아닐 때만 일반 액션캠 로직 실행
-            if (this.actionCam.target.scale > 1) {
-                this.resetActionCam(false);
-            } else {
-                this.actionCam.target.x = pos.pixelX;
-                this.actionCam.target.y = pos.pixelY;
-                this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
-            }
-        }
-
-        // 팔로우캠이 켜져 있거나, 일반 액션캠이 켜져 있을 때만 애니메이션 시작
-        if (this.isFollowCamEnabled || this.isActionCam) { 
-            this.actionCam.isAnimating = true;
-            if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
-        }
-    }
-
-    resizeCanvas(width, height) {
-        // 1. 해상도 배율 설정 (없으면 기본값 3)
-        this.resolutionScale = this.resolutionScale || 3;
-
-        // 2. CSS 스타일 (화면에 보이는 크기)
-        this.canvas.style.width = `${width}px`;
-        this.canvas.style.height = `${height}px`;
-
-        // 3. 캔버스 버퍼 (실제 픽셀 수 - 고해상도)
-        this.canvas.width = width * this.resolutionScale;
-        this.canvas.height = height * this.resolutionScale;
-
-        // 4. 논리적 크기 저장 (InputManager 등에서 사용)
-        this.logicalWidth = width;
-        this.logicalHeight = height;
-
-        document.getElementById('widthInput').value = width;
-        document.getElementById('heightInput').value = height;
-        this.COLS = Math.floor(width / GRID_SIZE);
-        this.ROWS = Math.floor(height / GRID_SIZE);
-
-        // [중요] 여기서 ctx.scale을 하지 않습니다. drawImpl에서 매 프레임 처리합니다.
-        // 픽셀 아트 설정
-        this.ctx.imageSmoothingEnabled = false;
-        this.ctx.textBaseline = 'middle';
-
-        this.resetMap();
-    }
-
     resetMap() {
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
