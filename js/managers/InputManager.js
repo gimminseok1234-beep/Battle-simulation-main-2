@@ -16,15 +16,28 @@ export class InputManager {
 
     getMousePos(evt) {
         const rect = this.gameManager.canvas.getBoundingClientRect();
+        // 스케일 계산: 실제 캔버스 픽셀 크기 / 화면에 보이는 CSS 크기
+        // gameManager.js에서 width * resolutionScale을 했으므로,
+        // scaleX, scaleY는 resolutionScale 값과 비슷하게 됩니다.
         const scaleX = this.gameManager.canvas.width / rect.width;
         const scaleY = this.gameManager.canvas.height / rect.height;
 
-        // 카메라 변환을 고려한 월드 좌표 계산
         const cam = this.gameManager.actionCam.current;
-        const canvasX = (evt.clientX - rect.left) * scaleX;
-        const canvasY = (evt.clientY - rect.top) * scaleY;
-        const worldX = (canvasX - this.gameManager.canvas.width / 2) / cam.scale + cam.x;
-        const worldY = (canvasY - this.gameManager.canvas.height / 2) / cam.scale + cam.y;
+
+        // 1. 캔버스 상의 실제 픽셀 좌표 (고해상도 기준)
+        const rawCanvasX = (evt.clientX - rect.left) * scaleX;
+        const rawCanvasY = (evt.clientY - rect.top) * scaleY;
+
+        // 2. 게임 로직용 논리 좌표로 변환 (resolutionScale로 나눔)
+        // GameManager에 resolutionScale이 있으므로 사용
+        const logicalCanvasX = rawCanvasX / this.gameManager.resolutionScale;
+        const logicalCanvasY = rawCanvasY / this.gameManager.resolutionScale;
+
+        // 3. 논리 좌표를 기준으로 월드 좌표 계산
+        // this.gameManager.canvas.width/height는 고해상도 크기이므로
+        // 중심점 계산 시 resolutionScale로 나누어주어야 함
+        const worldX = (logicalCanvasX - (this.gameManager.canvas.width / this.gameManager.resolutionScale) / 2) / cam.scale + cam.x;
+        const worldY = (logicalCanvasY - (this.gameManager.canvas.height / this.gameManager.resolutionScale) / 2) / cam.scale + cam.y;
 
         return {
             pixelX: worldX,

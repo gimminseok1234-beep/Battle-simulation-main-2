@@ -26,10 +26,13 @@ export class GameManager {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // [수정 1] 고해상도 스케일 팩터 추가
+        // 2 또는 3으로 설정하면 매우 선명해집니다. (쇼츠용으로 3 추천)
+        this.resolutionScale = 3;
+
         // 고품질 렌더링 설정
-        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingEnabled = false; // 픽셀 아트 스타일 유지를 위해 false 추천 (또는 true)
         this.ctx.imageSmoothingQuality = 'high';
-        this.ctx.textRenderingOptimization = 'optimizeQuality';
         this.ctx.textBaseline = 'middle';
         this.COLS = 0;
         this.ROWS = 0;
@@ -470,14 +473,31 @@ export class GameManager {
         }
     }
 
+    // [수정 2] resizeCanvas 메서드 전체 수정
     resizeCanvas(width, height) {
-        this.canvas.width = width;
-        this.canvas.height = height;
+        // 1. CSS 스타일(화면에 보이는 크기) 설정
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+
+        // 2. 캔버스 버퍼(실제 픽셀 수)를 스케일만큼 확대
+        this.canvas.width = width * this.resolutionScale;
+        this.canvas.height = height * this.resolutionScale;
+
+        // 3. 입력 필드 값은 논리적 크기(width, height)로 유지
         document.getElementById('widthInput').value = width;
         document.getElementById('heightInput').value = height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
-        
+
+        // 4. 게임 내부 그리드 계산은 논리적 크기 기준
+        this.COLS = Math.floor(width / GRID_SIZE);
+        this.ROWS = Math.floor(height / GRID_SIZE);
+
+        // 5. 렌더링 컨텍스트를 스케일만큼 확대하여 모든 드로잉이 커지도록 설정
+        this.ctx.scale(this.resolutionScale, this.resolutionScale);
+
+        // 텍스트 렌더링 설정 초기화 (크기 변경 시 초기화될 수 있음)
+        this.ctx.imageSmoothingEnabled = false;
+        this.ctx.textBaseline = 'middle';
+
         this.resetMap();
     }
 

@@ -82,11 +82,12 @@ export function drawImpl(mouseEvent) {
         if (unit.name) {
             this.ctx.save();
             // 카메라 줌과 관계없이 항상 같은 크기로 보이도록 스케일 초기화
-            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+            // 변경: 해상도 스케일 반영
+            this.ctx.setTransform(this.resolutionScale, 0, 0, this.resolutionScale, 0, 0);
 
             // 캔버스 좌표로 변환
-            const canvasX = (pos.pixelX - cam.current.x) * cam.current.scale + this.canvas.width / 2;
-            const canvasY = (pos.pixelY - cam.current.y) * cam.current.scale + this.canvas.height / 2;
+            const canvasX = (pos.pixelX - cam.current.x) * cam.current.scale + (this.canvas.width / this.resolutionScale) / 2;
+            const canvasY = (pos.pixelY - cam.current.y) * cam.current.scale + (this.canvas.height / this.resolutionScale) / 2;
 
             this.ctx.font = 'bold 10px Arial';
             this.ctx.textAlign = 'center';
@@ -100,9 +101,10 @@ export function drawImpl(mouseEvent) {
     if (this.actionCam.vignetteEnabled && (this.isActionCam || this.isFollowCamEnabled) && cam.current.scale > 1.05) {
         this.ctx.save();
         // 카메라 변환을 초기화하고 캔버스 좌표계에서 그립니다.
-        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        const w = this.canvas.width;
-        const h = this.canvas.height;
+        // 변경: 해상도 스케일 반영
+        this.ctx.setTransform(this.resolutionScale, 0, 0, this.resolutionScale, 0, 0);
+        const w = this.canvas.width / this.resolutionScale;
+        const h = this.canvas.height / this.resolutionScale;
         const outerRadius = Math.hypot(w, h) / 2;
         const gradient = this.ctx.createRadialGradient(w / 2, h / 2, h / 2.5, w / 2, h / 2, outerRadius);
         const vignetteStrength = Math.min(1.0, (cam.current.scale - 1) * 2.7); // 1.8 -> 2.7 (1.5배 더 강화)
