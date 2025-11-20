@@ -436,6 +436,66 @@ export class GameManager {
         }
     }
 
+    handleActionCamClick(pos) {
+        if (this.isFollowCamEnabled) {
+            const clickedUnit = this.units.find(u => Math.hypot(u.pixelX - pos.pixelX, u.pixelY - pos.pixelY) < GRID_SIZE);
+            if (clickedUnit) {
+                this.followedUnit = clickedUnit;
+                this.uiManager.updateFollowedUnitInfo(clickedUnit);
+            } else {
+                this.followedUnit = null;
+                this.uiManager.updateFollowedUnitInfo(null);
+                this.resetActionCam(false);
+            }
+        } else if (this.isActionCam) { // 팔로우캠이 아닐 때만 일반 액션캠 로직 실행
+            if (this.actionCam.target.scale > 1) {
+                this.resetActionCam(false);
+            } else {
+                this.actionCam.target.x = pos.pixelX;
+                this.actionCam.target.y = pos.pixelY;
+                this.actionCam.target.scale = this.actionCam.maxZoom || 1.4;
+            }
+        }
+
+        // 팔로우캠이 켜져 있거나, 일반 액션캠이 켜져 있을 때만 애니메이션 시작
+        if (this.isFollowCamEnabled || this.isActionCam) { 
+            this.actionCam.isAnimating = true;
+            if (this.state !== 'SIMULATE' && !this.animationFrameId) this.gameLoop();
+        }
+    }
+
+    resizeCanvas(width, height) {
+        // 1. 해상도 배율 설정 (없으면 기본값 3)
+        this.resolutionScale = this.resolutionScale || 3;
+
+        // 2. [핵심] 화면에 보이는 크기(CSS) 고정
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+
+        // 3. 캔버스 버퍼(실제 픽셀 수)는 배율만큼 확대
+        this.canvas.width = width * this.resolutionScale;
+        this.canvas.height = height * this.resolutionScale;
+
+        // 4. 논리적 크기 저장
+        this.logicalWidth = width;
+        this.logicalHeight = height;
+
+        // UI 동기화
+        const wInput = document.getElementById('widthInput');
+        const hInput = document.getElementById('heightInput');
+        if (wInput) wInput.value = width;
+        if (hInput) hInput.value = height;
+
+        // 그리드 계산은 논리적 크기 기준
+        this.COLS = Math.floor(width / GRID_SIZE);
+        this.ROWS = Math.floor(height / GRID_SIZE);
+
+        // 픽셀 아트 설정 재적용
+        this.ctx.imageSmoothingEnabled = false;
+        this.ctx.textBaseline = 'middle';
+
+        this.resetMap();
+    }
     resetMap() {
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
@@ -1215,13 +1275,11 @@ export class GameManager {
         
         this.currentMapId = mapId;
         this.currentMapName = mapData.name;
-        this.canvas.width = mapData.width || 600;
-        this.canvas.height = mapData.height || 900;
-        document.getElementById('widthInput').value = this.canvas.width;
-        document.getElementById('heightInput').value = this.canvas.height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
 
+        // [수정됨] 직접 width/height에 대입하지 않고 resizeCanvas를 통해 고해상도 설정 적용
+        const mapW = mapData.width || 600;
+        const mapH = mapData.height || 900;
+        this.resizeCanvas(mapW, mapH);
         this.handleMapColors(mapData);
 
         if (mapData.map && typeof mapData.map === 'string') {
@@ -1270,13 +1328,8 @@ export class GameManager {
         await this.audioManager.init();
         
         this.currentMapName = mapData.name;
-        this.canvas.width = mapData.width;
-        this.canvas.height = mapData.height;
-        document.getElementById('widthInput').value = this.canvas.width;
-        document.getElementById('heightInput').value = this.canvas.height;
-        this.COLS = Math.floor(this.canvas.width / GRID_SIZE);
-        this.ROWS = Math.floor(this.canvas.height / GRID_SIZE);
-
+        // [수정됨] resizeCanvas 사용
+        this.resizeCanvas(mapData.width, mapData.height);
         this.handleMapColors(mapData);
 
         this.map = JSON.parse(mapData.map);
@@ -1455,11 +1508,9 @@ export class GameManager {
         this.hadokenKnockback = replayData.hadokenKnockback || 15;
         this.isLavaAvoidanceEnabled = replayData.isLavaAvoidanceEnabled !== undefined ? replayData.isLavaAvoidanceEnabled : false;
 
-        this.canvas.width = replayData.mapWidth;
-        this.canvas.height = replayData.mapHeight;
+        // [수정됨] resizeCanvas 사용
+        this.resizeCanvas(replayData.mapWidth, replayData.mapHeight);
         const map = JSON.parse(replayData.initialMapState);
-        this.COLS = map[0].length;
-        this.ROWS = map.length;
         this.map = map;
 
         const mapColorData = {
