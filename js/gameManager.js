@@ -1537,17 +1537,7 @@ export class GameManager {
     }
 
     updateUIToReplayMode() {
-        const toolbox = document.getElementById('toolbox');
-        toolbox.style.display = 'flex';
-        toolbox.classList.add('replay-mode');
-
-        const utilsHeader = toolbox.querySelector('[data-target="category-utils"]');
-        const utilsContent = document.getElementById('category-utils');
-        if (utilsHeader && utilsContent) {
-            utilsHeader.classList.remove('collapsed');
-            utilsContent.classList.remove('collapsed');
-        }
-
+        // [수정] 리플레이 모드에서는 에디터 컨트롤을 숨기고, 액션캠 패널을 표시합니다.
         document.getElementById('editor-controls').style.display = 'none';
         document.getElementById('simResetBtn').style.display = 'none';
         const placementResetBtn = document.getElementById('simPlacementResetBtn');
